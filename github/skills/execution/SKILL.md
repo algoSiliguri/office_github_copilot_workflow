@@ -30,20 +30,49 @@ You are in execute phase. Implement the plan exactly as written — nothing more
 1. Read the plan file in full.
 2. Read `.github/skills/conventions/SKILL.md` for the test command and commit format.
    Keep the raw text — you will embed it in subagent prompts if using phased mode.
-3. Check the `> **Execution mode:**` line in the plan.
+3. Check the `> **Execution mode:**` line in the plan. Three valid values:
+   - `inline` — execute all steps in this session
+   - `phased-inline` — execute phases sequentially in this session with hard gates between phases
+   - `phased-subagent` — dispatch each phase to a fresh sub-agent
    If no `Execution mode:` annotation is found (legacy plan): count total files in the plan.
-   Use inline if ≤3 files, phased if >3 files.
+   Use `inline` if ≤5 files, `phased-inline` if 6–12 files, `phased-subagent` if >12 files.
 4. Announce your mode:
    - **inline:** "2 files total. Using **inline mode** — executing all steps now."
-   - **phased:** "11 files across 4 phases. Using **sub-agent mode** — I'll execute one phase at a time, commit, and pause for your review before each next phase."
+   - **phased-inline:** "8 files across 3 phases. Using **phased-inline mode** — I'll execute phases sequentially in this session with a review gate between each."
+   - **phased-subagent:** "14 files across 4 phases. Using **sub-agent mode** — I'll dispatch each phase to a fresh subagent and pause for your review before proceeding."
+
+## Step 1b: Coverage Confidence Announcement (all modes)
+
+Read `Coverage confidence:` from the context packet (if loaded in Step 2a/2b/2c below) or check plan `## Intelligence Context` block.
+
+Announce at session/phase start:
+- `high`: "Context: high coverage — file reads restricted to context packet. I will not load files outside it."
+- `medium`: "Context: medium coverage — one-hop expansion allowed for files referenced by loaded modules."
+- `low`: "Context: low coverage — full codebase search available. I will note gaps as encountered."
+
+If no context packet and no `## Intelligence Context` block: treat as `low`. Announce: "No context packet found. Context: low coverage — proceeding with full codebase search."
 
 ## Step 2a: Inline Execution (`Execution mode: inline`)
 
 **Context packet check (run before any steps):**
 1. Read `Context Packets:` path from `.github/skills/conventions/SKILL.md`.
 2. Check for `[context-packets-path]/[ticket-id]/phase-1-context.md` (inline plans use a single phase; try `phase-1` first, then `phase-2` if not found).
-3. If found: read the full context packet. Note the `Coverage confidence` field. Use `## Relevant Decisions` and `## Module Context` to frame your understanding before touching any code. Do not load additional module or knowledge pages from the index — the packet is the full context budget for this plan.
-4. If not found: proceed without pre-loaded context. The Codebase Search Protocol remains available on demand throughout execution.
+3. If found: read the full context packet. Note the `Coverage confidence` field. Enforce based on level:
+   - `high`: **Prohibited** from reading files outside the context packet. If a step requires a file read outside the packet, stop and say: "Step [N] requires reading [file], which is outside the context packet. Coverage is HIGH. Should I expand context or rephrase the step to work within the packet?"
+   - `medium`: Controlled one-hop expansion allowed — may read files referenced by packet modules; do not scan broadly.
+   - `low`: Expansion required. The Codebase Search Protocol is available without restriction.
+   Use `## Relevant Decisions` and `## Module Context` to frame understanding before touching any code.
+4. If not found: treat as `low` coverage. Note: "No context packet found — proceeding with full codebase search." The Codebase Search Protocol is available without restriction.
+
+**Inline checkpoint discipline:**
+- Count total steps in the plan. If ≥6: group steps by file (all steps on one file form one group, or by natural dependency boundary).
+- After each group completes, show a **soft checkpoint** (informational — no gate, proceed automatically):
+  ```
+  — [group name, e.g. "RateLimiter.java"] — [N steps complete]
+  Tests: [PASS / FAIL — one-line summary]
+  ```
+- After all steps complete: show a **hard checkpoint** in the same format as the phased checkpoint below (files changed, Stage 1, Stage 2, test output, finishing options). This is the only gate in inline mode.
+- For inline plans with <6 steps: no soft checkpoints. Hard checkpoint at the end only.
 
 Work through all steps sequentially:
 1. Execute each step in order. Do not skip any.
@@ -101,17 +130,92 @@ Before claiming any of these: "step complete", "phase complete", "all tests pass
 
 Reject these: "should pass", "probably works", "tests passed" (without output). Evidence is pasted terminal output — nothing else counts.
 
-## Step 2b: Sub-Agent Execution (`Execution mode: phased`)
+## Step 2b: Phased-Inline Execution (`Execution mode: phased-inline`)
+
+Execute phases sequentially in the current session. No sub-agents. UX is identical to phased-subagent — same phase start format, same checkpoint format, same gate discipline.
+
+For each phase:
+
+**Announce phase start:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Phase [N] of [M] — [Phase name] — [N files] / [N steps]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Context packet check (before each phase):**
+1. Read `Context Packets:` path from `.github/skills/conventions/SKILL.md`.
+2. Read `[context-packets-path]/[ticket-id]/phase-[N]-context.md` if it exists.
+3. If found: load it. Enforce coverage confidence behavior (see Step 1b).
+4. If not found: treat as `low` confidence. Note: "No context packet for phase [N]. Proceeding with full codebase search."
+
+**Execute all steps** in the phase using inline execution rules (see Step 2a).
+
+**Run two-stage review** (same as Step 2c sub-agent review below) before showing the checkpoint.
+
+**Phase checkpoint (show after both stages pass):**
+```
+Phase [N] complete — [Phase name]
+
+Files changed:
+  + [file] (created)
+  ~ [file] (modified)
+
+[Stage 1] Spec compliance: PASS
+OR
+[Stage 1] Spec compliance: FAIL — [missing file or unlisted change]
+
+[Stage 2] Code quality: PASS
+OR
+[Stage 2] Code quality: FAIL — [finding: what + where]
+
+Test output:
+[pasted output]
+
+Review:
+[exact questions from plan's Engineer review prompt for this phase]
+
+Type `continue` for Phase [N+1], or describe a concern.
+```
+
+Show exactly one Stage 1 line and one Stage 2 line — the applicable variant only (PASS or FAIL, not both).
+PASS is one line. FAIL is one line including the finding. No explanation, no suggestion.
+
+**Gate is hard:** do not proceed to the next phase without explicit `continue` from the engineer.
+
+**On test failure:** "Phase [N] failed — [test name or compliance finding]. Use `/debug`. Type `retry phase [N]` when fixed." No auto-retry.
+
+**Amendment and discovery tracking:** identical to inline mode — append to plan file under `## Amendments` or `## Discoveries`.
+
+**After all phases complete** — run the full test suite in this session and present finishing options (same as inline mode).
+
+## Step 2c: Sub-Agent Execution (`Execution mode: phased-subagent`)
 
 Work through phases in order. For each phase:
 
 ### Dispatch the subagent
+
+**Announce phase start before dispatching:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Phase [N] of [M] — [Phase name] — [N files] / [N steps]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 **Before dispatching — context packet check:**
 1. Read `Context Packets:` path from `.github/skills/conventions/SKILL.md`.
 2. Read `[context-packets-path]/[ticket-id]/phase-[N]-context.md` if it exists.
 3. If found: copy the full file content for embedding in the subagent prompt (CONTEXT_PACKET_CONTENT).
 4. If not found: set CONTEXT_PACKET_CONTENT = `No context packet available. Use the Codebase Search Protocol for any module lookups during this phase.`
+
+**Before building the sub-agent prompt — dynamic conventions injection:**
+Scan each step's text in this phase for these keyword patterns. When matched, read the named section from `conventions/SKILL.md` and append it after `--- END CONVENTIONS ---` labeled `--- INJECTED: [section name] ---`:
+- Words "error", "exception", "throws", "catch", "validate", "validation" → `## Error Handling`
+- Words "endpoint", "request", "response", "API", "contract", "status code" → `## API Conventions`
+- Words "migration", "schema", "table", "query", "database", "model" → `## Data Conventions`
+- Any framework name that appears as a section header in conventions (exact match) → that section
+- Default: no injection beyond the minimal summary
+If `conventions/SKILL.md` does not contain a matching section: no injection. Do not fail or warn.
 
 Spin up a new `@Implementation Agent` sub-session with the following fully self-contained prompt.
 The sub-session has NO access to the parent session — embed everything it needs.
@@ -121,8 +225,13 @@ Copy and complete the prompt below exactly, replacing bracketed placeholders wit
 You are implementing Phase [N]: [phase name] as part of ticket [ticket-id].
 
 --- CONVENTIONS ---
-[Paste the full raw text content of conventions/SKILL.md here]
+Test: [test command from conventions/SKILL.md]
+Commit: [commit format from conventions/SKILL.md]
+Lint: [lint command from conventions/SKILL.md, or "none"]
+Ticket: [ticket format from conventions/SKILL.md]
 --- END CONVENTIONS ---
+[--- INJECTED: [section name] ---
+[section content from conventions/SKILL.md — only present when keyword-triggered; omit block entirely if no injection]
 
 --- CONTEXT PACKET ---
 [Paste CONTEXT_PACKET_CONTENT here — either the full phase-[N]-context.md content or the "No context packet available" message]
@@ -140,11 +249,9 @@ RULES:
 3. After each step, run the test command from CONVENTIONS.
 4. If any test fails: stop immediately and return the failure output. Do not proceed.
 5. Do not make changes not listed in the steps above. If something looks wrong, report back.
-6. **REQUIRED:** Follow TDD for any step creating new logic: write the failing test FIRST (RED), then implement (GREEN). No production code without a failing test.
-7. **REQUIRED:** If a test fails and the cause is not obvious, follow systematic debugging: reproduce -> isolate -> hypothesise -> verify -> fix. Do not guess.
-8. Commit when all steps pass: "[ticket-id] phase [N]: [phase name]"
-9. If a deviation from the plan is necessary and engineer-approved: append to the plan file — add `## Amendments` section at the end if missing, then append: `- [YYYY-MM-DD] Phase [N]: [what changed and why it was necessary]`
-10. If you discover an unexpected constraint or system behavior: append to the plan file — add `## Discoveries` section at the end if missing, then append: `- [YYYY-MM-DD] [brief description of what you discovered]`
+6. Follow TDD for new logic (RED→GREEN→REFACTOR); use systematic debugging for failures (reproduce→isolate→hypothesise→verify→fix).
+7. Commit when all steps pass: "[ticket-id] phase [N]: [phase name]"
+8. Amendments: append to `## Amendments` in plan file — `- [YYYY-MM-DD] Phase [N]: [change and reason]`. Discoveries: append to `## Discoveries` — `- [YYYY-MM-DD] [description]`.
 
 RETURN when done:
 - List every file you changed (path + created/modified)
@@ -174,19 +281,31 @@ If Stage 2 fails: send the subagent back to fix. Re-run only Stage 2.
 
 **After both stages pass**, show the engineer:
 
-> **Phase [N] complete — [Phase name]**
->
-> **Files changed:** `[file1]` (created), `[file2]` (modified)
->
-> **Test output:**
-> ```
-> [Paste full output from subagent — do not summarise]
-> ```
->
-> **Please review:**
-> [Copy the exact "Engineer review prompt" text from the plan for this phase]
->
-> Type `continue` to proceed to Phase [N+1], or describe any concerns.
+```
+Phase [N] complete — [Phase name]
+
+Files changed:
+  + [file1] (created)
+  ~ [file2] (modified)
+
+[Stage 1] Spec compliance: PASS
+OR
+[Stage 1] Spec compliance: FAIL — [missing file or unlisted change]
+
+[Stage 2] Code quality: PASS
+OR
+[Stage 2] Code quality: FAIL — [finding: what + where]
+
+Test output:
+[Paste full output from subagent — do not summarise]
+
+Review:
+[Copy the exact "Engineer review prompt" text from the plan for this phase]
+
+Type `continue` for Phase [N+1], or describe a concern.
+```
+
+Show exactly one Stage 1 line and one Stage 2 line — the applicable variant only. PASS is one line. FAIL is one line with the finding. No explanation, no suggestion.
 
 **Wait for the engineer's response. Do not auto-continue.**
 
@@ -241,8 +360,6 @@ Wait for the engineer's choice. Do not auto-merge or auto-push.
 
 ## Handoff
 
-Next phase: `/verify`
+Next: `/verify [spec-file-path]` in a new chat.
 
-Start a new chat. Recommended: **Standard**. Use `/verify` with the spec file path to prove every requirement is met.
-
-Apply context hygiene summary, then proceed.
+Apply context hygiene before closing this chat.

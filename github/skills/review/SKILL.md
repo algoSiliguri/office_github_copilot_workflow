@@ -1,7 +1,6 @@
 ---
 name: review
 description: Critical peer review of code and evidence before raising a PR. Reads spec, verification file, and all changed files with fresh eyes. Flags BLOCKERs and SUGGESTIONs. Use after the verification file is complete.
-allowed-tools: read_file, list_dir, file_search, grep_search, semantic_search, get_errors, run_in_terminal, get_terminal_output, validate_cves
 ---
 
 ## Metadata
@@ -147,4 +146,4 @@ If no blockers: raise your PR.
 
 If blockers found: fix each blocker, then re-invoke `/review` for the affected area only. Do not re-review the entire diff for a single fix.
 
-Apply context hygiene summary, then proceed.
+Apply context hygiene before closing this chat.

@@ -144,10 +144,6 @@ Spec file at `[specs-path]/YYYY-MM-DD-[ticket-id]-[feature-name].md` containing:
 
 ## Handoff
 
-Next phase: `/write-plan`
+Next: `/write-plan [spec-file-path]` in a new chat.
 
-After spec is reviewed and approved, use `/write-plan` with the spec file path as input.
-
-Start a new chat. Recommended: **Premium**. Use `/write-plan`.
-
-Apply context hygiene summary, then proceed.
+Apply context hygiene before closing this chat.

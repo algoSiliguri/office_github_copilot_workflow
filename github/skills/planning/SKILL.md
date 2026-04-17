@@ -1,7 +1,6 @@
 ---
 name: planning
 description: Creates a phased implementation plan from a spec file by reading the actual codebase first. Generates concrete file-level steps with real paths — not placeholders. Use when ready to plan implementation after a spec is written and approved.
-allowed-tools: read_file, list_dir, file_search, grep_search, semantic_search
 ---
 
 ## Metadata
@@ -28,6 +27,7 @@ You are in plan phase. Create a phased implementation plan grounded in the actua
 
 1. Read `.github/skills/retrieval-protocol/SKILL.md`. Run the full retrieval protocol exactly as described — activation gate through retrieval summary (Steps 1–9 in the protocol).
 2. **If index absent or maturity = low:** Skip retrieval. Proceed directly to "Before Writing a Single Step" below, using the full codebase search (step 2 in that section).
+   **If index exists at any maturity above low:** Retrieval is mandatory. A skip without documented justification blocks the plan from being written.
 3. **After retrieval completes:**
    a. Assemble the `## Intelligence Context` block from the retrieval summary. This block goes in the plan preamble (added in Step 2 of the plan structure update below).
    b. Collect all `## Known Constraints` lines from every loaded module page. These go in the `## Constraints` section of the plan preamble (also in Step 2 below). Label each: `[source: module-page]`. Treat them as non-negotiable — equivalent to spec requirements.
@@ -53,9 +53,25 @@ Group steps into phases. A phase MUST satisfy all three:
 
 Typical phase boundaries: by architectural layer (repository → service → controller), by feature area (auth module, notification module), or by change type (schema migration → model update → query update).
 
-**Set execution mode** based on total files across ALL phases:
-- ≤3 files total → `Execution mode: inline`
-- >3 files total → `Execution mode: phased`
+**Set execution mode** based on total files across ALL phases. File count is the baseline signal; apply override rules after.
+
+**Baseline:**
+- ≤5 files AND low risk → `Execution mode: inline`
+- 6–12 files OR high risk/uncertainty → `Execution mode: phased-inline`
+- >12 files → `Execution mode: phased-subagent`
+
+**Override rules (apply after baseline):**
+- ≤5 files with high risk/uncertain steps → escalate to `phased-inline`
+- 6–12 tightly coupled, well-understood files, low complexity → downgrade to `inline`
+- >12 files of trivial changes (e.g. rename across files) → may use `phased-inline`
+
+**Risk signals — escalate one tier if any are true:**
+- Any step touches a module flagged `active` or `high-risk` in the codebase index
+- Any step requires resolving a decision conflict flagged during planning
+- More than 3 steps in a phase are marked with "or equivalent" / "depending on current state"
+
+**Required:** Include a one-sentence mode justification on the `> **Execution mode:**` line:
+`> **Execution mode:** phased-inline — 8 files, auth module has high iteration risk`
 
 ## Plan Quality Bar
 
@@ -107,7 +123,8 @@ source: [spec-file-path]
 
 # Implementation Plan: [TICKET-ID] — [Feature Name]
 
-> **Execution mode:** [inline | phased]
+> **Execution mode:** [inline | phased-inline | phased-subagent] — [one-sentence justification]
+> **Retrieval:** [ran | skipped — reason]
 
 ## Intelligence Context
 _(Include only when retrieval protocol ran. Omit this section entirely if index absent or maturity = low.)_
@@ -201,8 +218,6 @@ Before handing off to `/execute-plan`, review the plan you just wrote. Fix issue
 
 ## Handoff
 
-Next phase: `/execute-plan`
+Next: `/execute-plan [plan-file-path]` in a new chat.
 
-Start a new chat. Recommended: **Standard**. Use `/execute-plan` with the plan file path.
-
-Apply context hygiene summary, then proceed.
+Apply context hygiene before closing this chat.

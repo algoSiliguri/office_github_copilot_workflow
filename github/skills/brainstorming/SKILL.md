@@ -1,7 +1,6 @@
 ---
 name: brainstorming
 description: Guides collaborative problem exploration with a senior architect persona before any spec is written. Activate when the user wants to explore requirements, understand a problem, discuss a new feature, or start work on a story or ticket.
-allowed-tools: read_file, list_dir, file_search, grep_search, semantic_search
 ---
 
 ## Metadata
@@ -51,8 +50,8 @@ Before engaging with the engineer, silently check whether a codebase index exist
      It is flagged as `[quadrant]` with `[N]` recent signals.
      Known signals: [one-line summaries from step 3, or "none yet"]. Does this match your understanding?"
    - **No candidates (step 2 found nothing, or index absent/low):**
-     Proceed directly to the Active Context check and seed question in Entry Logic below.
-     Open without any codebase framing.
+     Say: "Index has no match for this ticket area — starting without codebase context."
+     Then proceed directly to the Active Context check and seed question in Entry Logic below.
 
 Do not announce the scan. Do not mention index files or retrieval protocol to the engineer.
 
@@ -152,12 +151,7 @@ Also: a convergence message in chat with the same content plus the saved file pa
 
 ## Handoff
 
-Next phase: `/write-spec`
+Next: `/write-spec [brainstorms-path]/YYYY-MM-DD-[ticket-id]-brainstorm.md` in a new chat.
+Note: pass the file path — the summary is read from the file, not pasted from chat.
 
-Pass the brainstorm artifact path: `/write-spec [brainstorms-path]/YYYY-MM-DD-[ticket-id]-brainstorm.md`
-
-The brainstorm summary is read from the file — do not paste the chat text.
-
-Start a new chat. Recommended: **Standard**. Use `/write-spec`.
-
-Apply context hygiene summary, then proceed.
+Apply context hygiene before closing this chat.

@@ -182,6 +182,27 @@ _New tickets only, after all six skills are upgraded. Full types in `.github/ski
 
 ---
 
+## Cross-Repo Setup (Phase 3 — after ≥5 v2 tickets)
+
+Full format reference: `github/skills/cross-repo/SKILL.md`
+
+| File | Location | Written by | When |
+|---|---|---|---|
+| `exports.md` | `[knowledge-path]/exports.md` in **exporting** repo | Service B engineers | When first exposing an API surface to another service |
+| `imports.md` | `[knowledge-path]/imports.md` in **importing** repo | Service A engineers | When first consuming an external API |
+
+**Naming alignment rule:** `exports.md:modules[]` must exactly match `imports.md:scope[]` — case-sensitive, no fuzzy matching. A single character difference produces no signal and no error.
+
+**What fires automatically after setup:**
+
+| Phase | Behavior |
+|---|---|
+| Brainstorming | Silent scan surfaces HIGH/MEDIUM exported topics as framing context when problem scope matches a declared import |
+| Planning | `risk_signals: ["API Conventions"]` auto-appended to StepNodes touching scoped modules (removable before plan approval) |
+| Context Packet | Full cross-repo signals + code files loaded when `include_code:` declared in `imports.md` |
+
+---
+
 ## System Philosophy
 
 - **File-native** — no runtime dependencies, no external services; all intelligence is Markdown

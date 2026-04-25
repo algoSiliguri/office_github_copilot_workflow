@@ -119,6 +119,40 @@ When you reach convergence:
         ## Key Risks / Edge Cases
         - [one risk or edge case per bullet]
 
+   **V2 template (use for all new brainstorms — schema_version: 2):**
+
+        ---
+        ticket: [TICKET-ID]
+        phase: brainstorm
+        schema_version: 2
+        created: [YYYY-MM-DD]
+        status: complete
+        ---
+
+        problem:
+          id: "[TICKET-ID]"
+          classification: "[new-feature|modification|bug-fix]"
+          summary: "[one specific problem sentence, max 200 chars — specific enough to write a failing test]"
+          scope:
+            - module: "[module-name-from-codebase-index]"
+              known: [true if module in codebase index; false if not yet indexed]
+          acceptance_signals:
+            - "[X happens when Y — testable, from convergence criteria]"
+
+        open_decisions:
+          - question: "[unresolved question from the conversation]"
+            options:
+              - "[option A]"
+              - "[option B]"
+
+   **Field rules:**
+   - `problem.id`: the ticket ID
+   - `problem.classification`: `new-feature` = new capability; `modification` = changes existing behavior; `bug-fix` = defect
+   - `problem.summary`: max 200 chars; specific enough that you could write a failing test from it
+   - `scope[*].module`: lowercase hyphenated names from the codebase index; use `known: false` for modules not yet indexed
+   - `acceptance_signals`: from the conversation's convergence — each must pass the "X happens when Y" testability check
+   - `open_decisions`: unresolved questions that need a decision in spec-writing. Each needs `question` and at least 2 `options`. Omit the array entirely (or leave as `[]`) if all questions were resolved during the brainstorm.
+
 3. Then say:
 
 > "I think I understand enough to write a spec. Here's what we've aligned on:

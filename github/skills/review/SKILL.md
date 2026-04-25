@@ -26,6 +26,10 @@ You are in review phase. Read everything as if you have never seen this code bef
 
 ## Before Reviewing
 
+**Version gate:** Before reading any artifact, check the plan file's `schema_version` frontmatter.
+- `schema_version: 2` → PLAN_VERSION = 2. Use v2 typed paths in sections below. Run `/validate-artifact [plan-path]` silently. BLOCK if validation fails.
+- Absent or other → PLAN_VERSION = 1. Use existing prose extraction throughout. No change in behavior.
+
 1. Read the spec.
 2. Read the verification file.
 3. Read every changed file.
@@ -39,6 +43,8 @@ For every requirement in the spec: is there code that implements it AND a passin
 that proves it?
 
 Missing coverage = **BLOCKER**
+
+**V2 path (PLAN_VERSION = 2):** Read `requirements[*]` directly from the plan artifact. For each requirement: (a) confirm at least one StepNode in `phases[*].steps[]` lists `requirement.id` in its `requirement_ids[]`; (b) confirm at least one `step-completed` amendment exists in `amendments[]` for each such StepNode. A requirement with no linked StepNode OR a linked StepNode with no `step-completed` amendment = BLOCKER.
 
 ### 2. Verification File
 Does a verification file exist for this ticket?
@@ -66,6 +72,8 @@ Did the implementation differ from what the spec describes?
 If yes — is the deviation documented in the spec or plan?
 
 Undocumented deviation = **BLOCKER**
+
+**V2 path (PLAN_VERSION = 2):** Run `git diff --name-status main`. For each file with status `A` (added), `M` (modified), or `R` (renamed) in the diff: check if the path appears in any `phases[*].steps[*].files[*].path` in the plan. If it does not appear in any StepNode AND there is no `step-added` or `scope-change` amendment in `amendments[]` documenting it: BLOCKER. Files with status `D` (deleted) that are absent from StepNodes: check for a `step-removed` amendment. `step-completed` amendments are compliance records, not deviations.
 
 ## Rules
 

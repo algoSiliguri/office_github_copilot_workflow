@@ -11,6 +11,7 @@ allowed-tools: read_file, list_dir, file_search, grep_search, create_file, inser
 - **Phase:** Pre-execution (run after plan is written, before execution begins)
 - **Inputs:** Ticket ID, phase number (N), plan file path (inferred from conventions)
 - **Outputs:** `[context-packets-path]/[ticket-id]/phase-[N]-context.md`
+- **Non-goals:** Does not write code; does not modify plans or specs; does not build the codebase or knowledge index
 
 ## When To Use
 
@@ -34,9 +35,13 @@ Locate the plan file for the given ticket ID: search PLANS_PATH for a file whose
 
 If no plan file is found for the ticket ID, stop and say: "No plan file found for [ticket-id] in [PLANS_PATH]. Ensure the plan exists before generating a context packet."
 
-**Version detection:** After reading the plan file, check its `schema_version` frontmatter. Store as PLAN_VERSION.
-- `schema_version: 2` → PLAN_VERSION = 2. Use v2 typed-field paths in Steps 2, 3, 6.5, and 7.
-- Absent → PLAN_VERSION = 1. Use existing prose extraction paths.
+**Version gate:** After reading the plan file, check its `schema_version` frontmatter. Store as PLAN_VERSION.
+
+### V2 (PLAN_VERSION = 2)
+PLAN_VERSION = 2. Use v2 typed-field paths in Steps 2, 3, 6.5, and 7.
+
+### V1 (PLAN_VERSION = 1)
+PLAN_VERSION = 1. Use existing prose extraction paths.
 
 ## Step 2: Check Trigger Conditions
 
@@ -47,17 +52,24 @@ Evaluate all three conditions. All must be true to proceed:
 2. **Execution mode:** Does the plan file contain `> **Execution mode:** phased`? If `inline` or absent → stop: "Plan is inline execution mode. Context packets are for phased plans only."
 
 3. **Phase file count:**
-   - **V2 (PLAN_VERSION = 2):** Locate the phase entry where `phases[*].id = N`. Count total `FileRef` entries across `phases[N-1].steps[*].files` (all steps in that phase).
-   - **V1 (PLAN_VERSION = 1):** Find the section `## Phase [N]:` and count files listed in its `**Files in this phase:**` block.
-   Are there ≥ 4 files? If < 4 → stop: "Phase [N] has [count] files. Context packets are generated for phases with ≥ 4 files only."
+
+### V2 (PLAN_VERSION = 2)
+Locate the phase entry where `phases[*].id = N`. Count total `FileRef` entries across `phases[N-1].steps[*].files` (all steps in that phase).
+Are there ≥ 4 files? If < 4 → stop: "Phase [N] has [count] files. Context packets are generated for phases with ≥ 4 files only."
+
+### V1 (PLAN_VERSION = 1)
+Find the section `## Phase [N]:` and count files listed in its `**Files in this phase:**` block.
+Are there ≥ 4 files? If < 4 → stop: "Phase [N] has [count] files. Context packets are generated for phases with ≥ 4 files only."
 
 If all three conditions pass, continue.
 
 ## Step 3: Extract Phase File Manifest
 
-**V2 (PLAN_VERSION = 2):** Read `phases[*].id = N` entry. Collect all `steps[*].files[*].path` values across every step in that phase. Exclude paths where `operation: 'delete'` (deleted files have no module context to load). Store as PHASE_FILES. No text parsing required.
+### V2 (PLAN_VERSION = 2)
+Read `phases[*].id = N` entry. Collect all `steps[*].files[*].path` values across every step in that phase. Exclude paths where `operation: 'delete'` (deleted files have no module context to load). Store as PHASE_FILES. No text parsing required.
 
-**V1 (PLAN_VERSION = 1):** From the plan's phase section, extract the exact list of files listed under `**Files in this phase:**`. Store as PHASE_FILES.
+### V1 (PLAN_VERSION = 1)
+From the plan's phase section, extract the exact list of files listed under `**Files in this phase:**`. Store as PHASE_FILES.
 
 Example: if Phase 2 lists:
 ```
@@ -120,8 +132,9 @@ Do NOT include the full `## Entries` list in the packet — summary and pattern 
 
 Store as KNOWLEDGE_CONDENSED: a list of `{topic, modules, weight, type, validity, summary, contradicts_refs (list of topic names), derived_from_line (or null), pattern (or null)}`.
 
-## Step 6.5: Select Decisions for Context Packet (PLAN_VERSION = 2 only)
+## Step 6.5: Select Decisions for Context Packet
 
+### V2 (PLAN_VERSION = 2)
 Compute the set of decisions to include in `## Relevant Decisions`:
 
 ```
@@ -133,11 +146,15 @@ decision_ids_B = { d.id for d in decisions where d.reversibility = 'low' }
 included       = decisions where id ∈ (decision_ids_A ∪ decision_ids_B)
 ```
 
-Store as SELECTED_DECISIONS. Skip entirely for PLAN_VERSION = 1 (all decisions from loaded module pages apply, existing behavior).
+Store as SELECTED_DECISIONS.
+
+### V1 (PLAN_VERSION = 1)
+Not applicable — skip this step. All decisions from loaded module pages apply (existing behavior).
 
 ## Step 7: Compute Coverage Confidence
 
-**V2 (PLAN_VERSION = 2):** Apply the typed formula:
+### V2 (PLAN_VERSION = 2)
+Apply the typed formula:
 
 ```
 all_files  = all FileRef entries in phases[*].id=N steps
@@ -162,7 +179,8 @@ resolve(path):
                       tie → alphabetically first module name (deterministic)
 ```
 
-**V1 (PLAN_VERSION = 1):** Use existing rules (first match wins: unresolved majority → low, stale index → low, index age > 30 days → low, one or more unresolved → medium, all resolved + index ≤ 7 days + not stale → high).
+### V1 (PLAN_VERSION = 1)
+Use existing rules (first match wins: unresolved majority → low, stale index → low, index age > 30 days → low, one or more unresolved → medium, all resolved + index ≤ 7 days + not stale → high).
 
 If CONFIDENCE = `low`, prepend to the packet:
 ```

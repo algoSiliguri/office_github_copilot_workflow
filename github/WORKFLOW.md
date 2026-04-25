@@ -156,6 +156,12 @@ When you see this, run `/index knowledge --incremental` before executing. If the
 - Before starting a large ticket: `/index knowledge` (full run) to ensure signals are current
 - When you see the stale warning in a context packet: `/index knowledge --incremental`
 
+**Once ≥5 tickets complete on v2 artifacts — set up cross-repo context (one time per service pair):**
+
+If Service A calls Service B's API: Service B writes `[knowledge-path]/exports.md` declaring available API surfaces and knowledge signals. Service A writes `[knowledge-path]/imports.md` declaring which of its modules monitor which services. See `github/skills/cross-repo/SKILL.md` for the full format.
+
+After setup: brainstorming automatically surfaces Service B's knowledge signals when problem scope touches a monitored module. No command needed — the scan runs silently at session start. Context packets load Service B's actual code files when `include_code:` is declared.
+
 ### Relationships between topics
 
 Topic pages may reference each other:

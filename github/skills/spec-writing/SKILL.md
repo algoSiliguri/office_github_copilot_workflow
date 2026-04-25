@@ -10,6 +10,7 @@ description: Creates a design specification from brainstorm output. Use when wri
 - **Phase:** 3 — Spec
 - **Inputs:** Brainstorm artifact file path (output of `/brainstorm`) — the file is read directly; do not paste the chat summary
 - **Outputs:** Spec file at `[specs-path]/YYYY-MM-DD-[ticket-id]-[feature-name].md`
+- **Non-goals:** Does not read the codebase; does not create implementation steps; does not produce a plan
 
 ## When To Use
 

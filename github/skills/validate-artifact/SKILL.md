@@ -9,6 +9,7 @@ description: Validates a v2 artifact against schema invariants, referential inte
 - **Phase:** Pre-phase validation — runs silently inside consuming skills; also user-invokable
 - **Inputs:** Artifact file path. Optionally a source artifact file path (enables Check 5: immutability).
 - **Outputs:** `PASS` (silent when invoked internally) or itemized `FAIL` list with field paths.
+- **Non-goals:** Does not validate v1 artifacts; does not perform semantic checks; does not auto-fix failures
 
 ---
 

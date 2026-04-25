@@ -9,6 +9,7 @@ description: Canonical format reference for exports.md and imports.md. Defines Y
 - **Phase:** Reference — consulted before writing exports.md or imports.md; not an executable phase skill
 - **Inputs:** None
 - **Outputs:** N/A
+- **Non-goals:** Does not generate exports.md or imports.md automatically; does not enforce cross-repo contracts at execution time
 
 ---
 

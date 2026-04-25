@@ -11,6 +11,7 @@ allowed-tools: read_file
 - **Phase:** Shared reference — read by the planning skill during Intelligence Retrieval
 - **Inputs:** Brainstorm artifact (already read by the planning skill), codebase index, knowledge index
 - **Outputs:** A retrieval summary block (`## Intelligence Context`) and a set of loaded module/knowledge pages for use during planning
+- **Non-goals:** Does not run during brainstorm, spec, execution, or review phases; does not write any files
 
 ## When To Use
 

@@ -12,6 +12,7 @@ description: Systematic debugging — reproduce, isolate, hypothesise, verify hy
 - **Phase:** 7 — Debug (within Execute)
 - **Inputs:** Full test failure output including stack trace, or a description of unexpected behaviour
 - **Outputs:** Root cause identified + minimal fix applied + failing test now passing + no new regressions
+- **Non-goals:** Does not write new features; does not fix without root cause identification first
 
 ## When To Use
 

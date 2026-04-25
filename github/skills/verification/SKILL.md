@@ -12,6 +12,7 @@ description: Proves every spec requirement is met with actual test evidence befo
 - **Phase:** 8 — Verify
 - **Inputs:** Spec file path — recorded as `source` in the verification frontmatter
 - **Outputs:** Verification file at `[verifications-path]/YYYY-MM-DD-[ticket-id]-[feature-name].md`
+- **Non-goals:** Does not fix failures; does not write new tests; does not raise a PR
 
 ## When To Use
 

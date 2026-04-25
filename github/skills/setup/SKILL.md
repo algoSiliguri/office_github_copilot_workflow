@@ -10,6 +10,7 @@ description: One-time repo initialisation. Auto-detects tech stack, test command
 - **Phase:** 1 — Setup
 - **Inputs:** A repo with at least one build manifest (pom.xml, package.json, go.mod, etc.)
 - **Outputs:** `.github/skills/conventions/SKILL.md` fully populated with no placeholder text
+- **Non-goals:** Does not create plans, specs, or workflow artifacts; does not run tests; does not modify source files
 
 ## When To Use
 

@@ -10,6 +10,7 @@ description: Guides collaborative problem exploration with a senior architect pe
 - **Phase:** 2 — Brainstorm
 - **Inputs:** None required; reads `Active Context` from conventions. Optionally: a ticket ID or brief problem description.
 - **Outputs:** A brainstorm artifact file saved to `[brainstorms-path]/YYYY-MM-DD-[ticket-id]-brainstorm.md`
+- **Non-goals:** Does not write specs or plans; does not make implementation decisions; does not read the codebase
 
 ## When To Use
 

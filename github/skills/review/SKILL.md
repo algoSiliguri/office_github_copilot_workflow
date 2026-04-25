@@ -10,6 +10,7 @@ description: Critical peer review of code and evidence before raising a PR. Read
 - **Phase:** 9 — Review
 - **Inputs:** Verification file path + list of changed files (`git diff --name-only main`)
 - **Outputs:** A BLOCKER/SUGGESTION list, or "No blockers. Raise your PR." if clean
+- **Non-goals:** Does not modify code; does not approve or raise PRs; does not re-run tests
 
 ## When To Use
 

@@ -10,6 +10,7 @@ description: Creates a phased implementation plan from a spec file by reading th
 - **Phase:** 4 — Plan
 - **Inputs:** Spec file path
 - **Outputs:** Plan file at `[plans-path]/YYYY-MM-DD-[ticket-id]-[feature-name].md`
+- **Non-goals:** Does not write code; does not execute steps; does not validate spec against test evidence
 
 ## When To Use
 
@@ -32,20 +33,37 @@ You are in plan phase. Create a phased implementation plan grounded in the actua
    a. Assemble the `## Intelligence Context` block from the retrieval summary. This block goes in the plan preamble (added in Step 2 of the plan structure update below).
    b. Collect all `## Known Constraints` lines from every loaded module page. These go in the `## Constraints` section of the plan preamble (also in Step 2 below). Label each: `[source: module-page]`. Treat them as non-negotiable — equivalent to spec requirements.
    c. Note which loaded knowledge entries have HIGH weight — use them to order phases (put riskier, higher-signal areas first) and to add risk notes to the relevant phase's `**Engineer review prompt:**`.
-3. **V2 (SPEC_VERSION = 2):** Read `problem.classification` from the spec artifact as a typed field. Pass it directly to the retrieval protocol's classification parameter — no prose inference:
-   - `new-feature` → retrieval priority: system › empirical › external
-   - `modification` or `bug-fix` → retrieval priority: empirical › system › external
+3. **Spec classification:**
+
+### V2 (SPEC_VERSION = 2)
+Read `problem.classification` from the spec artifact as a typed field. Pass it directly to the retrieval protocol's classification parameter — no prose inference:
+- `new-feature` → retrieval priority: system › empirical › external
+- `modification` or `bug-fix` → retrieval priority: empirical › system › external
+
+### V1 (SPEC_VERSION = 1)
+Not applicable — skip this step. Retrieval priority uses default ordering.
+
    d. **Decision Conflict Check:**
-      - **V2 (SPEC_VERSION = 2):** Read `decisions[*].constraints[]` typed array from the spec artifact. Compare each constraint against `## Known Constraints` sections in loaded module pages. Flag where a spec constraint directly contradicts a module constraint.
-      - **V1 (SPEC_VERSION = 1):** Read `## Decisions` from every loaded module page; compare against the spec's `## Architecture / Design Decisions` prose.
-      Note (both versions): module pages are v1 prose. This check remains partially deterministic (typed spec input vs. prose module pages) until module pages adopt v2 typed decisions — acknowledged limitation in the design spec.
+
+### V2 (SPEC_VERSION = 2)
+Read `decisions[*].constraints[]` typed array from the spec artifact. Compare each constraint against `## Known Constraints` sections in loaded module pages. Flag where a spec constraint directly contradicts a module constraint.
+
+Note: module pages are v1 prose. This check remains partially deterministic (typed spec input vs. prose module pages) until module pages adopt v2 typed decisions — acknowledged limitation in the design spec.
+
+### V1 (SPEC_VERSION = 1)
+Read `## Decisions` from every loaded module page; compare against the spec's `## Architecture / Design Decisions` prose.
+
+Note: module pages are v1 prose. This check remains partially deterministic (typed spec input vs. prose module pages) until module pages adopt v2 typed decisions — acknowledged limitation in the design spec.
 
 ## Version Gate (run before any other step)
 
 Read the spec file's `schema_version` frontmatter. Store as SPEC_VERSION.
 
-- **`schema_version: 2`:** run `/validate-artifact [spec-path] [brainstorm-path]` silently (includes immutability check against brainstorm source). BLOCK if validation fails. Use v2 typed-field paths throughout this skill.
-- **Absent or other:** SPEC_VERSION = 1. Use existing prose extraction throughout. Version gates do not apply.
+### V2 (SPEC_VERSION = 2)
+Run `/validate-artifact [spec-path] [brainstorm-path]` silently (includes immutability check against brainstorm source). BLOCK if validation fails. Use v2 typed-field paths throughout this skill.
+
+### V1 (SPEC_VERSION = 1 or absent)
+SPEC_VERSION = 1. Use existing prose extraction throughout. Version gates do not apply.
 
 ## Before Writing a Single Step
 
@@ -125,6 +143,8 @@ Create the plan file at: `[plans-path]/YYYY-MM-DD-[ticket-id]-[feature-name].md`
 
 ## Plan Structure
 
+### V1 (SPEC_VERSION = 1)
+
 ~~~markdown
 ---
 ticket: [TICKET-ID]
@@ -195,7 +215,8 @@ Every file created or modified across all phases:
 - [Any data migration to reverse, if applicable]
 ~~~
 
-**V2 output template (SPEC_VERSION = 2):** Use this YAML PlanArtifact instead of the v1 Markdown template above. Carry all spec fields verbatim — do not re-derive.
+### V2 (SPEC_VERSION = 2)
+Use this YAML PlanArtifact instead of the V1 Markdown template above. Carry all spec fields verbatim — do not re-derive.
 
 ~~~yaml
 ---
@@ -264,8 +285,9 @@ amendments: []
 
 **Immutability rule:** All fields above the `# ── OWNED BY PLANNING` comment are inherited verbatim from the spec. Do not modify them. `/validate-artifact` at the consuming phase will byte-for-byte compare these fields against the spec source and BLOCK on any mismatch.
 
-## Cross-Repo Auto-Risk-Signal Injection (SPEC_VERSION = 2 only — runs after all StepNodes written)
+## Cross-Repo Auto-Risk-Signal Injection
 
+### V2 (SPEC_VERSION = 2)
 If `[knowledge-path]/imports.md` exists and is readable, run once before writing the plan artifact:
 
 ```
@@ -283,7 +305,9 @@ Rules:
 - Only injects `"API Conventions"`. Does not infer or inject other section names.
 - Does not remove or replace existing `risk_signals[]` entries. Appends only.
 - Injection is visible in the written plan artifact. Engineer may remove false-positive entries before approving.
-- Only runs for SPEC_VERSION = 2. V1 planning is unchanged.
+
+### V1 (SPEC_VERSION = 1)
+Not applicable — skip this step.
 
 ## No Placeholders
 

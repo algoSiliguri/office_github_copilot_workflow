@@ -19,9 +19,19 @@ After a `/brainstorm` session has reached convergence and produced a summary. Do
 
 - Brainstorm artifact file path (e.g. `docs/brainstorms/2026-04-16-PROJ-123-brainstorm.md`)
   — Read the file. Extract: problem, success criteria, constraints, risks. The ticket ID is in the frontmatter.
+**V2 (BRAINSTORM_VERSION = 2):** Read typed fields directly — no prose extraction:
+- `problem` → inherit verbatim into SpecArtifact (do not re-derive or paraphrase)
+- `open_decisions[]` → each entry has `question` and `options[]`; resolve each into a `DecisionRecord` with `chosen`, `rejected[]` (one entry per unchosen option with reason), `constraints[]` (required if `reversibility='low'`), `reversibility`, `phase_resolved: 'spec'`
 - If the brainstorm file is missing: stop and ask for the file path. Do not accept a pasted summary — file provenance is required.
 
 ---
+
+## Version Gate (run before any other step)
+
+Read the brainstorm artifact file's `schema_version` frontmatter. Store as BRAINSTORM_VERSION.
+
+- **`schema_version: 2`:** run `/validate-artifact [brainstorm-path]` silently. BLOCK if validation fails. Use v2 typed-field paths in this skill.
+- **Absent or other:** BRAINSTORM_VERSION = 1. Use existing prose extraction throughout.
 
 You are in spec phase. Create a design specification before any code is written.
 
@@ -85,6 +95,62 @@ Why this design was chosen over alternatives. This section is permanent — neve
 - Integration tests: [cross-system scenarios to verify]
 - Manual testing: [user-facing behaviour to walk through step by step]
 ```
+
+**V2 output template (BRAINSTORM_VERSION = 2):** Use this YAML SpecArtifact instead of the v1 Markdown template above. Carry brainstorm fields verbatim.
+
+~~~yaml
+---
+ticket: [TICKET-ID]
+phase: spec
+schema_version: 2
+created: [YYYY-MM-DD]
+status: draft
+source: [brainstorm-file-path]
+---
+
+# ── INHERITED FROM BRAINSTORM — carry verbatim, byte-for-byte ─────────────────
+problem:
+  id: "[from brainstorm]"
+  classification: "[from brainstorm]"
+  summary: "[from brainstorm]"
+  scope:
+    - module: "[from brainstorm]"
+      known: [from brainstorm]
+  acceptance_signals:
+    - "[from brainstorm]"
+
+open_decisions:
+  [from brainstorm — verbatim]
+
+# ── OWNED BY SPEC-WRITING — write only these fields ───────────────────────────
+decisions:
+  - id: "D1"
+    question: "[from open_decisions[0].question]"
+    chosen: "[chosen option]"
+    rejected:
+      - option: "[unchosen option A]"
+        reason: "[why this was not chosen]"
+    constraints: []          # REQUIRED: min 1 entry when reversibility='low'
+    reversibility: "[low|medium|high]"
+    phase_resolved: "spec"
+
+requirements:
+  - id: "R1"
+    text: "[specific testable requirement — X when Y]"
+    acceptance: "[runnable command that proves this requirement]"
+    classification: "[functional|constraint|non-functional]"
+    source_decision: "D1"    # null if not derived from a decision
+
+spec_constraints:
+  - "[hard constraint not derived from any decision]"
+
+out_of_scope:
+  - "[explicitly excluded item]"
+~~~
+
+**Immutability rule:** All fields above `# ── OWNED BY SPEC-WRITING` are inherited verbatim from the brainstorm file. Do not modify them. `/validate-artifact` at the planning phase will BLOCK on any mismatch.
+
+**Decision conflict check (V2):** After writing `decisions[]`, compare `decisions[*].constraints[]` typed values against `## Known Constraints` sections in loaded module pages (same check as V1 but uses typed input instead of prose extraction).
 
 For every requirement: if you cannot describe a failing test for it, push back and make it
 more specific before accepting it.

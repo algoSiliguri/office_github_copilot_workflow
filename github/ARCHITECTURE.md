@@ -134,7 +134,9 @@ Ticket: [format]
 --- END CONVENTIONS ---
 ```
 
-**Dynamic injection:** Relevant sections from `conventions/SKILL.md` are dynamically injected based on step requirements (e.g. error handling, API conventions, data conventions). The parent session scans step text before dispatch and appends matching sections — pull-based, not push-based. If a matching section does not exist in conventions: no injection, no warning.
+**Dynamic injection (v1):** Relevant sections from `conventions/SKILL.md` are dynamically injected based on step requirements. The parent session scans step text for keyword patterns before dispatch and appends matching sections. If a matching section does not exist in conventions: no injection, no warning.
+
+**Dynamic injection (v2):** Injection is determined by `StepNode.risk_signals[]` — exact header-text match against conventions section headers. No step-text scan. `"API Conventions"` is automatically appended to `risk_signals[]` by the planner for any StepNode whose resolved module appears in `imports.md:scope`. Engineers may remove auto-injected entries from the plan artifact before approving.
 
 **Fallback:** If sub-agents are unavailable, the system falls back to `phased-inline` automatically.
 
@@ -257,7 +259,7 @@ Thresholds are configurable per repo in `conventions/SKILL.md` (`Maturity thresh
 
 | Phase | What happens |
 |---|---|
-| **Brainstorm** | Silent intelligence scan: read codebase index, identify candidate modules and HIGH-weight knowledge signals, frame opening question around findings. When no candidates found: state "Index has no match for this area — starting without codebase context." Absence is always stated, never silent. No module pages loaded — index only. |
+| **Brainstorm** | Silent intelligence scan: read codebase index, identify candidate modules and HIGH-weight knowledge signals, frame opening question around findings. When no candidates found: state "Index has no match for this area — starting without codebase context." Absence is always stated, never silent. No module pages loaded — index only. **V2 addition:** after codebase scan, silent `imports.md` scan — if declared scope modules match problem scope, HIGH/MEDIUM exported topics from the exporting repo are surfaced as framing signals before the opening question. Code exports not loaded at this phase. Silent on failure (absent file, no match, unreachable path). |
 | **Spec-writing** | Decisions-only check: read `## Decisions` sections from relevant module pages; compare against the spec's architectural choices; flag conflicts. A conflict must be resolved before the spec is completed. No full page loads beyond the Decisions section. |
 | **Planning** | Full retrieval: load module pages + knowledge pages within budget; run decision conflict check; order phases by signal weight. Mandatory when index maturity > `low`. A skip without documented justification blocks the plan from being written. |
 | **Execution** | Context packet only. No additional index access during execution. All module and knowledge context was pre-assembled in the packet. |
@@ -592,6 +594,10 @@ The decision conflict check in spec-writing compares typed `DecisionRecord.const
 ### Cross-Repo Context (Area 4)
 
 Each participating repo maintains `exports.md` (what it publishes) and `imports.md` (what it monitors). Import resolution runs at context packet assembly time using exact string matching: `phase_module = exported_topic.modules[i]`. No fuzzy matching. Results appear in `## Cross-Repo Signals` in the context packet — advisory only, do not affect coverage confidence.
+
+**Brainstorm-phase awareness (v2):** When `imports.md` is declared, brainstorming silently scans it at session start. If problem scope modules match any declared import scope, HIGH/MEDIUM knowledge signals from the exporting repo are surfaced as framing context before the first question. Acceptance signals and open decisions are written with knowledge of cross-repo constraints from the start of the ticket.
+
+**Planning-phase injection (v2):** After all StepNodes are written, the planner scans each StepNode's resolved file modules against `imports.md:scope`. Matching StepNodes receive `risk_signals: ["API Conventions"]` automatically, ensuring lean conventions injection covers the API conventions section for cross-service steps.
 
 Operational dependency: imports work only with consistent module naming across repos.
 

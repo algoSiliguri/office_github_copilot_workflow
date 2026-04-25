@@ -12,6 +12,7 @@ description: Enforces disciplined plan-driven implementation. Automatically sele
 - **Phase:** 5 — Execute
 - **Inputs:** Plan file path
 - **Outputs:** Committed implementation code with a green full test suite; codebase ready for `/verify`
+- **Non-goals:** Does not verify spec completeness (verification skill's job); does not raise a PR; does not assemble context packets
 
 ## When To Use
 
@@ -40,13 +41,17 @@ You are in execute phase. Implement the plan exactly as written — nothing more
    - **inline:** "2 files total. Using **inline mode** — executing all steps now."
    - **phased-inline:** "8 files across 3 phases. Using **phased-inline mode** — I'll execute phases sequentially in this session with a review gate between each."
    - **phased-subagent:** "14 files across 4 phases. Using **sub-agent mode** — I'll dispatch each phase to a fresh subagent and pause for your review before proceeding."
-5. **Version detection:** Read the plan file's `schema_version` frontmatter. Store as PLAN_VERSION.
-   - `schema_version: 2` → PLAN_VERSION = 2. Use v2 typed paths throughout this skill.
-   - Absent → PLAN_VERSION = 1. All existing paths apply unchanged.
-   If PLAN_VERSION = 2: run `/validate-artifact [plan-path]` silently. BLOCK if validation fails.
+5. **Version gate:** Read the plan file's `schema_version` frontmatter. Store as PLAN_VERSION.
 
-## Step 1.5: Context Packet Auto-Trigger (PLAN_VERSION = 2 only)
+### V2 (PLAN_VERSION = 2)
+PLAN_VERSION = 2. Use v2 typed paths throughout this skill. Run `/validate-artifact [plan-path]` silently. BLOCK if validation fails.
 
+### V1 (PLAN_VERSION = 1)
+PLAN_VERSION = 1. All existing paths apply unchanged. No validation required.
+
+## Step 1.5: Context Packet Auto-Trigger
+
+### V2 (PLAN_VERSION = 2)
 For each phase about to execute, before any step runs, check both conditions:
 1. `plan.execution.mode` = `'phased-inline'` or `'phased-subagent'`
 2. Total FileRef count across `phases[*].id=N .steps[*].files` ≥ 4
@@ -55,7 +60,8 @@ If both hold: silently invoke the context-packet skill for this phase (do not as
 
 If conditions are not met (inline mode, or < 4 files): announce: "Phase [N]: [N] file(s) — below auto-trigger threshold. Proceeding with codebase search protocol."
 
-For PLAN_VERSION = 1: no change — context packet is triggered manually via `/context-packet` command.
+### V1 (PLAN_VERSION = 1)
+Not applicable — skip this step. Context packet is triggered manually via `/context-packet` command.
 
 ## Step 1b: Coverage Confidence Announcement (all modes)
 
@@ -71,14 +77,7 @@ If no context packet and no `## Intelligence Context` block: treat as `low`. Ann
 ## Step 2a: Inline Execution (`Execution mode: inline`)
 
 **Context packet check (run before any steps):**
-1. Read `Context Packets:` path from `.github/skills/conventions/SKILL.md`.
-2. Check for `[context-packets-path]/[ticket-id]/phase-1-context.md` (inline plans use a single phase; try `phase-1` first, then `phase-2` if not found).
-3. If found: read the full context packet. Note the `Coverage confidence` field. Enforce based on level:
-   - `high`: **Prohibited** from reading files outside the context packet. If a step requires a file read outside the packet, stop and say: "Step [N] requires reading [file], which is outside the context packet. Coverage is HIGH. Should I expand context or rephrase the step to work within the packet?"
-   - `medium`: Controlled one-hop expansion allowed — may read files referenced by packet modules; do not scan broadly.
-   - `low`: Expansion required. The Codebase Search Protocol is available without restriction.
-   Use `## Relevant Decisions` and `## Module Context` to frame understanding before touching any code.
-4. If not found: treat as `low` coverage. Note: "No context packet found — proceeding with full codebase search." The Codebase Search Protocol is available without restriction.
+Read `.github/protocols/context-packet-load.md` and follow it exactly.
 
 **Inline checkpoint discipline:**
 - Count total steps in the plan. If ≥6: group steps by file (all steps on one file form one group, or by natural dependency boundary).
@@ -95,15 +94,21 @@ Work through all steps sequentially:
    Before making any change that affects a public interface, a dependency's behavior, or a constraint boundary (as defined in `## Relevant Decisions` in the context packet, if loaded): confirm the change does not conflict with any recorded decision. If it conflicts: stop immediately. Say: "This change conflicts with a recorded decision in the context packet: '[exact decision text]'. Should I revise the approach or proceed with an explicit override?" Do not continue without the engineer's response.
    When a step requires reading existing code to understand a module or class, follow the **Codebase Search Protocol** in this skill.
 2. After each step: run the test command. Do not proceed if any test fails.
-2a. **V2 only (PLAN_VERSION = 2):** When a step's verify command passes, append a `step-completed` amendment to the plan file's `amendments:` YAML array. Set `id: A{N}` where N = count of existing amendments + 1 (first amendment is A1; numbers never reused). Example:
-    ```yaml
-    - id: "A3"
-      step_id: "P1.S2"
-      phase: 1
-      type: step-completed
-      description: "Write TokenValidator class — verify passed: 3 tests, 0 failures"
-      added_by: execution
-    ```
+**Amendment tracking:**
+
+### V2 (PLAN_VERSION = 2)
+When a step's verify command passes, append a `step-completed` amendment to the plan file's `amendments:` YAML array. Set `id: A{N}` where N = count of existing amendments + 1 (first amendment is A1; numbers never reused). Example:
+```yaml
+- id: "A3"
+  step_id: "P1.S2"
+  phase: 1
+  type: step-completed
+  description: "Write TokenValidator class — verify passed: 3 tests, 0 failures"
+  added_by: execution
+```
+
+### V1 (PLAN_VERSION = 1)
+Not applicable — skip this step.
 3. Before doing anything not in the plan, stop and ask:
    "This isn't in the plan — should I add it before proceeding?"
 4. If deviation is necessary, state it explicitly, get confirmation, then append to the plan file:
@@ -159,46 +164,11 @@ Wait for the engineer's choice. Do not auto-merge or auto-push.
 
 ## Codebase Search Protocol
 
-When you need to find existing code before implementing a step — understanding a class, finding where a behavior is handled, locating a configuration value:
-
-**Step 0: Knowledge state check (run before every module exploration):**
-Identify the module name for the file or area you are about to explore. Then evaluate in order — first match wins:
-
-1. Context packet is loaded AND this module appears explicitly by name in `## Module Context` → **no signal** — proceed directly to step 1. (Exact name match only — do not infer coverage.)
-2. `[KNOWLEDGE_PATH]/[module].md` exists → emit, then proceed to step 1:
-   ```
-   Context reuse signal:
-   This module has prior structured knowledge:
-   - <1-line summary from the file's ## Summary section>
-   ```
-3. Neither condition above is met → emit, then proceed to step 1:
-   ```
-   Context reuse signal:
-   No prior structured knowledge available for this module.
-   This exploration is not reusable unless captured in the knowledge system.
-   ```
-
-Signal is informational only — never blocks execution. Emit one signal (or none) per module per exploration.
-
-1. **Formulate a specific query**: name exactly what you're looking for. Bad: "find auth code". Good: "UserAuthService class" or "JWT token validation method".
-2. **Run `semantic_search`** with the specific query.
-3. **If a relevant result appears in the first page**: use it and stop.
-4. **If zero results or all irrelevant**: try once more with a synonym or the exact class/method name as a literal string. Maximum 2 `semantic_search` calls per question.
-5. **Fallback after 2 failed searches**: use `grep_search` with the exact class name, method name, or unique constant.
-6. **Stop when found**: do not continue searching once you have what you need for the current step.
-
-Apply this protocol any time a step requires understanding existing code before modifying it.
+Read `.github/protocols/codebase-search.md` and follow it exactly.
 
 ### Verification Gate
 
-Before claiming any of these: "step complete", "phase complete", "all tests pass", "full suite green" — run this gate:
-
-1. **IDENTIFY:** What exact command proves the claim?
-2. **RUN:** Execute it now — fresh execution, not cached output.
-3. **READ:** Read the full output including exit code.
-4. **CLAIM:** State the claim with the pasted evidence.
-
-Reject these: "should pass", "probably works", "tests passed" (without output). Evidence is pasted terminal output — nothing else counts.
+Read `.github/protocols/verification-gate.md` and follow it exactly.
 
 ## Step 2b: Phased-Inline Execution (`Execution mode: phased-inline`)
 
@@ -214,76 +184,15 @@ Phase [N] of [M] — [Phase name] — [N files] / [N steps]
 ```
 
 **Context packet check (before each phase):**
-1. Read `Context Packets:` path from `.github/skills/conventions/SKILL.md`.
-2. Read `[context-packets-path]/[ticket-id]/phase-[N]-context.md` if it exists.
-3. If found: load it. Enforce coverage confidence behavior (see Step 1b).
-4. If not found: treat as `low` confidence. Note: "No context packet for phase [N]. Proceeding with full codebase search."
+Read `.github/protocols/context-packet-load.md` and follow it exactly.
 
 **Execute all steps** in the phase using inline execution rules (see Step 2a).
 
-**Run two-stage review** (same as Step 2c sub-agent review below) before showing the checkpoint.
+**Run stage review:**
+Read `.github/protocols/stage-review.md` and follow it exactly. Use the loaded plan's PLAN_VERSION (stored in Step 1) to select the correct version block.
 
-**Stage 1 — Spec compliance:**
-
-**V2 (PLAN_VERSION = 2):**
-- `plan_listed` = all `files[*].path` values from `phases[*].id=N .steps[*].files` (typed array, no text parsing)
-- `actually_changed` = paths in `git diff --name-status HEAD~1` with status `A` (added), `M` (modified), or `R` (renamed). Paths with status `D` (deleted): check these against plan_listed separately — a `D` path not in plan_listed and not covered by a `step-removed` amendment = Stage 1 FAIL.
-- Classify each path in `actually_changed`:
-  - Present in `plan_listed` → expected
-  - Absent from `plan_listed` AND status is NOT `D` AND path matches a pattern in `conventions/SKILL.md: Incidental file patterns` AND path is not in any StepNode across any phase → `incidental` (logged in checkpoint under `Incidental files:`, NOT a failure)
-  - Absent from `plan_listed` AND does not meet all incidental conditions → `unlisted` → Stage 1 FAIL
-- Stage 1 PASS: all `actually_changed` paths are expected or incidental.
-
-**V1 (PLAN_VERSION = 1):** Compile two lists: **Plan listed** — all files from this phase's `**Files in this phase:**` section in the plan; **Actually changed** — all files modified during this phase's steps.
-
-**Phase checkpoint (show after both stages pass):**
-```
-Phase [N] complete — [Phase name]
-
-Files changed:
-  + [file] (created)
-  ~ [file] (modified)
-
-[Stage 1] Spec compliance: PASS
-
-Plan listed:
-- <file1>
-- <file2>
-
-Actually changed:
-- <file1>
-- <file2>
-OR
-[Stage 1] Spec compliance: FAIL
-
-Plan listed:
-- <file1>
-
-Actually changed:
-- <file1>
-- <fileX>
-
-Unlisted:
-- <fileX>
-
-[Stage 2] Code quality: PASS
-OR
-[Stage 2] Code quality: FAIL — [finding: what + where]
-
-Test output:
-[pasted output]
-
-Plan changes this phase:
-- none OR
-- [1-line summary of any ## Amendments entry tagged Phase [N] written during this phase]
-
-Review:
-[exact questions from plan's Engineer review prompt for this phase]
-
-Type `continue` for Phase [N+1], or describe a concern.
-```
-
-Stage 1 always shows Plan listed and Actually changed. On PASS, the lists match. On FAIL, include the Unlisted section. Stage 2 remains one line (PASS or FAIL with finding). No explanation, no suggestion in either.
+**Present the phase checkpoint:**
+Read `.github/protocols/phase-checkpoint.md` and follow it exactly. Omit the `Decisions & Assumptions:` field (phased-inline mode — that field is subagent-only).
 
 **Gate is hard:** do not proceed to the next phase without explicit `continue` from the engineer.
 
@@ -335,14 +244,12 @@ Phase [N] of [M] — [Phase name] — [N files] / [N steps]
 ```
 
 **Before dispatching — context packet check:**
-1. Read `Context Packets:` path from `.github/skills/conventions/SKILL.md`.
-2. Read `[context-packets-path]/[ticket-id]/phase-[N]-context.md` if it exists.
-3. If found: copy the full file content for embedding in the subagent prompt (CONTEXT_PACKET_CONTENT).
-4. If not found: set CONTEXT_PACKET_CONTENT = `No context packet available. Use the Codebase Search Protocol for any module lookups during this phase.`
+Read `.github/protocols/context-packet-load.md` and follow it. In phased-subagent mode: instead of applying enforcement in the parent session, capture CONTEXT_PACKET_CONTENT for embedding in the subagent prompt. If no packet found: set CONTEXT_PACKET_CONTENT = `No context packet available. Use the Codebase Search Protocol for any module lookups during this phase.`
 
 **Before building the sub-agent prompt — conventions injection:**
 
-**V2 (PLAN_VERSION = 2) — lean injection from risk_signals[]:**
+### V2 (PLAN_VERSION = 2)
+Lean injection from risk_signals[]:
 
 ```
 Fixed (always injected):
@@ -358,8 +265,8 @@ Risk-signal sections (per phase):
 
 No step-text scan. `StepNode.risk_signals[]` is the sole injection signal source.
 
-**V1 (PLAN_VERSION = 1) — keyword text-scan:**
-Scan each step's text for keyword patterns (error/exception/validate → `## Error Handling`; endpoint/request/API → `## API Conventions`; migration/schema/database → `## Data Conventions`; exact framework name match → that section). If `conventions/SKILL.md` does not contain a matching section: no injection.
+### V1 (PLAN_VERSION = 1)
+Keyword text-scan: scan each step's text for keyword patterns (error/exception/validate → `## Error Handling`; endpoint/request/API → `## API Conventions`; migration/schema/database → `## Data Conventions`; exact framework name match → that section). If `conventions/SKILL.md` does not contain a matching section: no injection.
 
 **Sub-agent availability check:**
 Attempt to initiate the `@Implementation Agent` sub-session. If it cannot be initiated (sub-agent feature unavailable, session error, or IDE limitation):
@@ -421,80 +328,12 @@ RETURN when done:
 
 ### Present the review checkpoint
 
-After the subagent returns, run a two-stage review before presenting to the engineer.
-
-**Stage 1: Spec Compliance**
-Compile two lists from the sub-agent's return:
-- **Plan listed** — all files from the `FILES TO CHANGE IN THIS PHASE:` section of the dispatch prompt
-- **Actually changed** — all files the sub-agent reports changing in its return output
-
-Check:
-- Implementation matches plan steps — every listed step was executed
-- All listed files were changed
-- No unlisted files were changed
+After the subagent returns, run stage review: read `.github/protocols/stage-review.md` and follow it exactly. Use the loaded plan's PLAN_VERSION (stored in Step 1) to select the correct version block.
 
 If Stage 1 fails: send the subagent back to fix. Re-run Stage 1 before proceeding.
-
-**Stage 2: Code Quality**
-Only runs after Stage 1 passes. Check:
-- Code follows conventions from `.github/skills/conventions/SKILL.md`
-- Tests test behaviour, not implementation details
-- No obvious issues (missing error handling the spec required, wrong return types, etc.)
-
 If Stage 2 fails: send the subagent back to fix. Re-run only Stage 2.
 
-**After both stages pass**, show the engineer:
-
-```
-Phase [N] complete — [Phase name]
-
-Files changed:
-  + [file1] (created)
-  ~ [file2] (modified)
-
-[Stage 1] Spec compliance: PASS
-
-Plan listed:
-- <file1>
-- <file2>
-
-Actually changed:
-- <file1>
-- <file2>
-OR
-[Stage 1] Spec compliance: FAIL
-
-Plan listed:
-- <file1>
-
-Actually changed:
-- <file1>
-- <fileX>
-
-Unlisted:
-- <fileX>
-
-[Stage 2] Code quality: PASS
-OR
-[Stage 2] Code quality: FAIL — [finding: what + where]
-
-Test output:
-[Paste full output from subagent — do not summarise]
-
-Plan changes this phase:
-- none OR
-- [1-line summary of any ## Amendments entry tagged Phase [N] in the sub-agent's return]
-
-Decisions & Assumptions:
-[bullets from sub-agent — or "None" if the sub-agent omitted the field]
-
-Review:
-[Copy the exact "Engineer review prompt" text from the plan for this phase]
-
-Type `continue` for Phase [N+1], or describe a concern.
-```
-
-Stage 1 always shows Plan listed and Actually changed. On PASS, the lists match. On FAIL, include the Unlisted section. Stage 2 remains one line (PASS or FAIL with finding). No explanation, no suggestion in either.
+**After both stages pass**, present the phase checkpoint: read `.github/protocols/phase-checkpoint.md` and follow it exactly. Include the `Decisions & Assumptions:` field (sourced from the subagent's return — write "None" if the subagent omitted the field).
 
 **Wait for the engineer's response. Do not auto-continue.**
 

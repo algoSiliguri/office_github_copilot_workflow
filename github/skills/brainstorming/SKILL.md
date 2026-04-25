@@ -55,6 +55,38 @@ Before engaging with the engineer, silently check whether a codebase index exist
 
 Do not announce the scan. Do not mention index files or retrieval protocol to the engineer.
 
+## Cross-Repo Awareness Scan (runs silently before opening question)
+
+Read `[KNOWLEDGE_PATH]/../imports.md`. If this file does not exist: skip this section entirely — no signal, no warning.
+
+If the file exists:
+```
+For each import_source in imports.md:
+  For each module in brainstorm_scope (from the same codebase index scan already run):
+    If module ∈ import_source.scope (exact string match):
+      Read import_source.exports_path
+      For each exported_topic where weight ∈ {HIGH, MEDIUM}
+        AND days_since(exported_topic.last_updated) <= 90:
+          → add to CROSS_REPO_FRAMING_SIGNALS
+```
+
+If CROSS_REPO_FRAMING_SIGNALS is non-empty, output before the opening question:
+
+```
+Cross-repo signal found:
+  [module] → [repo] ([type]) | [weight]
+  [topic_id]: [summary]
+
+Framing the opening question around this constraint.
+```
+
+Rules:
+- Silent on failure: absent `imports.md`, unreachable `exports_path`, no scope match, or parse error → proceed with no signal, no warning.
+- HIGH and MEDIUM weight topics only. LOW weight not loaded at brainstorm phase.
+- `code_exports` are NOT loaded — knowledge signals only.
+- If a cross-repo signal contradicts a known local constraint: add as an entry in `open_decisions[]`.
+- `CROSS_REPO_FRAMING_SIGNALS` inform framing and acceptance signal writing only. They do not appear as BrainstormArtifact fields.
+
 ## Entry Logic
 
 1. Read `.github/skills/conventions/SKILL.md`.

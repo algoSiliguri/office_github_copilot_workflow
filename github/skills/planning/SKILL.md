@@ -33,6 +33,7 @@ You are in plan phase. Create a phased implementation plan grounded in the actua
    a. Assemble the `## Intelligence Context` block from the retrieval summary. This block goes in the plan preamble (added in Step 2 of the plan structure update below).
    b. Collect all `## Known Constraints` lines from every loaded module page. These go in the `## Constraints` section of the plan preamble (also in Step 2 below). Label each: `[source: module-page]`. Treat them as non-negotiable — equivalent to spec requirements.
    c. Note which loaded knowledge entries have HIGH weight — use them to order phases (put riskier, higher-signal areas first) and to add risk notes to the relevant phase's `**Engineer review prompt:**`.
+   d. **Populate `retrieval_modules`** (v2 only): Set `execution.retrieval_modules` in the plan artifact to the list of module names in LOADED_MODULES (from retrieval-protocol Step 7). If retrieval was skipped or LOADED_MODULES is empty, write `retrieval_modules: []`. This field is consumed by context-packet to surface planning overlap — it does not affect retrieval logic.
 3. **Spec classification:**
 
 ### V2 (SPEC_VERSION = 2)
@@ -260,6 +261,7 @@ execution:
   justification: "[one sentence justifying mode choice]"
   retrieval: "[ran|skipped]"
   retrieval_justification: "[reason if skipped; empty string if retrieval ran]"
+  retrieval_modules: []
 
 retrieval_constraints:
   - "[constraint discovered from module pages — source: module-page: ModuleName]"

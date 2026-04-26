@@ -1,6 +1,6 @@
 # Architecture Reference: GitHub Copilot Workflow
 
-updated: 2026-04-17
+updated: 2026-04-26
 
 Internal mechanics of the workflow system. Written for skill maintainers and system designers — not for day-to-day use. For usage guidance, see WORKFLOW.md.
 
@@ -316,6 +316,7 @@ These are the default trigger conditions, not a hard gate. The planner or execut
 - Condensed module pages: responsibility, entry points, public interface, dependencies, known constraints
 - High/medium-weight knowledge signals: summary and pattern only (not full entry lists)
 - Coverage confidence level
+- Planning overlap annotation: count and names of modules reloaded from planning context (sourced from `execution.retrieval_modules` in v2 plans, or `## Intelligence Context` prose in v1 plans). Observability only — does not alter loading behavior.
 
 Decisions appear before module context — constraints must be seen before implementation begins.
 
@@ -343,6 +344,14 @@ The user decides whether to invoke `/context-packet` between planning and execut
 - Execution is phased and the phase is non-trivial (≥4 files)
 
 They act as a bridge between retrieval and execution — not a replacement for either. If skipped, execution falls back to live codebase search and announces `low` coverage confidence at phase start.
+
+### Deferred Optimizations
+
+Two optimizations were analyzed and explicitly deferred:
+
+**FT3 — Secondary module-topic map:** When `[knowledge-index-path]/index.md` contains ≥ 30 topics, consider implementing a secondary index (`knowledge/.module-topic-map.md`) mapping module names to topic IDs and weights. This eliminates the O(topics) full-index scan context-packet performs per phase. Implementation constraint: filtering logic must remain in context-packet — not pre-computed by index-knowledge — to preserve the component boundaries in the Knowledge Layer section below.
+
+**FT2 — Abbreviated module loading:** Deferred indefinitely. Execution-phase agents operate with no memory of what planning loaded; the context packet is their sole source of module knowledge. Skipping `## Entry Points` and `## Public Interface` for planning-overlapping modules deprives execution of blast-radius context. No safe solution identified.
 
 ---
 
@@ -558,6 +567,8 @@ BrainstormArtifact owns: [problem, open_decisions]
 SpecArtifact owns:       [decisions, requirements, spec_constraints, out_of_scope]
 PlanArtifact owns:       [execution, phases, retrieval_constraints, amendments]
 ```
+
+**`execution.retrieval_modules`** (optional list, default `[]`): Module names loaded during planning-phase retrieval. Written by planning after retrieval-protocol Step 7 completes. Read by context-packet to compute planning overlap — does not affect retrieval or loading logic. Non-breaking addition; consuming skills treat absence as empty list. Present in v2 plans only.
 
 ### Four System Rules
 

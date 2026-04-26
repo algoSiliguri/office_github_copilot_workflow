@@ -93,6 +93,31 @@ Store as FILE_MODULE_MAP. Collect the distinct resolved module names as PHASE_MO
 
 ## Step 5: Load Condensed Module Pages
 
+**Step 5.0: Extract PLANNING_LOADED**
+
+Before loading any module pages, identify which modules were loaded at planning time:
+
+### V2 (PLAN_VERSION = 2)
+Read `execution.retrieval_modules` from the plan file. Store as PLANNING_LOADED.
+If the field is absent or empty: PLANNING_LOADED = [].
+
+### V1 (PLAN_VERSION = 1)
+Search the plan for `## Intelligence Context`. If found, read the line beginning with
+`- Modules loaded:`. Parse the comma-separated list of module names after the colon.
+Trim whitespace from each name. Store as PLANNING_LOADED.
+If `## Intelligence Context` is absent, or the line is missing, or the value is `none`:
+PLANNING_LOADED = [].
+
+After extracting PLANNING_LOADED, compute:
+- OVERLAP = modules that appear in both PHASE_MODULES and PLANNING_LOADED (empty list if PLANNING_LOADED = [])
+- OVERLAP_COUNT = count of OVERLAP
+
+PLANNING_LOADED is used only for observability. It does not alter which sections are
+loaded or how module pages are processed. All modules in PHASE_MODULES receive the same
+full condensed view regardless of whether they appear in PLANNING_LOADED.
+
+---
+
 For each module in PHASE_MODULES (unresolved excluded), read `[CODEBASE_PATH]/[module].md`.
 
 Extract (condensed view — do not include the full page text):
@@ -268,8 +293,14 @@ Write `[CONTEXT_PATH]/[ticket-id]/phase-[N]-context.md` with this exact structur
 
     **Generated:** YYYY-MM-DD
     **Coverage confidence:** [high|medium|low]
+    **Planning overlap:** [see rules below]
     **Phase files:** [count] files across [count] modules
     **Unresolved files:** [list of unresolved file paths, or "none"]
+
+Planning overlap rules (fill the field above using these):
+- If PLANNING_LOADED = [] (field absent or retrieval was skipped): write `not available (pre-retrieval plan)`
+- If OVERLAP_COUNT = 0: write `0 modules reloaded`
+- If OVERLAP_COUNT > 0: write `N module(s) reloaded from planning context: [comma-separated names]`
 
     ## Index State
 
@@ -399,6 +430,7 @@ Say:
 >
 > - Coverage confidence: [level] — [reason if not high]
 > - Modules in scope: [list]
+> - Planning overlap: [OVERLAP_COUNT] module(s) reloaded ([comma-separated OVERLAP list, or "none"])
 > - Knowledge signals loaded: [N] topics (HIGH: N, MEDIUM: N)
 > - Unresolved files: [list or "none"]
 > - Unresolved files require direct codebase search (Plan 3) during execution."

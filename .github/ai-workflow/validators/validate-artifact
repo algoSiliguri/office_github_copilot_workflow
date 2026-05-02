@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+import yaml
+
+
+ALLOWED_CLASSIFICATION_STATUS = {"proposed", "revised_before_edit", "locked_for_execution"}
+ALLOWED_OPERATIONS = {"create", "modify", "delete"}
+ALLOWED_BRAINSTORM_STATUS = {"READY_FOR_SPEC", "BLOCKED"}
+ALLOWED_QUICK_TASK_STATUS = {"PASS_QUICK", "FAIL", "ESCALATED_TO_FULL_WORKFLOW"}
+ALLOWED_SPEC_STATUS = {"READY_FOR_PLAN", "BLOCKED"}
+ALLOWED_PLAN_STATUS = {"READY", "DEGRADED", "BLOCKED"}
+ALLOWED_EXECUTION_MODES = {"inline", "phased-inline", "phased-subagent"}
+ALLOWED_RETRIEVAL_DECISIONS = {"used", "skipped", "unavailable"}
+ALLOWED_VERIFICATION_STATUS = {"VERIFIED", "VERIFIED_WITH_DEGRADATION", "FAILED", "BLOCKED"}
+ALLOWED_REVIEW_STATUS = {"PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"}
+
+
+def fail(reason: str) -> int:
+    print(f"FAIL: {reason}")
+    return 1
+
+
+def require(condition: bool, reason: str):
+    if not condition:
+        raise ValueError(reason)
+
+
+def require_string(value, path: str):
+    require(isinstance(value, str) and value.strip(), f"{path} must be a non-empty string")
+
+
+def load_artifact(path_arg: str):
+    path = Path(path_arg)
+    require(path.exists(), f"artifact does not exist: {path}")
+    data = yaml.safe_load(path.read_text())
+    require(isinstance(data, dict), "artifact must be a mapping")
+    return data
+
+
+def validate_string_list(entries, path: str):
+    require(isinstance(entries, list), f"{path} must be a list")
+    for idx, value in enumerate(entries):
+        require_string(value, f"{path}[{idx}]")
+
+
+def validate_file_entries(entries, path: str):
+    require(isinstance(entries, list), f"{path} must be a list")
+    for idx, entry in enumerate(entries):
+        require(isinstance(entry, dict), f"{path}[{idx}] must be a mapping")
+        require_string(entry.get("path"), f"{path}[{idx}].path")
+        require(entry.get("operation") in ALLOWED_OPERATIONS, f"{path}[{idx}].operation must be one of {sorted(ALLOWED_OPERATIONS)}")
+
+
+def validate_brainstorm(artifact):
+    require(artifact.get("command") == "/brainstorm", "command must be /brainstorm")
+    require(artifact.get("status") in ALLOWED_BRAINSTORM_STATUS, f"status must be one of {sorted(ALLOWED_BRAINSTORM_STATUS)}")
+    require_string(artifact.get("task_summary"), "task_summary")
+    require_string(artifact.get("problem_statement"), "problem_statement")
+    validate_string_list(artifact.get("goals"), "goals")
+    validate_string_list(artifact.get("non_goals"), "non_goals")
+    validate_string_list(artifact.get("constraints"), "constraints")
+    validate_string_list(artifact.get("open_questions"), "open_questions")
+    review = artifact.get("review")
+    require(isinstance(review, dict), "review must be a mapping")
+    require(review.get("disposition") in ALLOWED_BRAINSTORM_STATUS, f"review.disposition must be one of {sorted(ALLOWED_BRAINSTORM_STATUS)}")
+    require_string(review.get("notes"), "review.notes")
+    require(artifact.get("handoff", {}).get("recommended_next_command") == "/write-spec", "handoff.recommended_next_command must be /write-spec")
+
+
+def validate_quick_task(artifact):
+    require(artifact.get("command") == "/quick-task", "command must be /quick-task")
+    require(artifact.get("status") in ALLOWED_QUICK_TASK_STATUS, f"status must be one of {sorted(ALLOWED_QUICK_TASK_STATUS)}")
+    require_string(artifact.get("task_summary"), "task_summary")
+    change_class = artifact.get("change_class")
+    require(isinstance(change_class, dict), "change_class must be a mapping")
+    require_string(change_class.get("value"), "change_class.value")
+    require(isinstance(change_class.get("policy_allowed"), bool), "change_class.policy_allowed must be boolean")
+    require(change_class.get("classification_status") in ALLOWED_CLASSIFICATION_STATUS, f"change_class.classification_status must be one of {sorted(ALLOWED_CLASSIFICATION_STATUS)}")
+    files = artifact.get("files")
+    require(isinstance(files, dict), "files must be a mapping")
+    validate_file_entries(files.get("planned"), "files.planned")
+    validate_file_entries(files.get("actual"), "files.actual")
+    escalation = artifact.get("escalation")
+    require(isinstance(escalation, dict), "escalation must be a mapping")
+    require(isinstance(escalation.get("required"), bool), "escalation.required must be boolean")
+    validate_string_list(escalation.get("reasons"), "escalation.reasons")
+    verification = artifact.get("verification")
+    require(isinstance(verification, dict), "verification must be a mapping")
+    validate_string_list(verification.get("evidence"), "verification.evidence")
+    review = artifact.get("review")
+    require(isinstance(review, dict), "review must be a mapping")
+    require(isinstance(review.get("scope_match"), bool), "review.scope_match must be boolean")
+    require(review.get("disposition") in ALLOWED_QUICK_TASK_STATUS, f"review.disposition must be one of {sorted(ALLOWED_QUICK_TASK_STATUS)}")
+    require_string(review.get("notes"), "review.notes")
+    if artifact.get("escalation", {}).get("required"):
+        seed = artifact.get("escalation_seed")
+        require(isinstance(seed, dict), "escalation_seed must be present when escalation.required is true")
+        require_string(seed.get("original_request"), "escalation_seed.original_request")
+        validate_string_list(seed.get("escalation_reason"), "escalation_seed.escalation_reason")
+        require_string(seed.get("observed_change_class"), "escalation_seed.observed_change_class")
+        validate_string_list(seed.get("planned_files"), "escalation_seed.planned_files")
+        validate_string_list(seed.get("actual_files_changed"), "escalation_seed.actual_files_changed")
+        require(seed.get("recommended_next_command") == "/write-spec", "escalation_seed.recommended_next_command must be /write-spec")
+
+
+def validate_spec(artifact):
+    require(artifact.get("command") == "/write-spec", "command must be /write-spec")
+    require(artifact.get("status") in ALLOWED_SPEC_STATUS, f"status must be one of {sorted(ALLOWED_SPEC_STATUS)}")
+    require_string(artifact.get("task_summary"), "task_summary")
+    source_context = artifact.get("source_context")
+    require(isinstance(source_context, dict), "source_context must be a mapping")
+    require(source_context.get("source_type") in {"direct_request", "quick_task_escalation"}, "source_context.source_type must be a supported value")
+    require_string(source_context.get("original_request"), "source_context.original_request")
+    if source_context.get("source_artifact") is not None:
+        require_string(source_context.get("source_artifact"), "source_context.source_artifact")
+    scope = artifact.get("scope")
+    require(isinstance(scope, dict), "scope must be a mapping")
+    validate_string_list(scope.get("in_scope"), "scope.in_scope")
+    validate_string_list(scope.get("out_of_scope"), "scope.out_of_scope")
+    requirements = artifact.get("requirements")
+    require(isinstance(requirements, list) and requirements, "requirements must be a non-empty list")
+    for idx, requirement in enumerate(requirements):
+        require(isinstance(requirement, dict), f"requirements[{idx}] must be a mapping")
+        require_string(requirement.get("id"), f"requirements[{idx}].id")
+        require_string(requirement.get("text"), f"requirements[{idx}].text")
+        validate_string_list(requirement.get("affected_paths"), f"requirements[{idx}].affected_paths")
+    validate_string_list(artifact.get("constraints"), "constraints")
+    validate_string_list(artifact.get("open_questions"), "open_questions")
+    review = artifact.get("review")
+    require(isinstance(review, dict), "review must be a mapping")
+    require(review.get("disposition") in ALLOWED_SPEC_STATUS, f"review.disposition must be one of {sorted(ALLOWED_SPEC_STATUS)}")
+    require_string(review.get("notes"), "review.notes")
+    require_string(artifact.get("handoff", {}).get("recommended_next_command"), "handoff.recommended_next_command")
+
+
+def validate_plan(artifact):
+    require(artifact.get("command") == "/write-plan", "command must be /write-plan")
+    require(artifact.get("status") in ALLOWED_PLAN_STATUS, f"status must be one of {sorted(ALLOWED_PLAN_STATUS)}")
+    require_string(artifact.get("task_summary"), "task_summary")
+    require_string(artifact.get("source_spec"), "source_spec")
+    if artifact.get("status") != "BLOCKED":
+        require(artifact.get("execution_mode") in ALLOWED_EXECUTION_MODES, f"execution_mode must be one of {sorted(ALLOWED_EXECUTION_MODES)}")
+    retrieval = artifact.get("retrieval_decision")
+    require(isinstance(retrieval, dict), "retrieval_decision must be a mapping")
+    require(isinstance(retrieval.get("required"), bool), "retrieval_decision.required must be boolean")
+    require(retrieval.get("decision") in ALLOWED_RETRIEVAL_DECISIONS, f"retrieval_decision.decision must be one of {sorted(ALLOWED_RETRIEVAL_DECISIONS)}")
+    require_string(retrieval.get("justification"), "retrieval_decision.justification")
+    steps = artifact.get("steps")
+    require(isinstance(steps, list), "steps must be a list")
+    for idx, step in enumerate(steps):
+        require(isinstance(step, dict), f"steps[{idx}] must be a mapping")
+        require_string(step.get("id"), f"steps[{idx}].id")
+        require_string(step.get("summary"), f"steps[{idx}].summary")
+        validate_string_list(step.get("requirement_refs"), f"steps[{idx}].requirement_refs")
+        validate_string_list(step.get("files"), f"steps[{idx}].files")
+        validate_string_list(step.get("depends_on"), f"steps[{idx}].depends_on")
+        validate_string_list(step.get("verification_signals"), f"steps[{idx}].verification_signals")
+    validate_string_list(artifact.get("constraints"), "constraints")
+    review = artifact.get("review")
+    require(isinstance(review, dict), "review must be a mapping")
+    require(review.get("disposition") in ALLOWED_PLAN_STATUS, f"review.disposition must be one of {sorted(ALLOWED_PLAN_STATUS)}")
+    require_string(review.get("notes"), "review.notes")
+    require(artifact.get("handoff", {}).get("recommended_next_command") == "/execute-plan", "handoff.recommended_next_command must be /execute-plan")
+
+
+def validate_verification(artifact):
+    require(artifact.get("command") == "/verify", "command must be /verify")
+    require(artifact.get("status") in ALLOWED_VERIFICATION_STATUS, f"status must be one of {sorted(ALLOWED_VERIFICATION_STATUS)}")
+    require_string(artifact.get("task_summary"), "task_summary")
+    require_string(artifact.get("plan_ref"), "plan_ref")
+    validate_string_list(artifact.get("changed_files"), "changed_files")
+    validate_string_list(artifact.get("evidence"), "evidence")
+    validate_string_list(artifact.get("outstanding_risks"), "outstanding_risks")
+    review = artifact.get("review")
+    require(isinstance(review, dict), "review must be a mapping")
+    require(review.get("disposition") in ALLOWED_VERIFICATION_STATUS, f"review.disposition must be one of {sorted(ALLOWED_VERIFICATION_STATUS)}")
+    require_string(review.get("notes"), "review.notes")
+    require(artifact.get("handoff", {}).get("recommended_next_command") == "/review", "handoff.recommended_next_command must be /review")
+
+
+def validate_review_artifact(artifact):
+    require(artifact.get("command") == "/review", "command must be /review")
+    require(artifact.get("status") in ALLOWED_REVIEW_STATUS, f"status must be one of {sorted(ALLOWED_REVIEW_STATUS)}")
+    require_string(artifact.get("task_summary"), "task_summary")
+    require_string(artifact.get("plan_ref"), "plan_ref")
+    require_string(artifact.get("verification_ref"), "verification_ref")
+    validate_string_list(artifact.get("actual_changed_files"), "actual_changed_files")
+    require(isinstance(artifact.get("scope_match"), bool), "scope_match must be boolean")
+    validate_string_list(artifact.get("findings"), "findings")
+    review = artifact.get("review")
+    require(isinstance(review, dict), "review must be a mapping")
+    require(review.get("disposition") in ALLOWED_REVIEW_STATUS, f"review.disposition must be one of {sorted(ALLOWED_REVIEW_STATUS)}")
+    require_string(review.get("notes"), "review.notes")
+    # Human authorization: required for PASS/PASS_WITH_DEGRADATION
+    status = artifact.get("status")
+    human_auth = artifact.get("human_authorization")
+    if status in ("PASS", "PASS_WITH_DEGRADATION"):
+        require(
+            isinstance(human_auth, dict),
+            "human_authorization is required for PASS/PASS_WITH_DEGRADATION — agent cannot self-approve",
+        )
+        require(
+            human_auth.get("status") == "approved",
+            f"human_authorization.status must be 'approved' for {status} — only the engineer may approve",
+        )
+        require_string(human_auth.get("reviewer"), "human_authorization.reviewer")
+    elif human_auth is not None:
+        require(isinstance(human_auth, dict), "human_authorization must be a mapping")
+        require(
+            human_auth.get("status") in ("pending", "approved", "rejected"),
+            "human_authorization.status must be pending, approved, or rejected",
+        )
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        return fail("usage: validate-artifact <artifact-path>")
+
+    try:
+        artifact = load_artifact(sys.argv[1])
+        schema_version = artifact.get("schema_version")
+        if schema_version == "brainstorm.schema.v1":
+            validate_brainstorm(artifact)
+        elif schema_version == "quick-task.schema.v1":
+            validate_quick_task(artifact)
+        elif schema_version == "spec.schema.v1":
+            validate_spec(artifact)
+        elif schema_version == "plan.schema.v1":
+            validate_plan(artifact)
+        elif schema_version == "verification.schema.v1":
+            validate_verification(artifact)
+        elif schema_version == "review.schema.v1":
+            validate_review_artifact(artifact)
+        else:
+            raise ValueError("schema_version must be one of brainstorm/spec/plan/verification/review/quick-task schema versions")
+        print("PASS")
+        return 0
+    except ValueError as exc:
+        return fail(str(exc))
+    except Exception as exc:
+        return fail(f"unexpected validation error: {exc}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

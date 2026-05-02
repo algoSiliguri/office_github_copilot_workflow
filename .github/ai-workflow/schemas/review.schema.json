@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Review Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "status",
+    "task_summary",
+    "plan_ref",
+    "verification_ref",
+    "actual_changed_files",
+    "scope_match",
+    "findings",
+    "review"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "review.schema.v1"
+    },
+    "command": {
+      "const": "/review"
+    },
+    "status": {
+      "enum": ["PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"]
+    },
+    "task_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verification_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actual_changed_files": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "scope_match": {
+      "type": "boolean"
+    },
+    "findings": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "notes"],
+      "properties": {
+        "disposition": {
+          "enum": ["PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"]
+        },
+        "notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "human_authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"],
+          "description": "Only the engineer sets 'approved'. Agent sets 'pending'."
+        },
+        "reviewer": {"type": "string"},
+        "reviewed_at": {"type": "string"},
+        "comment": {"type": "string"}
+      }
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifies the task; used to locate artifact storage path."
+    },
+    "validated_under": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manifest_version": {"type": "integer"},
+        "policy_version": {"type": "string"},
+        "schema_version": {"type": "string"},
+        "validated_at": {"type": "string"}
+      }
+    }
+  }
+}

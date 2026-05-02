@@ -214,12 +214,27 @@ def validate_review_artifact(artifact):
         )
 
 
+def validate_validated_under(artifact):
+    """Optional field — validate structure when present."""
+    vu = artifact.get("validated_under")
+    if vu is None:
+        return
+    require(isinstance(vu, dict), "validated_under must be a mapping")
+    for key in ("manifest_version", "policy_version", "schema_version", "validated_at"):
+        if key in vu:
+            if key == "manifest_version":
+                require(isinstance(vu[key], int), f"validated_under.{key} must be an integer")
+            else:
+                require(isinstance(vu[key], str) and vu[key].strip(), f"validated_under.{key} must be a non-empty string")
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         return fail("usage: validate-artifact <artifact-path>")
 
     try:
         artifact = load_artifact(sys.argv[1])
+        validate_validated_under(artifact)
         schema_version = artifact.get("schema_version")
         if schema_version == "brainstorm.schema.v1":
             validate_brainstorm(artifact)

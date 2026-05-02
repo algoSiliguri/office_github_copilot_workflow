@@ -1,0 +1,50 @@
+command_contract_id: quick-task.v1
+stable_alias: /quick-task
+contract_version: 1
+
+input_artifacts: []
+
+output_artifacts:
+  - type: quick_task_record
+    schema: quick-task.schema.v1
+    required: true
+
+required_policies:
+  - quick-task-policy.v1
+  - review-policy.v1
+
+required_validators:
+  before:
+    - validate-manifest
+    - validate-quick-task-preclassify   # pre-write gate: must pass before first file edit
+  after:
+    - validate-artifact
+    - validate-plan-scope
+    - validate-review-gate
+
+authority:
+  may_create:
+    - quick_task_record
+  may_modify:
+    - files_declared_in_quick_task_record
+  may_read:
+    - manifest
+    - policies
+    - schemas
+    - directly_affected_files
+  forbidden:
+    - modify_manifest
+    - modify_schemas
+    - modify_policies
+    - change_public_contracts
+    - introduce_new_abstractions
+    - edit_outside_declared_scope
+    - bypass_validation
+
+semantics:
+  required:
+    - classify_task_against_quick_task_policy
+    - list_exact_files_before_editing
+    - escalate_if_policy_disallows_quick_task
+    - record_verification_evidence
+    - produce_reviewable_scope

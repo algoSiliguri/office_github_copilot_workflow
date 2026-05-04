@@ -5,46 +5,35 @@ contract_version: 1
 input_artifacts: []
 
 output_artifacts:
-  - type: quick_task_record
+  - type: QuickTaskRecord
     schema: quick-task.schema.v1
     required: true
 
-required_policies:
-  - quick-task-policy.v1
-  - review-policy.v1
-
 required_validators:
   before:
-    - validate-manifest
-    - validate-quick-task-preclassify   # pre-write gate: must pass before first file edit
+    - validate-plan-scope
+    - validate-quick-task-preclassify
   after:
     - validate-artifact
     - validate-plan-scope
-    - validate-review-gate
 
 authority:
   may_create:
-    - quick_task_record
+    - QuickTaskRecord
   may_modify:
     - files_declared_in_quick_task_record
   may_read:
-    - manifest
-    - policies
-    - schemas
     - directly_affected_files
   forbidden:
     - modify_manifest
     - modify_schemas
     - modify_policies
-    - change_public_contracts
-    - introduce_new_abstractions
     - edit_outside_declared_scope
     - bypass_validation
 
 semantics:
   required:
-    - classify_task_against_quick_task_policy
-    - list_exact_files_before_editing
-    - escalate_if_policy_disallows_quick_task
-    - record_verification_evidence
-    - produce_reviewable_scope
+    - run_escalation_check_before_any_edits
+    - escalate_to_grill_if_any_trigger_fires
+    - record_planned_and_actual_files
+    - save_quick_task_record_to_task_folder

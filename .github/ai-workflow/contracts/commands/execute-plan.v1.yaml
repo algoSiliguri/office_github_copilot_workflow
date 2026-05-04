@@ -1,0 +1,48 @@
+command_contract_id: execute-plan.v1
+stable_alias: /execute-plan
+contract_version: 1
+
+input_artifacts:
+  - type: PlanArtifact
+    schema: plan.schema.v1
+    required: true
+  - type: context_packet_artifact
+    schema: context-packet.schema.v1
+    required: false
+
+output_artifacts:
+  - type: ExecutionRecord
+    schema: execution-checkpoint.schema.v1
+    required: true
+
+required_validators:
+  before:
+    - validate-artifact
+    - validate-plan-scope
+  after:
+    - validate-artifact
+
+authority:
+  may_create:
+    - ExecutionRecord
+  may_modify:
+    - files_declared_in_plan_scope
+  may_read:
+    - PlanArtifact
+    - optional_context_packet_artifact
+    - files_in_plan_scope
+  forbidden:
+    - edit_outside_plan_scope
+    - modify_manifest
+    - modify_schemas
+    - modify_policies
+    - generate_context_packet_implicitly
+    - bypass_validation
+
+semantics:
+  required:
+    - check_context_packet_when_required
+    - execute_only_declared_scope
+    - show_cli_handoff_block_and_wait_for_approval
+    - record_unplanned_files_touched
+    - save_execution_record_to_task_folder

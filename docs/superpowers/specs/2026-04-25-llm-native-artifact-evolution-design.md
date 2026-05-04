@@ -167,7 +167,7 @@ ContextPacketArtifact  ← NOT in inheritance chain; a projection
 ├── coverage_confidence: 'high' | 'medium' | 'low'
 ├── modules: ModuleContext[]        ← loaded from codebase index
 ├── knowledge_signals: KnowledgeSignal[]
-├── cross_repo_signals: CrossRepoSignal[]   ← area 4; separate section
+├── cross_repo_signals: CrossRepoSignal[]   ← appears in ## Cross-Repo Signals packet section
 ├── stale_warnings: string[]
 └── conflicts: ConflictPair[]
 ```
@@ -390,13 +390,17 @@ Checks in order:
 
 Output: `PASS` or itemized FAIL list with field paths. All checks are exact comparisons. None are semantic.
 
+### `cross-repo/SKILL.md` (new skill)
+
+Lives at `.github/skills/cross-repo/SKILL.md`. Canonical format reference for `exports.md` and `imports.md` — the two files that enable cross-repo context sharing. Contains full YAML schemas with field-level comments, naming rules, guardrails (prohibited root paths, per-root and global file caps), and operational guidance (when to set up, how each phase uses the files). Discoverable via `/setup` output and `CHEAT-SHEET.md`. Must exist before any team writes cross-repo context files. Not an executable phase skill — a reference document.
+
 ### Per-Skill Change Summary
 
 | Skill | What changes |
 |---|---|
-| `brainstorming` | Output: `BrainstormArtifact` with `schema_version: 2`. `ProblemRecord` populated from conversation. `open_decisions[]` populated from unresolved questions. |
+| `brainstorming` | Output: `BrainstormArtifact` with `schema_version: 2`. `ProblemRecord` populated from conversation. `open_decisions[]` populated from unresolved questions. Silent `imports.md` scan at session start: if any declared scope module overlaps with problem scope, HIGH/MEDIUM exported topics are surfaced as framing signals before opening questions are asked. Code exports not loaded at this phase. |
 | `spec-writing` | Gains version gate + `/validate-artifact` on input. Reads `open_decisions[]` (typed). Writes `decisions[]`, `requirements[]`, `spec_constraints[]`. Immutability check: verifies inherited fields match source brainstorm. |
-| `planning` | Gains version gate + `/validate-artifact` on input. Reads `decisions[*].constraints[]` for conflict check (typed vs module page prose — partially deterministic). Reads `problem.classification` for retrieval split (direct field). Writes `execution`, `phases`, `retrieval_constraints[]`. Immutability check on inherited spec fields. |
+| `planning` | Gains version gate + `/validate-artifact` on input. Reads `decisions[*].constraints[]` for conflict check (typed vs module page prose — partially deterministic). Reads `problem.classification` for retrieval split (direct field). Writes `execution`, `phases`, `retrieval_constraints[]`. Immutability check on inherited spec fields. Auto-injects `risk_signals: ["API Conventions"]` on StepNodes whose resolved module appears in `imports.md:scope`. |
 | `execution` | Gains version gate. Checkpoint generated from StepNode fields (template fill). Stage 1: exact comparison + incidental grace (Rule 2). Writes `step-completed` amendments. Context reset block from amendments + next phase files (Rule 3). Auto-triggers context packet when conditions met. |
 | `context-packet` | Gains version gate. Reads `phases[N].steps[*].files[*].path` as typed array. Decision selection uses deterministic rule. Coverage confidence computed by formula. |
 | `review` | Gains version gate. Reads `requirements[]` for spec-compliance traceability via `requirement_ids` links. Stage 1 evidence: `step-completed` amendment records. |
@@ -463,6 +467,221 @@ Cross-repo signals:
 ### Operational Dependency
 
 Cross-repo imports produce useful results only when exporting repo module names in `exports.md` match the module names in the importing repo's `imports.md:scope`. The system enforces the exact-match rule but cannot enforce naming alignment across teams. This is a team naming convention requirement.
+
+### Code-Level Access Extension (Scoped Exports)
+
+> This feature is primarily used when introducing a new cross-service interaction
+> where no prior contract or usage exists in the consuming repository.
+
+#### exports.md extension
+
+The existing `exports.md` topic-level structure is extended with an optional top-level key:
+
+```yaml
+code_exports:
+  - module: string
+    type: "api-surface" | "shared-library"
+    roots:
+      - path: string          # directory path relative to exporting repo root
+        include: ["*.java"]   # glob patterns; applied after listing
+        exclude: []           # optional; applied after include filter
+```
+
+`code_exports` is optional. Repos that do not declare it continue to export only topic signals.
+`exported_topics` and `code_exports` are independent — a repo may have either, both, or neither.
+
+Type semantics:
+- `api-surface` = externally callable interfaces (e.g., controllers, DTOs)
+- `shared-library` = reusable internal utilities safe for cross-repo usage
+
+#### imports.md extension
+
+The existing `import_sources` structure is extended with an optional key per source:
+
+```yaml
+import_sources:
+  - repo: service-b
+    exports_path: ../service-b/knowledge/exports.md
+    scope: [auth-service, session-manager]
+    include_code:                 # optional — absent = no code loaded from this source
+      - "api-surface"
+      - "shared-library"
+```
+
+`include_code` is optional. When absent, no code is loaded (existing behavior unchanged).
+When present, only `code_exports` entries whose `type` matches a listed value AND whose
+`module` matches the current phase scope are loaded.
+
+#### Deterministic Resolution Algorithm
+
+```
+For each import_source in imports.md:
+  For each module in current phase scope:
+    If module ∈ import_source.scope (exact string):
+      Read import_source.exports_path
+      If code_exports is absent: skip code loading for this source
+
+      For each code_export in exports.code_exports:
+        If code_export.module == module (exact string)
+        AND code_export.type ∈ import_source.include_code:
+
+          Accumulate files across all roots:
+            For each root in code_export.roots:
+              1. List files under root.path
+              2. Filter: keep files matching any pattern in root.include
+              3. Filter: remove files matching any pattern in root.exclude
+              4. Skip binary or non-text files silently
+              5. Add to candidate set
+
+          Deduplicate candidate set by full path (keep first lexicographic occurrence)
+          Sort candidate set lexicographically by full path
+          Apply per-root file cap: if any individual root yields > 20 files before
+            dedup/sort, skip that root and log warning — do not fail execution
+          Apply global cap: if candidate set > 50 files, keep first 50 (lexicographic)
+            and log warning
+          Include resulting files in CROSS_REPO_CODE grouped by [repo, module, type]
+
+Multiple import_sources are processed independently.
+Results are concatenated. No cross-repository deduplication is performed.
+```
+
+Path resolution: `root.path` is resolved relative to the root directory of the exporting
+repository (the repository where `exports.md` resides).
+
+No heuristics. No fuzzy matching. No inference outside declared roots.
+
+#### Context Packet Output — Cross-Repo Code Section
+
+Appears in the context packet ONLY when the resolution algorithm produces at least one file.
+Placed after `## Cross-Repo Signals`, before `## Conflicting Signals`.
+
+```
+## Cross-Repo Code
+
+_(Advisory only. Files loaded from declared code_exports roots via exact module+type match.
+Cannot block execution, modify artifact fields, affect coverage_confidence, or create
+contradicts relationships with local topics.)_
+
+### [repo name] — [module] ([type])
+Source roots: [root.path list] | Patterns: [include] | Excluded: [exclude]
+
+**[filename]**
+
+[file content — truncated at 500 lines with "... (truncated)" if exceeded]
+
+[Warnings, if any:]
+⚠️ Root [path] skipped — [reason].
+⚠️ import_source [repo] capped at 50 files — [count] resolved.
+```
+
+Rules:
+- Section omitted entirely when no code matches — no placeholder.
+- Each matched repo+module+type group gets its own sub-heading.
+- File content is included inline.
+- This section is advisory: informs the implementer but cannot gate execution.
+- Does NOT affect `coverage_confidence` calculation.
+- Does NOT count against the local knowledge loading budget.
+- Warnings (skipped roots, file limits exceeded) are surfaced inline under the
+  corresponding group — not in a separate section.
+
+#### File Handling Rules
+
+- Files are ordered lexicographically by full path before inclusion.
+- Duplicate file paths across roots within the same import_source are deduplicated
+  before inclusion. The first occurrence in lexicographic order is kept.
+- If a file exceeds 500 lines, truncate after 500 lines and append: `... (truncated)`
+- Binary or unsupported file types matching include patterns are skipped silently.
+
+#### Guardrails
+
+Root paths must not match or be a parent of any broad source directory, including:
+- `src/`
+- `src/main/`
+- `src/main/java/`
+
+Roots must point to a specific package or feature-level directory.
+
+Per-root file cap: max 20 files after include/exclude filtering. If a root resolves
+to more than 20 files: skip that root, log warning inline in the context packet. Do not fail execution.
+
+Global file cap per import_source per phase: 50 files total.
+If exceeded, truncate deterministically using lexicographic order (keep first 50).
+
+Missing paths: if `root.path` does not exist in the exporting repo at resolution time,
+skip that root silently. Do not fail execution.
+
+#### Note on exports.md Generation
+
+`exports.md:code_exports` can be pre-populated using tooling (e.g., scanning for controller
+classes and DTOs). This is a team-level helper, not a system feature. The final selection
+of roots and patterns is always human-controlled. The system never auto-generates or
+auto-updates `code_exports` during execution. Tooling is out of scope for this evolution.
+
+---
+
+### Brainstorm-Phase Cross-Repo Awareness
+
+> **Gap addressed:** Cross-repo signals currently only fire at context-packet time. Architectural constraints from external services are invisible during brainstorming, causing acceptance signals and open decisions to be written without knowledge of the dependency — and discoveries to arrive during implementation, after spec and plan are locked.
+
+At brainstorm session start, silently read `[knowledge-path]/imports.md` if it exists. Compare declared `scope` module names against the modules identified in the brainstorm problem scope (via the same codebase index scan already performed).
+
+**Scan rule:**
+
+```
+If imports.md exists:
+  For each import_source in imports.md:
+    For each module in brainstorm_scope:
+      If module ∈ import_source.scope (exact string match):
+        Read import_source.exports_path
+        Load exported_topics where weight ∈ {HIGH, MEDIUM}
+          AND days_since(exported_topic.last_updated) <= 90
+        → surface as CROSS_REPO_FRAMING_SIGNALS before opening question
+```
+
+**Output format (appears before the first brainstorm question):**
+
+```
+Cross-repo signal found:
+  [module] → [repo] ([type]) | [weight]
+  [topic_id]: [summary]
+
+Framing the opening question around this constraint.
+```
+
+**Rules:**
+- Silent on failure: absent `imports.md`, unreachable `exports_path`, no scope match, or parse error → proceed with no signal, no warning.
+- HIGH and MEDIUM weight topics only. LOW weight not loaded at brainstorm phase.
+- `code_exports` are not loaded during brainstorming — knowledge signals only.
+- If a cross-repo signal contradicts a known local constraint: flag as an entry in `open_decisions[]` for spec-writing to resolve.
+- `CROSS_REPO_FRAMING_SIGNALS` inform problem framing and acceptance signal writing. They do not appear as artifact fields.
+
+---
+
+### Planning-Phase Auto-Risk-Signal Injection
+
+> **Gap addressed:** StepNodes touching cross-repo modules have no `risk_signals` set by default. The lean conventions injection for phased-subagent mode therefore misses the API Conventions section, and the implementer writes the cross-service integration without the relevant conventions in context.
+
+After all StepNodes are written and before the plan artifact is finalized, run:
+
+```
+If imports.md exists:
+  For each StepNode S in all phases:
+    For each FileRef F in S.files:
+      module = resolve(F.path)   # same rule as context-packet: longest prefix → Reach score → alphabetical
+      For each import_source in imports.md:
+        If module ∈ import_source.scope (exact string match):
+          If "API Conventions" ∉ S.risk_signals:
+            Append "API Conventions" to S.risk_signals
+```
+
+**Rules:**
+- Silent no-op when `imports.md` is absent or unreadable.
+- Only injects `"API Conventions"`. Does not infer or inject other section names.
+- Does not remove or override existing `risk_signals[]` entries. Appends only.
+- Injection is visible in the written plan artifact. The engineer may remove entries that are false positives before approving the plan.
+- Uses the same file-path-to-module resolution rule as the context-packet skill.
+
+---
 
 ### Context Packet Decision Selection Rule
 
@@ -542,6 +761,31 @@ No change. Version gates route v1 artifacts to legacy extraction paths, unchange
 ### Completion Signal
 
 All six skills at v2 + `SCHEMA.md` stable at `v2.0` + at least one ticket completed end-to-end with v2 artifacts and no validation failures.
+
+---
+
+## Documentation Updates Required
+
+When this plan is executed, the following files must be updated as part of the implementation. These are explicit plan tasks (Task 11), not automatic.
+
+### ARCHITECTURE.md
+
+- **Retrieval Integration → Per-Phase Integration table — Brainstorm row:** Add: "V2 addition: silent `imports.md` scan after codebase index scan. If declared scope modules match problem scope: surface HIGH/MEDIUM exported topics as framing signals before opening question. Code exports not loaded. Silent on failure."
+- **Execution Mechanics → Phased-Subagent Mode — Dynamic injection:** Replace the single "dynamic injection" paragraph with separate V1 (keyword text-scan) and V2 (risk_signals[] match) descriptions. Add note that `"API Conventions"` is auto-appended by the planner for cross-repo StepNodes; engineer may remove false-positive entries.
+- **V2 Artifact Model → Cross-Repo Context section:** Add brainstorm-phase awareness and planning-phase auto-injection as part of the cross-repo model. Update migration path note to reflect the brainstorm and planning changes.
+
+### CHEAT-SHEET.md
+
+- Add new section **Cross-Repo Setup** after the V2 Artifact Primitives section:
+  - Pointer to `.github/skills/cross-repo/SKILL.md` for full format reference
+  - Table: `exports.md` (exporting repo, Service B) vs `imports.md` (importing repo, Service A)
+  - Naming alignment rule (one line): "`exports.md:modules[]` must exactly match `imports.md:scope[]` — case-sensitive, no fuzzy matching"
+  - Phase note: "Set up after ≥5 v2 tickets complete (Phase 3 migration)"
+  - Activation note: what fires automatically at brainstorm, planning, and context-packet phases
+
+### WORKFLOW.md
+
+- Add step in the post-ticket section (after `/index knowledge --incremental`): "Once ≥5 tickets complete on v2 artifacts, set up cross-repo context for services that call each other. Service B writes `exports.md`; Service A writes `imports.md`. See `.github/skills/cross-repo/SKILL.md` for format. After setup: brainstorming automatically surfaces cross-repo signals when problem scope matches a declared import — no command needed."
 
 ---
 

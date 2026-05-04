@@ -15,6 +15,7 @@
 | File | Status | Task |
 |---|---|---|
 | `.github/skills/SCHEMA.md` | Create | Task 1 |
+| `.github/skills/cross-repo/SKILL.md` | Create | Task 1.5 |
 | `.github/skills/validate-artifact/SKILL.md` | Create | Task 2 |
 | `.github/skills/conventions/SKILL.md` | Modify | Task 3 |
 | `.github/skills/review/SKILL.md` | Modify | Task 4 |
@@ -22,9 +23,12 @@
 | `.github/skills/execution/SKILL.md` | Modify | Task 6 |
 | `.github/skills/planning/SKILL.md` | Modify | Task 7 |
 | `.github/skills/spec-writing/SKILL.md` | Modify | Task 8 |
-| `.github/skills/brainstorming/SKILL.md` | Modify | Task 9 |
+| `.github/skills/brainstorming/SKILL.md` | Modify | Task 9, Task 9.6 |
+| `github/ARCHITECTURE.md` | Modify | Task 11 |
+| `github/CHEAT-SHEET.md` | Modify | Task 11 |
+| `github/WORKFLOW.md` | Modify | Task 11 |
 
-**Out of scope:** `exports.md` and `imports.md` per-repo files. The context-packet skill (Task 5) reads `imports.md` if it exists. Creating and populating those files is migration Phase 3 (after ≥5 tickets on v2) and is a team adoption activity, not a system change.
+**Out of scope:** Per-repo `exports.md` and `imports.md` files (the actual team-authored content). Task 1.5 creates `cross-repo/SKILL.md` which documents their format. Populating them per-repo is migration Phase 3 (after ≥5 v2 tickets) and is a team adoption activity, not a system change.
 
 ---
 
@@ -242,6 +246,162 @@ Expected: at least 5 matches (one heading or interface declaration per type)
 ```bash
 git add .github/skills/SCHEMA.md
 git commit -m "feat: add SCHEMA.md with v2 primitive definitions, invariants, and evolution policy"
+```
+
+---
+
+### Task 1.5: Create cross-repo skill
+
+**Files:**
+- Create: `.github/skills/cross-repo/SKILL.md`
+
+- [ ] **Step 1: Write cross-repo/SKILL.md**
+
+Write `.github/skills/cross-repo/SKILL.md` with this exact content:
+
+````
+---
+name: cross-repo
+description: Canonical format reference for exports.md and imports.md. Defines YAML schemas, naming rules, guardrails, and operational guide for cross-repo context sharing. Read this before writing either file in any repo.
+---
+
+## Metadata
+
+- **Name:** cross-repo
+- **Phase:** Reference — consulted before writing exports.md or imports.md; not an executable phase skill
+- **Inputs:** None
+- **Outputs:** N/A
+
+---
+
+## When to Use Cross-Repo Context
+
+Use when:
+- Service A will call Service B's API for the first time and no prior integration exists in Service A's codebase
+- A shared library in Service B will be consumed by Service A
+- Service A's engineers need Service B's API surface, DTOs, or constraints during implementation
+
+Set up after ≥5 tickets complete on v2 artifacts (Phase 3 of the v2 migration).
+
+---
+
+## Two Files Required
+
+| File | Location | Written by | Purpose |
+|---|---|---|---|
+| `exports.md` | `[knowledge-path]/exports.md` in the **exporting** repo | Service B engineers | Declares what Service B makes available |
+| `imports.md` | `[knowledge-path]/imports.md` in the **importing** repo | Service A engineers | Declares what Service A wants to consume |
+
+Both files are hand-authored. The system never auto-generates or auto-updates them during execution. Tooling may pre-populate `code_exports` (e.g., scanning for controller annotations), but the final selection of roots and patterns is always human-controlled.
+
+---
+
+## exports.md — Full Schema
+
+```yaml
+# [knowledge-path]/exports.md
+# Written by: engineers of the exporting repo
+# Updated when: new API surfaces added or topics become stale
+
+exported_topics:                            # OPTIONAL — omit if no knowledge signals to share
+  - topic_id: T1                            # REQUIRED  unique string  /^T[0-9]+$/
+    title: "Short descriptive title"        # REQUIRED  non-empty
+    modules: [module-name]                  # REQUIRED  min:1  exact names from THIS repo's codebase index
+    weight: HIGH                            # REQUIRED  HIGH | MEDIUM | LOW
+    type: empirical                         # REQUIRED  system | empirical | external | operational
+    summary: "One-sentence key constraint"  # REQUIRED  non-empty
+    last_updated: YYYY-MM-DD                # REQUIRED  ISO date — topics older than 90 days are not loaded
+
+code_exports:                               # OPTIONAL — omit if no code to share
+  - module: module-name                     # REQUIRED  exact name from THIS repo's codebase index
+    type: api-surface                       # REQUIRED  "api-surface" | "shared-library"
+    roots:                                  # REQUIRED  min:1
+      - path: src/payments/controllers      # REQUIRED  relative to THIS repo root
+        include: ["*.java"]                 # REQUIRED  min:1 glob pattern
+        exclude: ["*Internal*.java"]        # OPTIONAL  default: []
+```
+
+**Type semantics:**
+- `api-surface`: externally callable interfaces — controllers, REST endpoints, gRPC service definitions
+- `shared-library`: reusable internal utilities explicitly safe for cross-repo use
+
+**Root path guardrails — these paths are prohibited as roots:**
+- `src/`
+- `src/main/`
+- `src/main/java/`
+- Any directory resolving to >20 files after include/exclude filtering
+
+Roots must point to a specific package or feature-level directory. If a root exceeds 20 files after filtering: that root is skipped with a warning in the context packet. Split into more specific roots.
+
+---
+
+## imports.md — Full Schema
+
+```yaml
+# [knowledge-path]/imports.md
+# Written by: engineers of the importing repo
+# Updated when: a new cross-repo dependency is introduced
+
+import_sources:
+  - repo: service-b                                   # REQUIRED  human-readable repo identifier
+    exports_path: ../service-b/knowledge/exports.md   # REQUIRED  path to exports.md relative to THIS repo root
+    scope: [payment-integration]                      # REQUIRED  min:1  module names in THIS repo's codebase index
+    include_code:                                     # OPTIONAL  omit = load knowledge signals only, no code
+      - api-surface                                   # values: "api-surface" | "shared-library"
+```
+
+---
+
+## The Naming Alignment Rule
+
+**This is the most common failure mode.**
+
+`exports.md:modules[]` in the exporting repo must **exactly match** `imports.md:scope[]` in the importing repo. Case-sensitive string equality. No fuzzy matching. A single character difference produces no signal and no error.
+
+```yaml
+# BROKEN — one character difference, produces no match, no error
+# service-b/exports.md
+modules: [payment-api]      # "payment-api"
+
+# service-a/imports.md
+scope: [payments-api]       # "payments-api" — no match
+```
+
+Convention: use lowercase hyphenated names matching your codebase index format (`payment-api`, `auth-service`) consistently across all repos.
+
+---
+
+## What Fires at Each Phase
+
+| Phase | What activates | What is loaded |
+|---|---|---|
+| Brainstorming | Silent scan when problem scope matches `imports.md:scope` | HIGH/MEDIUM `exported_topics` only — as framing context before opening question |
+| Planning | Auto-injection when StepNode files resolve to a scoped module | `risk_signals: ["API Conventions"]` appended to matching StepNodes |
+| Context Packet | Full cross-repo resolution | `exported_topics` signals + `code_exports` files (when `include_code:` declared) |
+
+Code files from `code_exports` are only loaded at context packet time. They do not appear during brainstorming or planning.
+
+---
+
+## File Cap Summary
+
+| Cap | Value | Behavior when exceeded |
+|---|---|---|
+| Per-root file cap | 20 files | Root skipped; warning in context packet |
+| Global per-import-source per-phase cap | 50 files | First 50 lexicographically; warning logged |
+| Per-file line cap | 500 lines | File truncated; `... (truncated)` appended |
+````
+
+- [ ] **Step 2: Verify cross-repo/SKILL.md has both schemas and the naming rule**
+
+Run: `grep -c 'exported_topics\|import_sources\|include_code\|code_exports\|Naming Alignment' .github/skills/cross-repo/SKILL.md`
+Expected: 5 matches
+
+- [ ] **Step 3: Commit cross-repo skill**
+
+```bash
+git add .github/skills/cross-repo/SKILL.md
+git commit -m "feat: add cross-repo/SKILL.md — canonical format reference for exports.md and imports.md"
 ```
 
 ---
@@ -1016,10 +1176,37 @@ amendments: []
 **Immutability rule:** All fields above the `# ── OWNED BY PLANNING` comment are inherited verbatim from the spec. Do not modify them. `/validate-artifact` at the consuming phase will byte-for-byte compare these fields against the spec source and BLOCK on any mismatch.
 ```
 
+- [ ] **Step 4.5: Add cross-repo auto-risk-signal injection to planning skill**
+
+In `.github/skills/planning/SKILL.md`, find the section where StepNodes are finalized before the plan artifact is saved (immediately before the Handoff or Save section). Add this new section immediately before it:
+
+```
+## Cross-Repo Auto-Risk-Signal Injection (SPEC_VERSION = 2 only — runs after all StepNodes written)
+
+If `[knowledge-path]/imports.md` exists and is readable, run once before writing the plan artifact:
+
+```
+For each StepNode S across all phases:
+  For each FileRef F in S.files:
+    module = resolve(F.path)   # same rule as context-packet: longest prefix → Reach score → alphabetical
+    For each import_source in imports.md:
+      If module ∈ import_source.scope (exact string match):
+        If "API Conventions" ∉ S.risk_signals:
+          Append "API Conventions" to S.risk_signals
+```
+
+Rules:
+- Silent no-op when `imports.md` is absent or unreadable — no warning.
+- Only injects `"API Conventions"`. Does not infer or inject other section names.
+- Does not remove or replace existing `risk_signals[]` entries. Appends only.
+- Injection is visible in the written plan artifact. Engineer may remove false-positive entries before approving.
+- Only runs for SPEC_VERSION = 2. V1 planning is unchanged.
+```
+
 - [ ] **Step 5: Verify all planning skill changes**
 
-Run: `grep -c 'SPEC_VERSION\|schema_version: 2\|retrieval_constraints\|risk_signals\|phase_resolved' .github/skills/planning/SKILL.md`
-Expected: at least 4 distinct matches
+Run: `grep -c 'SPEC_VERSION\|schema_version: 2\|retrieval_constraints\|risk_signals\|Auto-Risk-Signal' .github/skills/planning/SKILL.md`
+Expected: at least 5 distinct matches
 
 - [ ] **Step 6: Commit planning skill upgrade**
 
@@ -1226,6 +1413,190 @@ git commit -m "feat: upgrade brainstorming skill to v2 BrainstormArtifact output
 
 ---
 
+### Task 9.5: Add Cross-Repo Code Access Support to context-packet skill
+
+**Files:**
+- Modify: `.github/skills/context-packet/SKILL.md`
+
+This task extends the context-packet skill to support code loading via `code_exports`/`include_code`.
+Builds on Task 5's Step 7.5 (cross-repo signal loading) — code loading runs in the same step,
+after topic signals are loaded.
+
+**Constraints:**
+- Planning and execution MUST NOT assume access to cross-repo code unless it is explicitly
+  declared in both `exports.md:code_exports` (exporting repo) and `imports.md:include_code`
+  (importing repo). Missing exports or imports silently produce no code section — they do not
+  block execution or reduce coverage confidence.
+- Cross-repo code loading must respect the global file cap (50 per import_source per phase),
+  lexicographic ordering, per-file 500-line truncation, binary file skipping, and root-level
+  deduplication defined in the spec. Context size must remain bounded and deterministic.
+
+- [ ] **Step 1: Extend Step 7.5 in context-packet/SKILL.md with code loading**
+
+In `.github/skills/context-packet/SKILL.md`, find `## Step 7.5: Load Cross-Repo Signals`.
+The section ends with:
+
+```
+CROSS_REPO_SIGNALS do NOT count against the knowledge loading budget.
+```
+
+Append immediately after:
+
+```
+**Code loading (runs after topic signal resolution, same step):**
+
+Initialize CROSS_REPO_CODE = [] and CROSS_REPO_CODE_WARNINGS = [].
+
+For each import_source where `include_code` is present and non-empty:
+  For each phase_module in PHASE_MODULES:
+    If phase_module ∈ import_source.scope (exact string match):
+      (exports already read above — reuse parsed content)
+      If exports.code_exports is absent: skip code loading for this source
+
+      For each code_export where:
+        code_export.module == phase_module (exact string)
+        AND code_export.type ∈ import_source.include_code:
+
+          Accumulate files across all roots for this code_export:
+            For each root in code_export.roots:
+              If root.path does not exist: skip silently
+              List files under root.path
+              Apply root.include patterns (keep matches only)
+              Apply root.exclude patterns (remove matches)
+              Skip binary / non-text files silently
+              If result > 20 files:
+                Add to CROSS_REPO_CODE_WARNINGS: "Root [root.path] skipped — exceeds 20-file limit"
+                Skip root; continue to next root
+              Else: add files to candidate set
+
+            Deduplicate candidate set by full path (keep first lexicographic occurrence)
+            Sort candidate set lexicographically by full path
+            Apply global cap: if candidate set > 50 files, keep first 50
+              and add to CROSS_REPO_CODE_WARNINGS: "import_source [repo] capped at 50 files"
+            For each file in candidate set:
+              Read content; truncate at 500 lines with "... (truncated)" if needed
+            Add group {repo, module, type, root_summary, files, warnings} to CROSS_REPO_CODE
+
+CROSS_REPO_CODE does NOT affect CONFIDENCE.
+CROSS_REPO_CODE does NOT count against the knowledge loading budget.
+Multiple import_sources are processed independently; results concatenated.
+```
+
+- [ ] **Step 2: Add ## Cross-Repo Code section to Step 8 template**
+
+In `.github/skills/context-packet/SKILL.md`, in the Step 8 template, locate the
+`## Cross-Repo Signals` block added in Task 5. After its closing `---`, insert:
+
+```
+    [If CROSS_REPO_CODE is non-empty:]
+    ## Cross-Repo Code
+
+    _(Advisory only — files loaded from declared code_exports roots via exact module+type
+    match. Cannot block execution, modify artifact fields, affect coverage_confidence,
+    or create contradicts relationships with local topics.)_
+
+    [For each group in CROSS_REPO_CODE:]
+    ### [repo name] — [module] ([type])
+    _Source roots: [root.path list] | Patterns: [include] | Excluded: [exclude]_
+
+    [For each file in group.files:]
+    **[filename]**
+    [file content]
+
+    [For each warning in group.warnings:]
+    ⚠️ [warning text]
+
+    ---
+
+```
+
+Also append to the Rules block at the bottom of Step 8:
+```
+- `## Cross-Repo Code` appears only when CROSS_REPO_CODE is non-empty. Omit when empty — no placeholder.
+- Cross-repo code is advisory only. Cannot create `contradicts` relationships or affect confidence.
+- Warnings are surfaced inline under the relevant group — not in a separate section.
+- Context size is bounded: 50-file global cap per import_source per phase, 500-line per-file truncation.
+```
+
+- [ ] **Step 3: Verify context-packet changes**
+
+Run: `grep -c 'CROSS_REPO_CODE\|include_code\|code_exports\|global cap\|500 lines' .github/skills/context-packet/SKILL.md`
+Expected: at least 5 matches
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add .github/skills/context-packet/SKILL.md
+git commit -m "feat: add cross-repo code loading to context-packet skill (bounded, deterministic, scoped exports)"
+```
+
+---
+
+### Task 9.6: Add cross-repo awareness scan to brainstorming skill
+
+**Files:**
+- Modify: `.github/skills/brainstorming/SKILL.md`
+
+Change: Add silent `imports.md` scan before the opening question — surfaces HIGH/MEDIUM exported topics as framing signals when problem scope overlaps declared import scope.
+
+- [ ] **Step 1: Confirm scan section not yet present**
+
+Run: `grep -n 'CROSS_REPO_FRAMING_SIGNALS\|imports.md' .github/skills/brainstorming/SKILL.md`
+Expected: no output (section not yet added).
+
+- [ ] **Step 2: Add cross-repo awareness scan section**
+
+In `.github/skills/brainstorming/SKILL.md`, find the `**Understanding the idea:**` section heading. Insert this new section IMMEDIATELY BEFORE it:
+
+```
+## Cross-Repo Awareness Scan (runs silently before opening question)
+
+Read `[KNOWLEDGE_PATH]/../imports.md`. If this file does not exist: skip this section entirely — no signal, no warning.
+
+If the file exists:
+```
+For each import_source in imports.md:
+  For each module in brainstorm_scope (from the same codebase index scan already run):
+    If module ∈ import_source.scope (exact string match):
+      Read import_source.exports_path
+      For each exported_topic where weight ∈ {HIGH, MEDIUM}
+        AND days_since(exported_topic.last_updated) <= 90:
+          → add to CROSS_REPO_FRAMING_SIGNALS
+```
+
+If CROSS_REPO_FRAMING_SIGNALS is non-empty, output before the opening question:
+
+```
+Cross-repo signal found:
+  [module] → [repo] ([type]) | [weight]
+  [topic_id]: [summary]
+
+Framing the opening question around this constraint.
+```
+
+Rules:
+- Silent on failure: absent `imports.md`, unreachable `exports_path`, no scope match, or parse error → proceed with no signal, no warning.
+- HIGH and MEDIUM weight topics only. LOW weight not loaded at brainstorm phase.
+- `code_exports` are NOT loaded — knowledge signals only.
+- If a cross-repo signal contradicts a known local constraint: add as an entry in `open_decisions[]`.
+- `CROSS_REPO_FRAMING_SIGNALS` inform framing and acceptance signal writing only. They do not appear as BrainstormArtifact fields.
+
+```
+
+- [ ] **Step 3: Verify scan section was added**
+
+Run: `grep -c 'CROSS_REPO_FRAMING_SIGNALS\|imports.md\|Cross-repo signal found' .github/skills/brainstorming/SKILL.md`
+Expected: 3 matches
+
+- [ ] **Step 4: Commit brainstorming cross-repo scan**
+
+```bash
+git add .github/skills/brainstorming/SKILL.md
+git commit -m "feat: add cross-repo imports.md awareness scan to brainstorming skill — surfaces framing signals before opening question"
+```
+
+---
+
 ## Task 10: End-to-End Smoke Test
 
 **Files:** none modified — verification only
@@ -1375,6 +1746,156 @@ git commit -m "feat: complete v2 artifact evolution — all 9 skills upgraded, s
 
 ---
 
+## Task 11: Update Documentation Files
+
+**Files:**
+- Modify: `github/ARCHITECTURE.md`
+- Modify: `github/CHEAT-SHEET.md`
+- Modify: `github/WORKFLOW.md`
+
+Run after all skill upgrades are committed and smoke tests pass (Task 10 complete).
+
+---
+
+### Task 11a: Update ARCHITECTURE.md
+
+- [ ] **Step 1: Update Brainstorm row in Per-Phase Integration table**
+
+In `github/ARCHITECTURE.md`, find the **Retrieval Integration → Per-Phase Integration** table. Find the `**Brainstorm**` row:
+
+```
+| **Brainstorm** | Silent intelligence scan: read codebase index, identify candidate modules and HIGH-weight knowledge signals, frame opening question around findings. When no candidates found: state "Index has no match for this area — starting without codebase context." Absence is always stated, never silent. No module pages loaded — index only. |
+```
+
+Replace with:
+
+```
+| **Brainstorm** | Silent intelligence scan: read codebase index, identify candidate modules and HIGH-weight knowledge signals, frame opening question around findings. When no candidates found: state "Index has no match for this area — starting without codebase context." Absence is always stated, never silent. No module pages loaded — index only. **V2 addition:** after codebase scan, silent `imports.md` scan — if declared scope modules match problem scope, HIGH/MEDIUM exported topics from the exporting repo are surfaced as framing signals before the opening question. Code exports not loaded at this phase. Silent on failure (absent file, no match, unreachable path). |
+```
+
+- [ ] **Step 2: Update Dynamic injection paragraph in Phased-Subagent Mode**
+
+In `github/ARCHITECTURE.md`, find the dynamic injection paragraph:
+
+```
+**Dynamic injection:** Relevant sections from `conventions/SKILL.md` are dynamically injected based on step requirements (e.g. error handling, API conventions, data conventions). The parent session scans step text before dispatch and appends matching sections — pull-based, not push-based. If a matching section does not exist in conventions: no injection, no warning.
+```
+
+Replace with:
+
+```
+**Dynamic injection (v1):** Relevant sections from `conventions/SKILL.md` are dynamically injected based on step requirements. The parent session scans step text for keyword patterns before dispatch and appends matching sections. If a matching section does not exist in conventions: no injection, no warning.
+
+**Dynamic injection (v2):** Injection is determined by `StepNode.risk_signals[]` — exact header-text match against conventions section headers. No step-text scan. `"API Conventions"` is automatically appended to `risk_signals[]` by the planner for any StepNode whose resolved module appears in `imports.md:scope`. Engineers may remove auto-injected entries from the plan artifact before approving.
+```
+
+- [ ] **Step 3: Add brainstorm-phase and planning-phase cross-repo notes to V2 Cross-Repo section**
+
+In `github/ARCHITECTURE.md`, find the **V2 Artifact Model → Cross-Repo Context** section. After the sentence:
+
+```
+Each participating repo maintains `exports.md` (what it publishes) and `imports.md` (what it monitors). Import resolution runs at context packet assembly time using exact string matching
+```
+
+Add immediately after that sentence (before the next paragraph):
+
+```
+**Brainstorm-phase awareness (v2):** When `imports.md` is declared, brainstorming silently scans it at session start. If problem scope modules match any declared import scope, HIGH/MEDIUM knowledge signals from the exporting repo are surfaced as framing context before the first question. Acceptance signals and open decisions are written with knowledge of cross-repo constraints from the start of the ticket.
+
+**Planning-phase injection (v2):** After all StepNodes are written, the planner scans each StepNode's resolved file modules against `imports.md:scope`. Matching StepNodes receive `risk_signals: ["API Conventions"]` automatically, ensuring lean conventions injection covers the API conventions section for cross-service steps.
+```
+
+- [ ] **Step 4: Verify ARCHITECTURE.md changes**
+
+Run: `grep -c 'V2 addition\|Dynamic injection (v1)\|Brainstorm-phase awareness\|Planning-phase injection' github/ARCHITECTURE.md`
+Expected: 4 matches
+
+- [ ] **Step 5: Commit ARCHITECTURE.md**
+
+```bash
+git add github/ARCHITECTURE.md
+git commit -m "docs: update ARCHITECTURE.md — v2 cross-repo brainstorm scan, planning auto-injection, lean injection split"
+```
+
+---
+
+### Task 11b: Update CHEAT-SHEET.md
+
+- [ ] **Step 1: Add Cross-Repo Setup section**
+
+In `github/CHEAT-SHEET.md`, find the `## System Philosophy` section. Insert this new section IMMEDIATELY BEFORE it:
+
+```
+---
+
+## Cross-Repo Setup (Phase 3 — after ≥5 v2 tickets)
+
+Full format reference: `.github/skills/cross-repo/SKILL.md`
+
+| File | Location | Written by | When |
+|---|---|---|---|
+| `exports.md` | `[knowledge-path]/exports.md` in **exporting** repo | Service B engineers | When first exposing an API surface to another service |
+| `imports.md` | `[knowledge-path]/imports.md` in **importing** repo | Service A engineers | When first consuming an external API |
+
+**Naming alignment rule:** `exports.md:modules[]` must exactly match `imports.md:scope[]` — case-sensitive, no fuzzy matching. A single character difference produces no signal and no error.
+
+**What fires automatically after setup:**
+
+| Phase | Behavior |
+|---|---|
+| Brainstorming | Silent scan surfaces HIGH/MEDIUM exported topics as framing context when problem scope matches a declared import |
+| Planning | `risk_signals: ["API Conventions"]` auto-appended to StepNodes touching scoped modules (removable before plan approval) |
+| Context Packet | Full cross-repo signals + code files loaded when `include_code:` declared in `imports.md` |
+
+```
+
+- [ ] **Step 2: Verify CHEAT-SHEET.md changes**
+
+Run: `grep -c 'Cross-Repo Setup\|exports.md\|imports.md\|Naming alignment' github/CHEAT-SHEET.md`
+Expected: at least 4 matches
+
+- [ ] **Step 3: Commit CHEAT-SHEET.md**
+
+```bash
+git add github/CHEAT-SHEET.md
+git commit -m "docs: add Cross-Repo Setup section to CHEAT-SHEET.md"
+```
+
+---
+
+### Task 11c: Update WORKFLOW.md
+
+- [ ] **Step 1: Locate post-ticket section**
+
+Run: `grep -n 'index knowledge\|after.*ticket\|close' github/WORKFLOW.md | head -20`
+Expected: lines showing the post-ticket or knowledge loop section.
+
+- [ ] **Step 2: Add cross-repo setup guidance**
+
+In `github/WORKFLOW.md`, find the instruction for running `/index knowledge --incremental` after a ticket closes. Add this block immediately after it:
+
+```
+**Once ≥5 tickets complete on v2 artifacts — set up cross-repo context (one time per service pair):**
+
+If Service A calls Service B's API: Service B writes `[knowledge-path]/exports.md` declaring available API surfaces and knowledge signals. Service A writes `[knowledge-path]/imports.md` declaring which of its modules monitor which services. See `.github/skills/cross-repo/SKILL.md` for the full format.
+
+After setup: brainstorming automatically surfaces Service B's knowledge signals when problem scope touches a monitored module. No command needed — the scan runs silently at session start. Context packets load Service B's actual code files when `include_code:` is declared.
+```
+
+- [ ] **Step 3: Verify WORKFLOW.md changes**
+
+Run: `grep -c 'cross-repo\|exports.md\|imports.md\|service pair' github/WORKFLOW.md`
+Expected: at least 3 matches
+
+- [ ] **Step 4: Commit WORKFLOW.md**
+
+```bash
+git add github/WORKFLOW.md
+git commit -m "docs: add cross-repo setup guidance to WORKFLOW.md post-ticket section"
+```
+
+---
+
 ## Testing Checklist (run after all tasks complete)
 
 - [ ] All 9 files present with expected changes:
@@ -1389,6 +1910,14 @@ git commit -m "feat: complete v2 artifact evolution — all 9 skills upgraded, s
   - `grep -c 'PLAN_VERSION = 1\|SPEC_VERSION = 1\|BRAINSTORM_VERSION = 1' .github/skills/execution/SKILL.md .github/skills/planning/SKILL.md .github/skills/spec-writing/SKILL.md` — expected: at least one line per file
 - [ ] Conventions has incidental file patterns field:
   - `grep 'Incidental file patterns' .github/skills/conventions/SKILL.md` — expected: one line
+- [ ] Cross-repo skill is present with both schemas and naming rule:
+  - `grep -c 'exported_topics\|import_sources\|Naming Alignment' .github/skills/cross-repo/SKILL.md` — expected: 3
+- [ ] Brainstorming skill has cross-repo awareness scan:
+  - `grep 'CROSS_REPO_FRAMING_SIGNALS' .github/skills/brainstorming/SKILL.md` — expected: at least one line
+- [ ] Planning skill has auto-risk-signal injection:
+  - `grep 'Auto-Risk-Signal' .github/skills/planning/SKILL.md` — expected: at least one line
+- [ ] Documentation files updated:
+  - `grep -l 'V2 addition\|Cross-Repo Setup\|cross-repo' github/ARCHITECTURE.md github/CHEAT-SHEET.md github/WORKFLOW.md` — expected: all 3 files listed
 
 ## Rollback Plan
 

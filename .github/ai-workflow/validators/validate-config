@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+import yaml
+
+
+def fail(reason: str) -> int:
+    print(f"FAIL: {reason}")
+    return 1
+
+
+def require(condition: bool, reason: str):
+    if not condition:
+        raise ValueError(reason)
+
+
+def require_string(value, path: str):
+    require(isinstance(value, str) and value.strip(), f"{path} must be a non-empty string")
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        return fail("usage: validate-config <config-path>")
+
+    try:
+        path = Path(sys.argv[1])
+        require(path.exists(), f"config does not exist: {path}")
+        data = yaml.safe_load(path.read_text())
+        require(isinstance(data, dict), "config must be a mapping")
+
+        require(set(data.keys()) == {"project", "commands", "workflow"}, "config must contain only project, commands, and workflow")
+
+        project = data.get("project")
+        require(isinstance(project, dict), "project must be a mapping")
+        require(set(project.keys()) == {"name", "description", "primary_language", "framework"}, "project must contain only name, description, primary_language, and framework")
+        require_string(project.get("name"), "project.name")
+        require_string(project.get("description"), "project.description")
+        require_string(project.get("primary_language"), "project.primary_language")
+        require_string(project.get("framework"), "project.framework")
+
+        commands = data.get("commands")
+        require(isinstance(commands, dict), "commands must be a mapping")
+        require(set(commands.keys()) == {"build", "test", "verify", "lint"}, "commands must contain only build, test, verify, and lint")
+        require_string(commands.get("build"), "commands.build")
+        require_string(commands.get("test"), "commands.test")
+        require_string(commands.get("verify"), "commands.verify")
+        require_string(commands.get("lint"), "commands.lint")
+
+        workflow = data.get("workflow")
+        require(isinstance(workflow, dict), "workflow must be a mapping")
+        require(set(workflow.keys()) == {"cli_handoff_allowed", "task_path", "instruction_version"}, "workflow must contain only cli_handoff_allowed, task_path, and instruction_version")
+        require(isinstance(workflow.get("cli_handoff_allowed"), bool), "workflow.cli_handoff_allowed must be boolean")
+        require_string(workflow.get("task_path"), "workflow.task_path")
+        require(workflow.get("instruction_version") == "v1", "workflow.instruction_version must be v1")
+
+        print("PASS")
+        return 0
+    except ValueError as exc:
+        return fail(str(exc))
+    except Exception as exc:
+        return fail(f"unexpected validation error: {exc}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

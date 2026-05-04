@@ -1,0 +1,39 @@
+command_contract_id: quick-task.v1
+stable_alias: /quick-task
+contract_version: 1
+
+input_artifacts: []
+
+output_artifacts:
+  - type: QuickTaskRecord
+    schema: quick-task.schema.v1
+    required: true
+
+required_validators:
+  before:
+    - validate-plan-scope
+    - validate-quick-task-preclassify
+  after:
+    - validate-artifact
+    - validate-plan-scope
+
+authority:
+  may_create:
+    - QuickTaskRecord
+  may_modify:
+    - files_declared_in_quick_task_record
+  may_read:
+    - directly_affected_files
+  forbidden:
+    - modify_manifest
+    - modify_schemas
+    - modify_policies
+    - edit_outside_declared_scope
+    - bypass_validation
+
+semantics:
+  required:
+    - run_escalation_check_before_any_edits
+    - escalate_to_grill_if_any_trigger_fires
+    - record_planned_and_actual_files
+    - save_quick_task_record_to_task_folder

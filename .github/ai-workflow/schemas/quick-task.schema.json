@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Quick Task Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "status",
+    "task_summary",
+    "change_class",
+    "files",
+    "escalation",
+    "verification",
+    "review"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "quick-task.schema.v1"
+    },
+    "command": {
+      "type": "string",
+      "const": "/quick-task"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS_QUICK",
+        "FAIL",
+        "ESCALATED_TO_FULL_WORKFLOW"
+      ]
+    },
+    "task_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "change_class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "policy_allowed",
+        "classification_status"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy_allowed": {
+          "type": "boolean"
+        },
+        "classification_status": {
+          "type": "string",
+          "enum": [
+            "proposed",
+            "revised_before_edit",
+            "locked_for_execution"
+          ]
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planned",
+        "actual"
+      ],
+      "properties": {
+        "planned": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fileEntry"
+          }
+        },
+        "actual": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fileEntry"
+          }
+        }
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "reasons"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence"
+      ],
+      "properties": {
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope_match",
+        "disposition",
+        "notes"
+      ],
+      "properties": {
+        "scope_match": {
+          "type": "boolean"
+        },
+        "disposition": {
+          "type": "string",
+          "enum": [
+            "PASS_QUICK",
+            "FAIL",
+            "ESCALATED_TO_FULL_WORKFLOW"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "escalation_seed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "original_request",
+        "escalation_reason",
+        "observed_change_class",
+        "planned_files",
+        "actual_files_changed",
+        "recommended_next_command"
+      ],
+      "properties": {
+        "original_request": {
+          "type": "string",
+          "minLength": 1
+        },
+        "escalation_reason": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "observed_change_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planned_files": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "actual_files_changed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "recommended_next_command": {
+          "type": "string",
+          "const": "/write-spec"
+        }
+      }
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifies the task; used to locate artifact storage path."
+    },
+    "validated_under": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manifest_version": {
+          "type": "integer"
+        },
+        "policy_version": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "validated_at": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "fileEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "operation"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "create",
+            "modify",
+            "delete"
+          ]
+        }
+      }
+    }
+  }
+}

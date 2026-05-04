@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Brainstorm Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "status",
+    "task_summary",
+    "problem_statement",
+    "goals",
+    "non_goals",
+    "constraints",
+    "open_questions",
+    "review",
+    "handoff"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "brainstorm.schema.v1"
+    },
+    "command": {
+      "const": "/brainstorm"
+    },
+    "status": {
+      "enum": [
+        "READY_FOR_SPEC",
+        "BLOCKED"
+      ]
+    },
+    "task_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "problem_statement": {
+      "type": "string",
+      "minLength": 1
+    },
+    "goals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "non_goals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "disposition",
+        "notes"
+      ],
+      "properties": {
+        "disposition": {
+          "enum": [
+            "READY_FOR_SPEC",
+            "BLOCKED"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recommended_next_command"
+      ],
+      "properties": {
+        "recommended_next_command": {
+          "const": "/write-spec"
+        }
+      }
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifies the task; used to locate artifact storage path."
+    },
+    "validated_under": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manifest_version": {
+          "type": "integer"
+        },
+        "policy_version": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "validated_at": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+import yaml
+
+
+BRAINTSTORM_POLICY_PATH = Path(".github/ai-workflow/policies/brainstorm-policy.v1.yaml")
+QUICK_TASK_POLICY_PATH = Path(".github/ai-workflow/policies/quick-task-policy.v1.yaml")
+SPEC_POLICY_PATH = Path(".github/ai-workflow/policies/spec-policy.v1.yaml")
+WORKFLOW_POLICY_PATH = Path(".github/ai-workflow/policies/workflow-policy.v1.yaml")
+VERIFICATION_POLICY_PATH = Path(".github/ai-workflow/policies/verification-policy.v1.yaml")
+WILDCARD_CHARS = set("*?[]")
+
+
+def fail(reason: str) -> int:
+    print(f"FAIL: {reason}")
+    return 1
+
+
+def require(condition: bool, reason: str):
+    if not condition:
+        raise ValueError(reason)
+
+
+def load_yaml(path: Path):
+    data = yaml.safe_load(path.read_text())
+    require(isinstance(data, dict), f"{path} must contain a mapping")
+    return data
+
+
+def require_exact_path(path_value, path_label: str):
+    require(isinstance(path_value, str) and path_value.strip(), f"{path_label} must be a non-empty string")
+    require(not any(ch in path_value for ch in WILDCARD_CHARS), f"{path_label} must be exact")
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        return fail("usage: validate-plan-scope <artifact-path>")
+
+    try:
+        artifact = load_yaml(Path(sys.argv[1]))
+        schema_version = artifact.get("schema_version")
+
+        if schema_version == "brainstorm.schema.v1":
+            policy = load_yaml(BRAINTSTORM_POLICY_PATH)
+            require(artifact.get("status") in set(policy["allowed_statuses"]), "brainstorm status must be allowed by brainstorm policy")
+            require(len(artifact["goals"]) >= policy["minimum_goals"], "brainstorm goals are below policy minimum")
+            require(len(artifact["non_goals"]) >= policy["minimum_non_goals"], "brainstorm non_goals are below policy minimum")
+            if artifact.get("status") == "READY_FOR_SPEC":
+                require(artifact["handoff"]["recommended_next_command"] == "/write-spec", "READY_FOR_SPEC brainstorm must hand off to /write-spec")
+        elif schema_version == "quick-task.schema.v1":
+            policy = load_yaml(QUICK_TASK_POLICY_PATH)
+            planned = artifact["files"]["planned"]
+            require(len(planned) <= policy["max_files"], f"planned file count exceeds max_files={policy['max_files']}")
+            for idx, entry in enumerate(planned):
+                require_exact_path(entry.get("path"), f"files.planned[{idx}].path")
+            value = artifact["change_class"].get("value")
+            require(isinstance(value, str) and value.strip(), "change_class.value must be declared")
+            allowed = set(policy["allowed_change_classes"])
+            forbidden = set(policy["forbidden_change_classes"])
+            require(value in allowed or value in forbidden, "change_class.value must be present in quick-task policy")
+            policy_allowed = artifact["change_class"].get("policy_allowed")
+            require(isinstance(policy_allowed, bool), "change_class.policy_allowed must be boolean")
+            if value in forbidden:
+                require(policy_allowed is False, "forbidden change class must set policy_allowed=false")
+                require(artifact.get("status") == "ESCALATED_TO_FULL_WORKFLOW", "forbidden change class must escalate")
+            if value in allowed:
+                require(policy_allowed is True, "allowed change class must set policy_allowed=true")
+        elif schema_version == "spec.schema.v1":
+            policy = load_yaml(SPEC_POLICY_PATH)
+            require(artifact.get("status") in set(policy["allowed_statuses"]), "spec status must be allowed by spec policy")
+            source_type = artifact["source_context"].get("source_type")
+            require(source_type in set(policy["allowed_source_types"]), "source_context.source_type must be allowed by spec policy")
+            in_scope = artifact["scope"]["in_scope"]
+            out_of_scope = artifact["scope"]["out_of_scope"]
+            require(isinstance(in_scope, list), "scope.in_scope must be a list")
+            require(isinstance(out_of_scope, list), "scope.out_of_scope must be a list")
+            for idx, path in enumerate(in_scope):
+                require_exact_path(path, f"scope.in_scope[{idx}]")
+            for idx, path in enumerate(out_of_scope):
+                require_exact_path(path, f"scope.out_of_scope[{idx}]")
+            if artifact.get("status") == "READY_FOR_PLAN":
+                require(bool(in_scope), "READY_FOR_PLAN spec must include at least one in-scope path")
+            requirements = artifact["requirements"]
+            require(len(requirements) >= policy["minimum_requirements"], "spec requirement count is below policy minimum")
+            for idx, requirement in enumerate(requirements):
+                affected = requirement.get("affected_paths")
+                require(isinstance(affected, list) and affected, f"requirements[{idx}].affected_paths must be a non-empty list")
+                for path_idx, path in enumerate(affected):
+                    require_exact_path(path, f"requirements[{idx}].affected_paths[{path_idx}]")
+        elif schema_version == "plan.schema.v1":
+            workflow = load_yaml(WORKFLOW_POLICY_PATH)
+            require(artifact.get("status") in set(workflow["allowed_planning_statuses"]), "plan status must be allowed by workflow policy")
+            steps = artifact["steps"]
+            if artifact.get("status") == "BLOCKED":
+                require(not steps, "blocked plan must have no executable steps")
+            else:
+                require(artifact.get("execution_mode") in set(workflow["allowed_execution_modes"]), "execution_mode must be allowed by workflow policy")
+                require(bool(steps), "ready or degraded plan must include steps")
+            planned_files = 0
+            for idx, step in enumerate(steps):
+                files = step.get("files")
+                require(isinstance(files, list) and files, f"steps[{idx}].files must be a non-empty list")
+                planned_files += len(files)
+                require(len(files) <= workflow["max_files_per_step"], f"steps[{idx}] exceeds max_files_per_step={workflow['max_files_per_step']}")
+                for path_idx, path in enumerate(files):
+                    require_exact_path(path, f"steps[{idx}].files[{path_idx}]")
+            if artifact.get("execution_mode") == "inline":
+                require(planned_files <= workflow["max_inline_files"], f"inline plans must touch at most {workflow['max_inline_files']} files")
+            if artifact.get("status") == "DEGRADED" and workflow["force_phased_when_degraded"]:
+                require(artifact.get("execution_mode") != "inline", "degraded plans must use phased execution")
+        elif schema_version == "verification.schema.v1":
+            policy = load_yaml(VERIFICATION_POLICY_PATH)
+            require(artifact.get("status") in set(policy["allowed_statuses"]), "verification status must be allowed by verification policy")
+            if policy["require_changed_files"]:
+                require(isinstance(artifact.get("changed_files"), list), "changed_files must be a list")
+                for idx, path in enumerate(artifact["changed_files"]):
+                    require_exact_path(path, f"changed_files[{idx}]")
+            if policy["require_evidence"]:
+                require(bool(artifact.get("evidence")), "verification evidence is required")
+            # Verification command binding: if plan declared verification_command, run must match
+            command_run = artifact.get("verification_command_run")
+            if command_run is not None:
+                require(isinstance(command_run, str) and command_run.strip(), "verification_command_run must be a non-empty string")
+                plan_ref = artifact.get("plan_ref")
+                if plan_ref and Path(plan_ref).exists():
+                    plan_artifact = load_yaml(Path(plan_ref))
+                    plan_cmd = plan_artifact.get("verification_command")
+                    if plan_cmd:
+                        require(
+                            command_run == plan_cmd,
+                            f"verification_command_run ('{command_run}') must exactly match "
+                            f"plan.verification_command ('{plan_cmd}')",
+                        )
+        elif schema_version == "review.schema.v1":
+            require(isinstance(artifact.get("actual_changed_files"), list), "actual_changed_files must be a list")
+            for idx, path in enumerate(artifact["actual_changed_files"]):
+                require_exact_path(path, f"actual_changed_files[{idx}]")
+        else:
+            raise ValueError("schema_version must be one of brainstorm/spec/plan/verification/review/quick-task schema versions")
+
+        print("PASS")
+        return 0
+    except ValueError as exc:
+        return fail(str(exc))
+    except Exception as exc:
+        return fail(f"unexpected validation error: {exc}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

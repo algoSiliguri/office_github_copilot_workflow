@@ -1,0 +1,68 @@
+manifest_version: 1
+workflow_contract_version: 1
+supported_manifest_versions:
+  - 1
+
+runtime:
+  root: .github/ai-workflow
+  bootstrap_validator: .github/ai-workflow/validators/bootstrap
+
+paths:
+  contracts_root: .github/ai-workflow/contracts
+  schemas_root: .github/ai-workflow/schemas
+  policies_root: .github/ai-workflow/policies
+  skills_root: .github/ai-workflow/skills
+  protocols_root: .github/ai-workflow/protocols
+  validators_root: .github/ai-workflow/validators
+  artifacts_root: .github/ai-workflow/artifacts
+  logs_root: .github/ai-workflow/logs
+
+commands:
+  /brainstorm:
+    contract: brainstorm.v1
+    file: .github/ai-workflow/contracts/commands/brainstorm.v1.yaml
+  /quick-task:
+    contract: quick-task.v1
+    file: .github/ai-workflow/contracts/commands/quick-task.v1.yaml
+  /write-spec:
+    contract: write-spec.v1
+    file: .github/ai-workflow/contracts/commands/write-spec.v1.yaml
+  /write-plan:
+    contract: write-plan.v1
+    file: .github/ai-workflow/contracts/commands/write-plan.v1.yaml
+  /execute-plan:
+    contract: execute-plan.v1
+    file: .github/ai-workflow/contracts/commands/execute-plan.v1.yaml
+  /verify:
+    contract: verify.v1
+    file: .github/ai-workflow/contracts/commands/verify.v1.yaml
+  /review:
+    contract: review.v1
+    file: .github/ai-workflow/contracts/commands/review.v1.yaml
+
+schemas:
+  brainstorm: .github/ai-workflow/schemas/brainstorm.schema.json
+  manifest: .github/ai-workflow/schemas/manifest.schema.json
+  command_contract: .github/ai-workflow/schemas/command-contract.schema.json
+  quick_task: .github/ai-workflow/schemas/quick-task.schema.json
+  spec: .github/ai-workflow/schemas/spec.schema.json
+  plan: .github/ai-workflow/schemas/plan.schema.json
+  verification: .github/ai-workflow/schemas/verification.schema.json
+  review: .github/ai-workflow/schemas/review.schema.json
+
+policies:
+  brainstorm: .github/ai-workflow/policies/brainstorm-policy.v1.yaml
+  quick_task: .github/ai-workflow/policies/quick-task-policy.v1.yaml
+  spec: .github/ai-workflow/policies/spec-policy.v1.yaml
+  workflow: .github/ai-workflow/policies/workflow-policy.v1.yaml
+  retrieval: .github/ai-workflow/policies/retrieval-policy.v1.yaml
+  verification: .github/ai-workflow/policies/verification-policy.v1.yaml
+  review: .github/ai-workflow/policies/review-policy.v1.yaml
+
+validators:
+  bootstrap: .github/ai-workflow/validators/bootstrap
+  manifest: .github/ai-workflow/validators/validate-manifest
+  artifact: .github/ai-workflow/validators/validate-artifact
+  plan_scope: .github/ai-workflow/validators/validate-plan-scope
+  review_gate: .github/ai-workflow/validators/validate-review-gate
+  quick_task_preclassify: .github/ai-workflow/validators/validate-quick-task-preclassify

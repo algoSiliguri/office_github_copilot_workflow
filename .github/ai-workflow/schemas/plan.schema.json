@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Plan Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "status",
+    "task_summary",
+    "source_spec",
+    "retrieval_decision",
+    "steps",
+    "constraints",
+    "review",
+    "handoff"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "plan.schema.v1"
+    },
+    "command": {
+      "const": "/write-plan"
+    },
+    "status": {
+      "enum": ["READY", "DEGRADED", "BLOCKED"]
+    },
+    "task_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_spec": {
+      "type": "string",
+      "minLength": 1
+    },
+    "execution_mode": {
+      "type": "string",
+      "enum": ["inline", "phased-inline", "phased-subagent"]
+    },
+    "retrieval_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "decision", "justification"],
+      "properties": {
+        "required": {"type": "boolean"},
+        "decision": {
+          "enum": ["used", "skipped", "unavailable"]
+        },
+        "justification": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "summary",
+          "requirement_refs",
+          "files",
+          "depends_on",
+          "verification_signals"
+        ],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "summary": {"type": "string", "minLength": 1},
+          "requirement_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "files": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          },
+          "verification_signals": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "notes"],
+      "properties": {
+        "disposition": {
+          "enum": ["READY", "DEGRADED", "BLOCKED"]
+        },
+        "notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "verification_command": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exact command declared at planning time. /verify must run this command — not a substitute."
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifies the task; used to locate artifact storage path."
+    },
+    "validated_under": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manifest_version": {"type": "integer"},
+        "policy_version": {"type": "string"},
+        "schema_version": {"type": "string"},
+        "validated_at": {"type": "string"}
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommended_next_command"],
+      "properties": {
+        "recommended_next_command": {
+          "const": "/execute-plan"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": ["READY", "DEGRADED"]
+          }
+        }
+      },
+      "then": {
+        "required": ["execution_mode"]
+      }
+    }
+  ]
+}

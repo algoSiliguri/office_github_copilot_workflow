@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+import subprocess
+import sys
+from pathlib import Path
+
+import yaml
+
+
+POLICY_PATH = Path(".github/ai-workflow/policies/review-policy.v1.yaml")
+
+GOVERNANCE_PATHS = [
+    ".github/ai-workflow/manifest.yaml",
+    ".github/ai-workflow/policies/",
+    ".github/ai-workflow/schemas/",
+    ".github/ai-workflow/validators/",
+    ".github/ai-workflow/contracts/",
+]
+
+
+def fail(reason: str) -> int:
+    print(f"FAIL: {reason}")
+    return 1
+
+
+def require(condition: bool, reason: str):
+    if not condition:
+        raise ValueError(reason)
+
+
+def load_yaml(path: Path):
+    data = yaml.safe_load(path.read_text())
+    require(isinstance(data, dict), f"{path} must contain a mapping")
+    return data
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        return fail("usage: validate-review-gate <artifact-path>")
+
+    try:
+        policy = load_yaml(POLICY_PATH)
+        artifact = load_yaml(Path(sys.argv[1]))
+        status = artifact["status"]
+        disposition = artifact["review"]["disposition"]
+        allowed = set(policy["allowed_dispositions"])
+        require(disposition in allowed, "review.disposition is not allowed by review policy")
+        schema_version = artifact.get("schema_version")
+
+        if schema_version == "brainstorm.schema.v1":
+            if status == "READY_FOR_SPEC":
+                require(disposition == "READY_FOR_SPEC", "READY_FOR_SPEC brainstorm must use READY_FOR_SPEC review disposition")
+                require(artifact["handoff"]["recommended_next_command"] == "/write-spec", "READY_FOR_SPEC brainstorm must hand off to /write-spec")
+            elif status == "BLOCKED":
+                require(disposition == "BLOCKED", "BLOCKED brainstorm must use BLOCKED disposition")
+            else:
+                raise ValueError("brainstorm status must be READY_FOR_SPEC or BLOCKED")
+        elif schema_version == "quick-task.schema.v1":
+            planned = {entry["path"] for entry in artifact["files"]["planned"]}
+            actual = {entry["path"] for entry in artifact["files"]["actual"]}
+            require(actual.issubset(planned), "actual files must be a subset of planned files")
+            evidence = artifact["verification"]["evidence"]
+            require(isinstance(evidence, list), "verification.evidence must be a list")
+            if artifact["change_class"].get("policy_allowed") is False:
+                require(status == "ESCALATED_TO_FULL_WORKFLOW", "forbidden class must escalate instead of pass")
+                require(disposition == "ESCALATED_TO_FULL_WORKFLOW", "forbidden class review disposition must escalate")
+            if status == "PASS_QUICK":
+                require(bool(evidence), "PASS_QUICK requires verification evidence")
+                require(disposition == "PASS_QUICK", "PASS_QUICK status requires PASS_QUICK disposition")
+            elif not evidence:
+                require(status == "FAIL", "missing evidence must fail")
+                require(disposition == "FAIL", "missing evidence must use FAIL disposition")
+            elif status == "ESCALATED_TO_FULL_WORKFLOW":
+                require(disposition == "ESCALATED_TO_FULL_WORKFLOW", "escalated status must use escalated disposition")
+        elif schema_version == "spec.schema.v1":
+            handoff = artifact["handoff"]["recommended_next_command"]
+            if status == "READY_FOR_PLAN":
+                require(disposition == "READY_FOR_PLAN", "READY_FOR_PLAN spec must use READY_FOR_PLAN review disposition")
+                require(handoff == "/write-plan", "READY_FOR_PLAN spec must hand off to /write-plan")
+            elif status == "BLOCKED":
+                require(disposition == "BLOCKED", "BLOCKED spec must use BLOCKED review disposition")
+            else:
+                raise ValueError("spec status must be READY_FOR_PLAN or BLOCKED")
+        elif schema_version == "plan.schema.v1":
+            handoff = artifact["handoff"]["recommended_next_command"]
+            if status == "READY":
+                require(disposition == "READY", "READY plan must use READY review disposition")
+                require(handoff == "/execute-plan", "READY plan must hand off to /execute-plan")
+            elif status == "DEGRADED":
+                require(disposition == "DEGRADED", "DEGRADED plan must use DEGRADED review disposition")
+                require(handoff == "/execute-plan", "DEGRADED plan must hand off to /execute-plan")
+            elif status == "BLOCKED":
+                require(disposition == "BLOCKED", "BLOCKED plan must use BLOCKED review disposition")
+            else:
+                raise ValueError("plan status must be READY, DEGRADED, or BLOCKED")
+        elif schema_version == "verification.schema.v1":
+            handoff = artifact["handoff"]["recommended_next_command"]
+            if status == "VERIFIED":
+                require(disposition == "VERIFIED", "VERIFIED verification must use VERIFIED disposition")
+                require(handoff == "/review", "VERIFIED verification must hand off to /review")
+            elif status == "VERIFIED_WITH_DEGRADATION":
+                require(disposition == "VERIFIED_WITH_DEGRADATION", "degraded verification must preserve disposition")
+                require(handoff == "/review", "degraded verification must hand off to /review")
+            elif status == "FAILED":
+                require(disposition == "FAILED", "FAILED verification must use FAILED disposition")
+            elif status == "BLOCKED":
+                require(disposition == "BLOCKED", "BLOCKED verification must use BLOCKED disposition")
+            else:
+                raise ValueError("verification status must be VERIFIED, VERIFIED_WITH_DEGRADATION, FAILED, or BLOCKED")
+        elif schema_version == "review.schema.v1":
+            scope_match = artifact["scope_match"]
+            if status == "PASS":
+                require(scope_match is True, "PASS review requires scope_match=true")
+                require(disposition == "PASS", "PASS review must use PASS disposition")
+            elif status == "PASS_WITH_DEGRADATION":
+                require(scope_match is True, "PASS_WITH_DEGRADATION review requires scope_match=true")
+                require(disposition == "PASS_WITH_DEGRADATION", "degraded pass review must preserve disposition")
+            elif status == "FAIL":
+                require(disposition == "FAIL", "FAIL review must use FAIL disposition")
+            elif status == "BLOCKED":
+                require(disposition == "BLOCKED", "BLOCKED review must use BLOCKED disposition")
+            else:
+                raise ValueError("review status must be PASS, PASS_WITH_DEGRADATION, FAIL, or BLOCKED")
+
+            # Human authorization gate: PASS/PASS_WITH_DEGRADATION require human approval
+            if status in ("PASS", "PASS_WITH_DEGRADATION"):
+                human_auth = artifact.get("human_authorization")
+                require(
+                    isinstance(human_auth, dict),
+                    "human_authorization is required for PASS/PASS_WITH_DEGRADATION — agent cannot self-approve",
+                )
+                auth_status = human_auth.get("status")
+                require(
+                    auth_status == "approved",
+                    f"human_authorization.status must be 'approved' for {status} "
+                    f"(got: {auth_status!r}) — only the engineer may approve",
+                )
+                require(
+                    isinstance(human_auth.get("reviewer"), str) and human_auth["reviewer"].strip(),
+                    "human_authorization.reviewer must be set when status is approved",
+                )
+        else:
+            raise ValueError("schema_version must be one of brainstorm/spec/plan/verification/review/quick-task schema versions")
+
+        # Governance-change detection: any PR touching governance paths must not pass normal review gate
+        try:
+            changed = subprocess.check_output(
+                ["git", "diff", "--name-only", "HEAD"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).splitlines()
+            for changed_file in changed:
+                for gov_path in GOVERNANCE_PATHS:
+                    if changed_file.startswith(gov_path) or changed_file == gov_path.rstrip("/"):
+                        raise ValueError(
+                            f"governance path modified: {changed_file} — "
+                            "label this change as 'governance-change'; it cannot pass the normal review gate"
+                        )
+        except subprocess.CalledProcessError:
+            pass  # not in a git repo or git unavailable — skip check
+
+        print("PASS")
+        return 0
+    except ValueError as exc:
+        return fail(str(exc))
+    except Exception as exc:
+        return fail(f"unexpected validation error: {exc}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+import yaml
+
+
+MANIFEST_PATH = Path(".github/ai-workflow/manifest.yaml")
+SCHEMA_PATH = Path(".github/ai-workflow/schemas/manifest.schema.json")
+ALLOWED_TOP_LEVEL_KEYS = {
+    "manifest_version",
+    "workflow_contract_version",
+    "supported_manifest_versions",
+    "runtime",
+    "paths",
+    "commands",
+    "schemas",
+    "policies",
+    "validators",
+}
+REQUIRED_COMMANDS = {
+    "/setup-workflow": "setup-workflow.v1",
+    "/grill": "grill.v1",
+    "/legacy-explore": "legacy-explore.v1",
+    "/quick-task": "quick-task.v1",
+    "/write-plan": "write-plan.v1",
+    "/context-packet": "context-packet.v1",
+    "/execute-plan": "execute-plan.v1",
+    "/verify": "verify.v1",
+    "/review": "review.v1",
+}
+REQUIRED_SCHEMAS = {
+    "grill",
+    "legacy_explore",
+    "manifest",
+    "command_contract",
+    "config",
+    "quick_task",
+    "plan",
+    "context_packet",
+    "execution_checkpoint",
+    "verification",
+    "review",
+}
+REQUIRED_POLICIES = {"context", "quick_task", "workflow", "retrieval", "verification", "review"}
+REQUIRED_VALIDATORS = {"bootstrap", "compatibility", "config", "context_packet", "manifest", "artifact", "plan_scope", "review_gate", "quick_task_preclassify"}
+
+
+def fail(reason: str) -> int:
+    print(f"FAIL: {reason}")
+    return 1
+
+
+def require(condition: bool, reason: str):
+    if not condition:
+        raise ValueError(reason)
+
+
+def require_mapping(name: str, value):
+    require(isinstance(value, dict), f"{name} must be a mapping")
+
+
+def require_string(value, path: str):
+    require(isinstance(value, str) and value.strip(), f"{path} must be a non-empty string")
+
+
+def main() -> int:
+    try:
+        manifest = yaml.safe_load(MANIFEST_PATH.read_text())
+        json.loads(SCHEMA_PATH.read_text())
+    except Exception as exc:
+        return fail(f"unable to read manifest or schema: {exc}")
+
+    try:
+        require(isinstance(manifest, dict), "manifest must be a mapping")
+        extra_keys = sorted(set(manifest) - ALLOWED_TOP_LEVEL_KEYS)
+        require(not extra_keys, f"unsupported manifest keys: {', '.join(extra_keys)}")
+
+        missing_keys = sorted(ALLOWED_TOP_LEVEL_KEYS - set(manifest))
+        require(not missing_keys, f"missing manifest keys: {', '.join(missing_keys)}")
+
+        require(isinstance(manifest["manifest_version"], int), "manifest_version must be an integer")
+        require(isinstance(manifest["workflow_contract_version"], int), "workflow_contract_version must be an integer")
+        require(isinstance(manifest["supported_manifest_versions"], list) and manifest["supported_manifest_versions"], "supported_manifest_versions must be a non-empty list")
+
+        require_mapping("runtime", manifest["runtime"])
+        require_mapping("paths", manifest["paths"])
+        require_mapping("commands", manifest["commands"])
+        require_mapping("schemas", manifest["schemas"])
+        require_mapping("policies", manifest["policies"])
+        require_mapping("validators", manifest["validators"])
+
+        require_string(manifest["runtime"].get("root"), "runtime.root")
+        require_string(manifest["runtime"].get("bootstrap_validator"), "runtime.bootstrap_validator")
+        require_string(manifest["runtime"].get("config"), "runtime.config")
+
+        commands = manifest["commands"]
+        for alias, contract_id in REQUIRED_COMMANDS.items():
+            require(alias in commands, f"commands must include {alias}")
+            entry = commands[alias]
+            require_mapping(f"commands.{alias}", entry)
+            require(entry.get("contract") == contract_id, f"{alias} must bind contract {contract_id}")
+            require_string(entry.get("file"), f"commands.{alias}.file")
+            for list_key in ("allowed_predecessors", "required_inputs", "conditional_inputs", "produces", "allowed_handoffs"):
+                require(isinstance(entry.get(list_key), list), f"commands.{alias}.{list_key} must be a list")
+            require(isinstance(entry.get("may_edit_source"), bool), f"commands.{alias}.may_edit_source must be boolean")
+            require(isinstance(entry.get("may_search_outside_plan_files"), bool), f"commands.{alias}.may_search_outside_plan_files must be boolean")
+
+        schemas = manifest["schemas"]
+        missing_schemas = sorted(REQUIRED_SCHEMAS - set(schemas))
+        require(not missing_schemas, f"schemas missing required keys: {missing_schemas}")
+
+        policies = manifest["policies"]
+        missing_policies = sorted(REQUIRED_POLICIES - set(policies))
+        require(not missing_policies, f"policies missing required keys: {missing_policies}")
+
+        validators = manifest["validators"]
+        missing_validators = sorted(REQUIRED_VALIDATORS - set(validators))
+        require(not missing_validators, f"validators missing required keys: {missing_validators}")
+
+        print("PASS")
+        return 0
+    except ValueError as exc:
+        return fail(str(exc))
+
+
+if __name__ == "__main__":
+    sys.exit(main())

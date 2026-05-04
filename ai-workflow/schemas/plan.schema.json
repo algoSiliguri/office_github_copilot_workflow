@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PlanArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_type",
+    "schema_version",
+    "task_id",
+    "primary_surface",
+    "source_grill",
+    "source_exploration",
+    "files_in_scope",
+    "files_out_of_scope",
+    "context_packet_required",
+    "steps",
+    "verification_command",
+    "constraints",
+    "validated_under"
+  ],
+  "properties": {
+    "artifact_type": { "const": "PlanArtifact" },
+    "schema_version": { "const": "plan.schema.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "primary_surface": { "enum": ["copilot_plugin", "copilot_cli"] },
+    "secondary_surfaces_allowed": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "source_grill": { "type": "string", "minLength": 1 },
+    "source_exploration": { "type": ["string", "null"] },
+    "files_in_scope": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "operation"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "operation": { "enum": ["create", "modify", "delete"] }
+        }
+      }
+    },
+    "files_out_of_scope": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "context_packet_required": { "type": "boolean" },
+    "context_packet_path": { "type": ["string", "null"] },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "summary",
+          "preferred_surface",
+          "files",
+          "allowed_cli_commands",
+          "verification_command",
+          "risk_class",
+          "requires_human_ack",
+          "risk_reason",
+          "depends_on"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "minLength": 1 },
+          "preferred_surface": { "enum": ["copilot_plugin", "copilot_cli"] },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "operation"],
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "operation": { "enum": ["create", "modify", "delete"] }
+              }
+            }
+          },
+          "allowed_cli_commands": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "verification_command": { "type": "string", "minLength": 1 },
+          "risk_class": { "enum": ["safe", "degraded", "high-risk"] },
+          "requires_human_ack": { "type": "boolean" },
+          "risk_reason": { "type": "string", "minLength": 1 },
+          "depends_on": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "verification_command": { "type": "string", "minLength": 1 },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "validated_under": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_manifest_version",
+        "workflow_contract_version",
+        "command_contract_id",
+        "command_contract_version",
+        "artifact_schema",
+        "config_instruction_version"
+      ],
+      "properties": {
+        "workflow_manifest_version": { "type": "integer", "const": 1 },
+        "workflow_contract_version": { "type": "integer", "const": 1 },
+        "command_contract_id": { "type": "string", "const": "write-plan.v1" },
+        "command_contract_version": { "type": "integer", "const": 1 },
+        "artifact_schema": { "type": "string", "const": "plan.schema.v1" },
+        "config_instruction_version": { "type": "string", "const": "v1" }
+      }
+    }
+  }
+}

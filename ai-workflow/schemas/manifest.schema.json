@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Workflow Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "workflow_contract_version",
+    "supported_manifest_versions",
+    "runtime",
+    "paths",
+    "commands",
+    "schemas",
+    "policies",
+    "validators"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "workflow_contract_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "supported_manifest_versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "bootstrap_validator",
+        "config"
+      ],
+      "properties": {
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bootstrap_validator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "required": [
+        "contracts_root",
+        "schemas_root",
+        "policies_root",
+        "skills_root",
+        "protocols_root",
+        "validators_root",
+        "artifacts_root",
+        "logs_root"
+      ]
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contract",
+          "file",
+          "allowed_predecessors",
+          "required_inputs",
+          "conditional_inputs",
+          "produces",
+          "may_edit_source",
+          "may_search_outside_plan_files",
+          "allowed_handoffs"
+        ],
+        "properties": {
+          "contract": {
+            "type": "string",
+            "minLength": 1
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "allowed_predecessors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "conditional_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "produces": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "may_edit_source": {
+            "type": "boolean"
+          },
+          "may_search_outside_plan_files": {
+            "type": "boolean"
+          },
+          "allowed_handoffs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "required": [
+        "grill",
+        "legacy_explore",
+        "manifest",
+        "command_contract",
+        "config",
+        "quick_task",
+        "plan",
+        "context_packet",
+        "execution_checkpoint",
+        "verification",
+        "review"
+      ]
+    },
+    "policies": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "required": [
+        "context",
+        "quick_task",
+        "workflow",
+        "retrieval",
+        "verification",
+        "review"
+      ]
+    },
+    "validators": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "required": [
+        "bootstrap",
+        "compatibility",
+        "config",
+        "context_packet",
+        "manifest",
+        "artifact",
+        "plan_scope",
+        "review_gate"
+      ]
+    }
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExecutionRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_type",
+    "schema_version",
+    "task_id",
+    "primary_surface",
+    "source_plan",
+    "step_ids",
+    "status",
+    "plan_scope",
+    "actual_changes",
+    "cli_handoff",
+    "human_acknowledgments",
+    "commands_run",
+    "decision",
+    "validated_under"
+  ],
+  "properties": {
+    "artifact_type": { "const": "ExecutionRecord" },
+    "schema_version": { "const": "execution-checkpoint.schema.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "primary_surface": { "enum": ["copilot_plugin", "copilot_cli"] },
+    "secondary_surfaces_allowed": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "source_plan": { "type": "string", "minLength": 1 },
+    "step_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "status": { "enum": ["in_progress", "completed", "blocked", "escalated"] },
+    "plan_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_authorized"],
+      "properties": {
+        "files_authorized": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "actual_changes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_touched", "unplanned_files_touched"],
+      "properties": {
+        "files_touched": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "unplanned_files_touched": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "cli_handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approval_status",
+        "reason",
+        "allowed_commands",
+        "allowed_files",
+        "blocked_actions",
+        "expected_return_artifact"
+      ],
+      "properties": {
+        "approval_status": { "enum": ["not_required", "pending", "approved", "rejected"] },
+        "reason": { "type": "string", "minLength": 1 },
+        "allowed_commands": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "allowed_files": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "blocked_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "expected_return_artifact": { "type": "string", "minLength": 1 }
+      }
+    },
+    "human_acknowledgments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step_id", "status", "reviewer", "reason"],
+        "properties": {
+          "step_id": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["pending", "approved", "rejected"] },
+          "reviewer": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "commands_run": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "output"],
+        "properties": {
+          "command": { "type": "string", "minLength": 1 },
+          "output": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason"],
+      "properties": {
+        "status": { "enum": ["continue", "stop", "escalate"] },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "validated_under": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_manifest_version",
+        "workflow_contract_version",
+        "command_contract_id",
+        "command_contract_version",
+        "artifact_schema",
+        "config_instruction_version"
+      ],
+      "properties": {
+        "workflow_manifest_version": { "type": "integer", "const": 1 },
+        "workflow_contract_version": { "type": "integer", "const": 1 },
+        "command_contract_id": { "type": "string", "const": "execute-plan.v1" },
+        "command_contract_version": { "type": "integer", "const": 1 },
+        "artifact_schema": { "type": "string", "const": "execution-checkpoint.schema.v1" },
+        "config_instruction_version": { "type": "string", "const": "v1" }
+      }
+    }
+  }
+}

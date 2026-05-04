@@ -1,0 +1,21 @@
+policy_id: review-policy.v1
+
+allowed_dispositions:
+  - PASS_QUICK
+  - FAIL
+  - ESCALATED_TO_FULL_WORKFLOW
+  - READY
+  - DEGRADED
+  - VERIFIED
+  - VERIFIED_WITH_DEGRADATION
+  - PASS
+  - PASS_WITH_DEGRADATION
+  - BLOCKED
+
+rules:
+  actual_files_must_be_subset_of_planned: true
+  verification_evidence_required: true
+  forbidden_class_must_escalate: true
+  missing_evidence_must_fail: true
+  ready_plan_requires_execute_plan_handoff: true
+  verified_requires_review_handoff: true

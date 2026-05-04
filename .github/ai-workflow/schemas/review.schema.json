@@ -1,92 +1,72 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Review Artifact",
+  "title": "ReviewRecord",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "artifact_type",
     "schema_version",
-    "command",
-    "status",
-    "task_summary",
+    "task_id",
+    "primary_surface",
     "plan_ref",
+    "execution_ref",
     "verification_ref",
     "actual_changed_files",
+    "scope_violations",
     "scope_match",
-    "findings",
-    "review"
+    "status",
+    "validated_under"
   ],
   "properties": {
-    "schema_version": {
-      "const": "review.schema.v1"
+    "artifact_type": { "const": "ReviewRecord" },
+    "schema_version": { "const": "review.schema.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "primary_surface": { "enum": ["copilot_plugin", "copilot_cli"] },
+    "secondary_surfaces_allowed": {
+      "type": "array",
+      "items": { "type": "string" }
     },
-    "command": {
-      "const": "/review"
-    },
-    "status": {
-      "enum": ["PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"]
-    },
-    "task_summary": {
-      "type": "string",
-      "minLength": 1
-    },
-    "plan_ref": {
-      "type": "string",
-      "minLength": 1
-    },
-    "verification_ref": {
-      "type": "string",
-      "minLength": 1
-    },
+    "plan_ref": { "type": "string", "minLength": 1 },
+    "execution_ref": { "type": "string", "minLength": 1 },
+    "verification_ref": { "type": "string", "minLength": 1 },
     "actual_changed_files": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1}
+      "items": { "type": "string", "minLength": 1 }
     },
-    "scope_match": {
-      "type": "boolean"
-    },
-    "findings": {
+    "scope_violations": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1}
+      "items": { "type": "string", "minLength": 1 }
     },
-    "review": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["disposition", "notes"],
-      "properties": {
-        "disposition": {
-          "enum": ["PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"]
-        },
-        "notes": {"type": "string", "minLength": 1}
-      }
-    },
+    "scope_match": { "type": "boolean" },
+    "status": { "enum": ["PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"] },
+    "degraded_reason": { "type": ["string", "null"] },
     "human_authorization": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
-      "required": ["status"],
+      "required": ["status", "reviewer"],
       "properties": {
-        "status": {
-          "type": "string",
-          "enum": ["pending", "approved", "rejected"],
-          "description": "Only the engineer sets 'approved'. Agent sets 'pending'."
-        },
-        "reviewer": {"type": "string"},
-        "reviewed_at": {"type": "string"},
-        "comment": {"type": "string"}
+        "status": { "enum": ["pending", "approved", "rejected"] },
+        "reviewer": { "type": "string", "minLength": 1 }
       }
-    },
-    "task_id": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Identifies the task; used to locate artifact storage path."
     },
     "validated_under": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "workflow_manifest_version",
+        "workflow_contract_version",
+        "command_contract_id",
+        "command_contract_version",
+        "artifact_schema",
+        "config_instruction_version"
+      ],
       "properties": {
-        "manifest_version": {"type": "integer"},
-        "policy_version": {"type": "string"},
-        "schema_version": {"type": "string"},
-        "validated_at": {"type": "string"}
+        "workflow_manifest_version": { "type": "integer", "const": 1 },
+        "workflow_contract_version": { "type": "integer", "const": 1 },
+        "command_contract_id": { "type": "string", "const": "review.v1" },
+        "command_contract_version": { "type": "integer", "const": 1 },
+        "artifact_schema": { "type": "string", "const": "review.schema.v1" },
+        "config_instruction_version": { "type": "string", "const": "v1" }
       }
     }
   }

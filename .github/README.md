@@ -52,8 +52,10 @@ This repo mirrors a target `.github/` folder:
 
 1. Read [docs/INSTALL.md](docs/INSTALL.md).
 2. Read [docs/USAGE.md](docs/USAGE.md).
-3. Copy these files into the target repository's `.github/` directory.
-4. In the target repo, run `/setup-workflow` first.
+3. Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+4. Read [docs/CHEAT-SHEET.md](docs/CHEAT-SHEET.md).
+5. Copy these files into the target repository's `.github/` directory.
+6. In the target repo, run `/setup-workflow` first.
 
 ## Validation
 
@@ -76,4 +78,5 @@ python3 .github/ai-workflow/validators/validate-config .github/workflow/config.y
 
 - [Installation](docs/INSTALL.md)
 - [Effective usage](docs/USAGE.md)
-
+- [Architecture](docs/ARCHITECTURE.md)
+- [Cheat sheet](docs/CHEAT-SHEET.md)

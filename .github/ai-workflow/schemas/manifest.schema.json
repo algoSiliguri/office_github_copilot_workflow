@@ -36,7 +36,8 @@
       "additionalProperties": false,
       "required": [
         "root",
-        "bootstrap_validator"
+        "bootstrap_validator",
+        "config"
       ],
       "properties": {
         "root": {
@@ -44,6 +45,10 @@
           "minLength": 1
         },
         "bootstrap_validator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
           "type": "string",
           "minLength": 1
         }
@@ -73,7 +78,14 @@
         "additionalProperties": false,
         "required": [
           "contract",
-          "file"
+          "file",
+          "allowed_predecessors",
+          "required_inputs",
+          "conditional_inputs",
+          "produces",
+          "may_edit_source",
+          "may_search_outside_plan_files",
+          "allowed_handoffs"
         ],
         "properties": {
           "contract": {
@@ -83,6 +95,47 @@
           "file": {
             "type": "string",
             "minLength": 1
+          },
+          "allowed_predecessors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "conditional_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "produces": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "may_edit_source": {
+            "type": "boolean"
+          },
+          "may_search_outside_plan_files": {
+            "type": "boolean"
+          },
+          "allowed_handoffs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         }
       }
@@ -94,12 +147,15 @@
         "minLength": 1
       },
       "required": [
-        "brainstorm",
+        "grill",
+        "legacy_explore",
         "manifest",
         "command_contract",
+        "config",
         "quick_task",
-        "spec",
         "plan",
+        "context_packet",
+        "execution_checkpoint",
         "verification",
         "review"
       ]
@@ -111,9 +167,8 @@
         "minLength": 1
       },
       "required": [
-        "brainstorm",
+        "context",
         "quick_task",
-        "spec",
         "workflow",
         "retrieval",
         "verification",
@@ -128,6 +183,9 @@
       },
       "required": [
         "bootstrap",
+        "compatibility",
+        "config",
+        "context_packet",
         "manifest",
         "artifact",
         "plan_scope",

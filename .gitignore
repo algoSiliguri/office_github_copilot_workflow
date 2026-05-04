@@ -3,4 +3,8 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
+.claude/
+.scratch/
+.worktrees/
+github.zip
+office_github_copilot_workflow/

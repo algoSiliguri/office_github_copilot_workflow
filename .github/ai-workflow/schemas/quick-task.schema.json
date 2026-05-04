@@ -1,242 +1,111 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Quick Task Record",
+  "title": "QuickTaskRecord",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "artifact_type",
     "schema_version",
-    "command",
-    "status",
+    "task_id",
+    "primary_surface",
     "task_summary",
-    "change_class",
     "files",
-    "escalation",
+    "change_class",
     "verification",
-    "review"
+    "escalation_triggered",
+    "escalation_reason",
+    "status",
+    "validated_under"
   ],
   "properties": {
-    "schema_version": {
-      "type": "string",
-      "const": "quick-task.schema.v1"
+    "artifact_type": { "const": "QuickTaskRecord" },
+    "schema_version": { "const": "quick-task.schema.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "primary_surface": { "enum": ["copilot_plugin", "copilot_cli"] },
+    "secondary_surfaces_allowed": {
+      "type": "array",
+      "items": { "type": "string" }
     },
-    "command": {
-      "type": "string",
-      "const": "/quick-task"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "PASS_QUICK",
-        "FAIL",
-        "ESCALATED_TO_FULL_WORKFLOW"
-      ]
-    },
-    "task_summary": {
-      "type": "string",
-      "minLength": 1
-    },
-    "change_class": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "value",
-        "policy_allowed",
-        "classification_status"
-      ],
-      "properties": {
-        "value": {
-          "type": "string",
-          "minLength": 1
-        },
-        "policy_allowed": {
-          "type": "boolean"
-        },
-        "classification_status": {
-          "type": "string",
-          "enum": [
-            "proposed",
-            "revised_before_edit",
-            "locked_for_execution"
-          ]
-        }
-      }
-    },
+    "task_summary": { "type": "string", "minLength": 1 },
     "files": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "planned",
-        "actual"
-      ],
+      "required": ["planned", "actual"],
       "properties": {
         "planned": {
           "type": "array",
+          "minItems": 1,
           "items": {
-            "$ref": "#/$defs/fileEntry"
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "operation"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "operation": { "enum": ["create", "modify", "delete"] }
+            }
           }
         },
         "actual": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/fileEntry"
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "operation"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "operation": { "enum": ["create", "modify", "delete"] }
+            }
           }
         }
       }
     },
-    "escalation": {
+    "change_class": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "required",
-        "reasons"
-      ],
+      "required": ["value", "policy_allowed", "classification_status", "public_behavior_change"],
       "properties": {
-        "required": {
-          "type": "boolean"
-        },
-        "reasons": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
+        "value": { "type": "string", "minLength": 1 },
+        "policy_allowed": { "type": "boolean" },
+        "classification_status": { "enum": ["proposed", "revised_before_edit", "locked_for_execution"] },
+        "public_behavior_change": { "type": "boolean" }
       }
     },
     "verification": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "evidence"
-      ],
+      "required": ["command", "evidence"],
       "properties": {
+        "command": { "type": "string", "minLength": 1 },
         "evidence": {
           "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
+          "items": { "type": "string", "minLength": 1 }
         }
       }
     },
-    "review": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "scope_match",
-        "disposition",
-        "notes"
-      ],
-      "properties": {
-        "scope_match": {
-          "type": "boolean"
-        },
-        "disposition": {
-          "type": "string",
-          "enum": [
-            "PASS_QUICK",
-            "FAIL",
-            "ESCALATED_TO_FULL_WORKFLOW"
-          ]
-        },
-        "notes": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
+    "escalation_triggered": { "type": "boolean" },
+    "escalation_reason": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
     },
-    "escalation_seed": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "original_request",
-        "escalation_reason",
-        "observed_change_class",
-        "planned_files",
-        "actual_files_changed",
-        "recommended_next_command"
-      ],
-      "properties": {
-        "original_request": {
-          "type": "string",
-          "minLength": 1
-        },
-        "escalation_reason": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "observed_change_class": {
-          "type": "string",
-          "minLength": 1
-        },
-        "planned_files": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "actual_files_changed": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "recommended_next_command": {
-          "type": "string",
-          "const": "/write-spec"
-        }
-      }
-    },
-    "task_id": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Identifies the task; used to locate artifact storage path."
-    },
+    "status": { "enum": ["PASS_QUICK", "FAIL", "ESCALATED_TO_FULL_WORKFLOW"] },
     "validated_under": {
       "type": "object",
       "additionalProperties": false,
-      "properties": {
-        "manifest_version": {
-          "type": "integer"
-        },
-        "policy_version": {
-          "type": "string"
-        },
-        "schema_version": {
-          "type": "string"
-        },
-        "validated_at": {
-          "type": "string"
-        }
-      }
-    }
-  },
-  "$defs": {
-    "fileEntry": {
-      "type": "object",
-      "additionalProperties": false,
       "required": [
-        "path",
-        "operation"
+        "workflow_manifest_version",
+        "workflow_contract_version",
+        "command_contract_id",
+        "command_contract_version",
+        "artifact_schema",
+        "config_instruction_version"
       ],
       "properties": {
-        "path": {
-          "type": "string",
-          "minLength": 1
-        },
-        "operation": {
-          "type": "string",
-          "enum": [
-            "create",
-            "modify",
-            "delete"
-          ]
-        }
+        "workflow_manifest_version": { "type": "integer", "const": 1 },
+        "workflow_contract_version": { "type": "integer", "const": 1 },
+        "command_contract_id": { "type": "string", "const": "quick-task.v1" },
+        "command_contract_version": { "type": "integer", "const": 1 },
+        "artifact_schema": { "type": "string", "const": "quick-task.schema.v1" },
+        "config_instruction_version": { "type": "string", "const": "v1" }
       }
     }
   }

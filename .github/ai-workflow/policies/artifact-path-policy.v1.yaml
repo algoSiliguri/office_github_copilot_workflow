@@ -1,0 +1,26 @@
+policy_id: artifact-path-policy.v1
+
+artifact_paths:
+  GrillRecord: .github/ai-workflow/artifacts/grill
+  PlanArtifact: .github/ai-workflow/artifacts/plans
+  ExecutionRecord: .github/ai-workflow/artifacts/execution
+  VerificationRecord: .github/ai-workflow/artifacts/verification
+  ReviewRecord: .github/ai-workflow/artifacts/review
+  EvaluationRecord: .github/ai-workflow/artifacts/evaluation
+  TaskManifest: .github/ai-workflow/artifacts/task-manifest
+
+filename_pattern: "{task_id}.{artifact_slug}.json"
+
+artifact_slugs:
+  GrillRecord: grill
+  PlanArtifact: plan
+  ExecutionRecord: execution
+  VerificationRecord: verification
+  ReviewRecord: review
+  EvaluationRecord: evaluation
+  TaskManifest: task-manifest
+
+rules:
+  enforce_declared_paths: true
+  reject_misplaced_artifacts: true
+  require_task_id_in_filename: true

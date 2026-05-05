@@ -42,9 +42,11 @@ Required fields:
 - `verification_command_run` — exact command actually run
 - `command_output` — verbatim output from running the command (required, non-empty)
 - `evidence` — non-empty list of concrete evidence strings or paths derived from the command run
+- `criteria_outcomes` — **required**, one entry per success criterion from the GrillRecord (1:1 mapping). Each entry: `criterion` (exact string from grill), `met` (boolean), `evidence` (string), `verification_command_ref` (command that produced the result). Multiple criteria may share one command ref.
 - `status: VERIFIED | VERIFIED_WITH_DEGRADATION | FAILED | BLOCKED`
 - `degraded_reason` — required when status is VERIFIED_WITH_DEGRADATION
-- `human_acknowledgment` — required and approved when status is VERIFIED_WITH_DEGRADATION
+- `created_at` — ISO 8601 datetime, populate at artifact write time
+- `human_acknowledgment` — required and approved when status is VERIFIED_WITH_DEGRADATION. When status is `rejected`, must include `reason: { category: enum, details: string }` — present this block to the human reviewer and capture their structured reason.
 - `validated_under` — exact workflow/command/schema/config tuple
 
 After saving, output:

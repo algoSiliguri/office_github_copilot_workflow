@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Validates that an artifact file lives in its declared directory.
+# Usage: validate-artifact-path <artifact_file_path>
+# Exit 0 = valid, Exit 1 = violation
+
+set -euo pipefail
+
+ARTIFACT_FILE="${1:-}"
+
+if [[ -z "$ARTIFACT_FILE" ]]; then
+  echo "ERROR: artifact file path required" >&2
+  exit 1
+fi
+
+if [[ ! -f "$ARTIFACT_FILE" ]]; then
+  echo "ERROR: file not found: $ARTIFACT_FILE" >&2
+  exit 1
+fi
+
+ARTIFACT_TYPE=$(python3 -c "import json,sys; d=json.load(open('$ARTIFACT_FILE')); print(d.get('artifact_type',''))" 2>/dev/null || echo "")
+
+if [[ -z "$ARTIFACT_TYPE" ]]; then
+  echo "ERROR: cannot read artifact_type from $ARTIFACT_FILE" >&2
+  exit 1
+fi
+
+declare -A EXPECTED_DIRS=(
+  ["GrillRecord"]=".github/ai-workflow/artifacts/grill"
+  ["PlanArtifact"]=".github/ai-workflow/artifacts/plans"
+  ["ExecutionRecord"]=".github/ai-workflow/artifacts/execution"
+  ["VerificationRecord"]=".github/ai-workflow/artifacts/verification"
+  ["ReviewRecord"]=".github/ai-workflow/artifacts/review"
+  ["EvaluationRecord"]=".github/ai-workflow/artifacts/evaluation"
+  ["TaskManifest"]=".github/ai-workflow/artifacts/task-manifest"
+)
+
+EXPECTED_DIR="${EXPECTED_DIRS[$ARTIFACT_TYPE]:-}"
+
+if [[ -z "$EXPECTED_DIR" ]]; then
+  echo "WARN: unknown artifact_type '$ARTIFACT_TYPE' — skipping path check" >&2
+  exit 0
+fi
+
+ACTUAL_DIR=$(dirname "$ARTIFACT_FILE")
+ACTUAL_DIR="${ACTUAL_DIR#./}"
+
+if [[ "$ACTUAL_DIR" != *"$EXPECTED_DIR"* ]]; then
+  echo "ERROR: $ARTIFACT_TYPE must be in $EXPECTED_DIR but found in $ACTUAL_DIR" >&2
+  exit 1
+fi
+
+echo "OK: $ARTIFACT_TYPE path valid ($ACTUAL_DIR)"
+exit 0

@@ -35,6 +35,7 @@ The artifact must conform to `grill.schema.v1`. Required fields:
 - `artifact_type: GrillRecord`
 - `schema_version: grill.schema.v1`
 - `task_id` — matching the folder name (e.g. TASK-001)
+- `task_type` — one of: `feature | bugfix | system_improvement | exploration`
 - `primary_surface: copilot_plugin`
 - `secondary_surfaces_allowed: [copilot_cli]`
 - `goal` — one sentence
@@ -44,11 +45,13 @@ The artifact must conform to `grill.schema.v1`. Required fields:
 - `risks` — list of strings
 - `constraints` — list of strings
 - `approach` — list of decisions, each with `decision`, `rationale`, `alternatives_rejected[]`
-- `success_criteria` — list of strings
+- `success_criteria` — **required when decision is `proceed`**, list of strings (minItems: 1). Each criterion must be verifiable.
 - `exploration_required` — true when legacy/ambiguity triggers require bounded exploration before planning
 - `exploration_reasons` — list of trigger reasons (empty if not required)
 - `decision` — either `proceed` or `stop`
-- `open_blockers` — list of strings (empty if decision is proceed)
+- `open_blockers` — **required when decision is `stop`**, list of strings (minItems: 1)
+- `triggered_by` — **required when task_type is `system_improvement`**: `{ source_type, evaluation_refs[], failure_category }`
+- `created_at` — ISO 8601 datetime, populate at artifact write time
 - `validated_under`:
   - `workflow_manifest_version: 1`
   - `workflow_contract_version: 1`

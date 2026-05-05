@@ -53,7 +53,8 @@ Required fields:
 - `scope_violations` — list of files touched but not in plan scope (empty if clean)
 - `scope_match: true | false`
 - `status: PASS | PASS_WITH_DEGRADATION | FAIL | BLOCKED`
-- `human_authorization` — required for PASS/PASS_WITH_DEGRADATION
+- `created_at` — ISO 8601 datetime, populate at artifact write time
+- `human_authorization` — required for PASS/PASS_WITH_DEGRADATION. When status is `rejected`, must include `reason: { category: enum, details: string }` — present this block to the human reviewer and capture their structured reason. Category enum: `scope_violation | incorrect_implementation | criteria_not_met | verification_incomplete | quality_issue | other`.
 - `degraded_reason` — required for PASS_WITH_DEGRADATION
 - `validated_under` — exact workflow/command/schema/config tuple
 

@@ -17,6 +17,7 @@
     "human_acknowledgments",
     "commands_run",
     "decision",
+    "created_at",
     "validated_under"
   ],
   "properties": {
@@ -124,6 +125,7 @@
         "reason": { "type": "string", "minLength": 1 }
       }
     },
+    "created_at": { "type": "string", "format": "date-time" },
     "validated_under": {
       "type": "object",
       "additionalProperties": false,

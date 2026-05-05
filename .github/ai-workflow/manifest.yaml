@@ -20,6 +20,15 @@ paths:
   artifacts_root: .github/ai-workflow/artifacts
   logs_root: .github/ai-workflow/logs
 
+artifact_paths:
+  GrillRecord: .github/ai-workflow/artifacts/grill
+  PlanArtifact: .github/ai-workflow/artifacts/plans
+  ExecutionRecord: .github/ai-workflow/artifacts/execution
+  VerificationRecord: .github/ai-workflow/artifacts/verification
+  ReviewRecord: .github/ai-workflow/artifacts/review
+  EvaluationRecord: .github/ai-workflow/artifacts/evaluation
+  TaskManifest: .github/ai-workflow/artifacts/task-manifest
+
 commands:
   /setup-workflow:
     contract: setup-workflow.v1
@@ -172,6 +181,7 @@ policies:
   retrieval: .github/ai-workflow/policies/retrieval-policy.v1.yaml
   verification: .github/ai-workflow/policies/verification-policy.v1.yaml
   review: .github/ai-workflow/policies/review-policy.v1.yaml
+  artifact_path: .github/ai-workflow/policies/artifact-path-policy.v1.yaml
 
 validators:
   bootstrap: .github/ai-workflow/validators/bootstrap
@@ -180,6 +190,7 @@ validators:
   context_packet: .github/ai-workflow/validators/validate-context-packet
   manifest: .github/ai-workflow/validators/validate-manifest
   artifact: .github/ai-workflow/validators/validate-artifact
+  artifact_path: .github/ai-workflow/validators/validate-artifact-path
   plan_scope: .github/ai-workflow/validators/validate-plan-scope
   review_gate: .github/ai-workflow/validators/validate-review-gate
   quick_task_preclassify: .github/ai-workflow/validators/validate-quick-task-preclassify

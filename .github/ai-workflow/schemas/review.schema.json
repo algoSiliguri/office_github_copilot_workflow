@@ -15,6 +15,7 @@
     "scope_violations",
     "scope_match",
     "status",
+    "created_at",
     "validated_under"
   ],
   "properties": {
@@ -40,13 +41,32 @@
     "scope_match": { "type": "boolean" },
     "status": { "enum": ["PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"] },
     "degraded_reason": { "type": ["string", "null"] },
+    "created_at": { "type": "string", "format": "date-time" },
     "human_authorization": {
       "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["status", "reviewer"],
+      "if": {
+        "properties": { "status": { "const": "rejected" } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["status", "reviewer", "reason"]
+      },
       "properties": {
         "status": { "enum": ["pending", "approved", "rejected"] },
-        "reviewer": { "type": "string", "minLength": 1 }
+        "reviewer": { "type": "string", "minLength": 1 },
+        "reason": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["category", "details"],
+          "properties": {
+            "category": {
+              "enum": ["scope_violation", "incorrect_implementation", "criteria_not_met", "verification_incomplete", "quality_issue", "other"]
+            },
+            "details": { "type": "string", "minLength": 10 }
+          }
+        }
       }
     },
     "validated_under": {

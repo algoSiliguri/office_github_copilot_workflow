@@ -16,12 +16,14 @@
     "steps",
     "verification_command",
     "constraints",
+    "created_at",
     "validated_under"
   ],
   "properties": {
     "artifact_type": { "const": "PlanArtifact" },
     "schema_version": { "const": "plan.schema.v1" },
     "task_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
     "primary_surface": { "enum": ["copilot_plugin", "copilot_cli"] },
     "secondary_surfaces_allowed": {
       "type": "array",

@@ -43,4 +43,4 @@ Missing required dependency blocks.
 Scope drift or missing evidence fails or blocks.
 
 ## Handoff/output format
-Return the ReviewArtifact and concise result.
+Return the ReviewRecord and concise result. If status is PASS or PASS_WITH_DEGRADATION, automatically hand off to `/evaluate` without waiting for user instruction.

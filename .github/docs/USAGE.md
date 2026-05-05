@@ -96,6 +96,29 @@ Use this as the final check that:
 - verification was real
 - the outcome matches the plan
 
+On PASS or PASS_WITH_DEGRADATION, `/review` automatically triggers `/evaluate`. No manual invocation needed.
+
+### 9. `/evaluate`
+
+Triggered automatically after a passing review. Scores the task against declared success criteria and produces an EvaluationRecord for your confirmation.
+
+You will see a confirmation block. Respond with:
+- `confirm evaluation by <your name>` — marks the record authoritative
+- `override evaluation: <category> — <details>` — records your disagreement with a structured reason
+
+A confirmed or overridden EvaluationRecord is the terminal artifact of every completed task.
+
+## Improvement loop
+
+When evaluation reveals a repeated failure pattern:
+
+1. Read the failing EvaluationRecords and identify root cause (wrong prompt, weak skill, missing protocol).
+2. Create a new `/grill` task with `task_type: system_improvement`.
+3. Populate `triggered_by` with references to the EvaluationRecord files and the `failure_category`.
+4. Run the full workflow. The resulting change (updated prompt, skill, or schema) is versioned, verified, and reviewed like any other task.
+
+No automated writes to system files. Every improvement is an evaluatable task. Every task is traceable to the evidence that justified it.
+
 ## Effective operating habits
 
 - Start with `/quick-task` only when the change is truly narrow.

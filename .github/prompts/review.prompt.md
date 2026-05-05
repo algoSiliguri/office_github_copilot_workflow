@@ -73,4 +73,7 @@ TASK: TASK-{NNN}
 SCOPE_VIOLATIONS: none | [N violations]
 RESULT: PASS | FAIL
 ARTIFACT: .github/tasks/TASK-{NNN}/review.yaml
+NEXT: /evaluate
 ```
+
+If status is `PASS` or `PASS_WITH_DEGRADATION`, automatically proceed to `/evaluate` — do not wait for user instruction. Evaluation is mandatory after every completed review.

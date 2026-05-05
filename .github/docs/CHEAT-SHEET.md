@@ -30,7 +30,10 @@ Run:
   Runs the plan's verification command exactly as written and captures evidence.
 
 - `/review`
-  Checks scope match and verification status before merge.
+  Checks scope match and verification status before merge. On PASS or PASS_WITH_DEGRADATION, automatically hands off to `/evaluate`.
+
+- `/evaluate`
+  Mandatory after every accepted full-workflow review. AI computes scores from all upstream artifacts and produces a draft EvaluationRecord. You confirm or override. Terminal artifact of every completed task.
 
 - `/quick-task`
   Fast path for very small, low-risk work.
@@ -43,11 +46,11 @@ Small change:
 
 Normal change:
 
-`/setup-workflow -> /grill -> /write-plan -> /execute-plan -> /verify -> /review`
+`/setup-workflow -> /grill -> /write-plan -> /execute-plan -> /verify -> /review -> /evaluate`
 
 Ambiguous or legacy change:
 
-`/setup-workflow -> /grill -> /legacy-explore -> /write-plan -> /execute-plan -> /verify -> /review`
+`/setup-workflow -> /grill -> /legacy-explore -> /write-plan -> /execute-plan -> /verify -> /review -> /evaluate`
 
 ## When Copilot should stop
 

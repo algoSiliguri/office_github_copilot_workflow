@@ -58,6 +58,8 @@ This repo mirrors a target `.github/` folder:
 5. Copy these files into the target repository's `.github/` directory.
 6. In the target repo, run `/setup-workflow` first.
 
+To brief an AI on the full system in one paste, use [docs/MASTER_CONTEXT.md](docs/MASTER_CONTEXT.md).
+
 ## Validation
 
 From the target repository root after installing into `.github/`:
@@ -82,3 +84,4 @@ python3 .github/ai-workflow/validators/validate-config .github/workflow/config.y
 - [Effective usage](docs/USAGE.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Cheat sheet](docs/CHEAT-SHEET.md)
+- [Master context prompt](docs/MASTER_CONTEXT.md)

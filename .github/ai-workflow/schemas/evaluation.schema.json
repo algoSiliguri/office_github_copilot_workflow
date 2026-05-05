@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EvaluationRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_type",
+    "schema_version",
+    "task_id",
+    "created_at",
+    "source_refs",
+    "scores",
+    "outcome",
+    "evaluation_status",
+    "human_evaluation"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "evaluation_status": { "const": "overridden" } },
+        "required": ["evaluation_status"]
+      },
+      "then": {
+        "properties": {
+          "human_evaluation": {
+            "required": ["status", "reviewer", "override_reason"]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "artifact_type": { "const": "EvaluationRecord" },
+    "schema_version": { "const": "evaluation.schema.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_manifest", "grill", "plan", "execution", "verification", "review"],
+      "properties": {
+        "task_manifest": { "type": ["string", "null"] },
+        "grill": { "type": ["string", "null"] },
+        "plan": { "type": ["string", "null"] },
+        "execution": { "type": ["string", "null"] },
+        "verification": { "type": ["string", "null"] },
+        "review": { "type": ["string", "null"] }
+      }
+    },
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "criteria_satisfaction_rate",
+        "criteria_outcomes_summary",
+        "scope_adherence",
+        "unplanned_files_count",
+        "verification_status",
+        "review_status",
+        "human_approval_first_pass"
+      ],
+      "properties": {
+        "criteria_satisfaction_rate": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "criteria_outcomes_summary": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["criterion", "met"],
+            "properties": {
+              "criterion": { "type": "string", "minLength": 1 },
+              "met": { "type": "boolean" }
+            }
+          }
+        },
+        "scope_adherence": { "type": "boolean" },
+        "unplanned_files_count": { "type": "integer", "minimum": 0 },
+        "verification_status": {
+          "enum": ["VERIFIED", "VERIFIED_WITH_DEGRADATION", "FAILED", "BLOCKED"]
+        },
+        "review_status": {
+          "enum": ["PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"]
+        },
+        "human_approval_first_pass": {
+          "enum": ["approved", "rejected", "pending"]
+        }
+      }
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["success", "partial_success", "failure"],
+      "description": "success: all criteria met + scope_adherence + review PASS + human approved. partial_success: criteria_satisfaction_rate >= 0.5 OR degraded status OR human approved after revision. failure: criteria_satisfaction_rate < 0.5 OR review FAIL OR human rejected."
+    },
+    "evaluation_status": {
+      "type": "string",
+      "enum": ["draft", "confirmed", "overridden"]
+    },
+    "human_evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reviewer"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["draft", "confirmed", "overridden"]
+        },
+        "reviewer": { "type": ["string", "null"] },
+        "confirmed_at": { "type": ["string", "null"], "format": "date-time" },
+        "override_reason": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["category", "details"],
+          "properties": {
+            "category": {
+              "enum": ["scope_violation", "incorrect_implementation", "criteria_not_met", "verification_incomplete", "quality_issue", "other"]
+            },
+            "details": { "type": "string", "minLength": 10 }
+          }
+        }
+      }
+    }
+  }
+}

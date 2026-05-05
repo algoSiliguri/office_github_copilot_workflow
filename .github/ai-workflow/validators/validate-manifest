@@ -29,6 +29,7 @@ REQUIRED_COMMANDS = {
     "/execute-plan": "execute-plan.v1",
     "/verify": "verify.v1",
     "/review": "review.v1",
+    "/evaluate": "evaluate.v1",
 }
 REQUIRED_SCHEMAS = {
     "grill",
@@ -42,9 +43,11 @@ REQUIRED_SCHEMAS = {
     "execution_checkpoint",
     "verification",
     "review",
+    "task_manifest",
+    "evaluation",
 }
-REQUIRED_POLICIES = {"context", "quick_task", "workflow", "retrieval", "verification", "review"}
-REQUIRED_VALIDATORS = {"bootstrap", "compatibility", "config", "context_packet", "manifest", "artifact", "plan_scope", "review_gate", "quick_task_preclassify"}
+REQUIRED_POLICIES = {"context", "quick_task", "workflow", "retrieval", "verification", "review", "artifact_path", "evaluation"}
+REQUIRED_VALIDATORS = {"bootstrap", "compatibility", "config", "context_packet", "manifest", "artifact", "artifact_path", "plan_scope", "review_gate", "quick_task_preclassify", "criteria_coverage", "evaluation_gate"}
 
 
 def fail(reason: str) -> int:

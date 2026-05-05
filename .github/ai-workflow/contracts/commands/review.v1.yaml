@@ -24,19 +24,20 @@ required_validators:
     - validate-review-gate
   after:
     - validate-artifact
+    - validate-artifact-path
     - validate-review-gate
 
 authority:
   may_create:
     - ReviewRecord
-  may_modify: []
+  may_modify:
+    - TaskManifest
   may_read:
     - PlanArtifact
     - ExecutionRecord
     - VerificationRecord
   forbidden:
     - edit_source_files
-    - modify_manifest
     - modify_schemas
     - modify_policies
     - smooth_over_scope_drift
@@ -49,3 +50,4 @@ semantics:
     - record_scope_violations
     - require_human_authorization_for_pass
     - save_review_record_to_task_folder
+    - update_task_manifest_phase_and_artifact_refs

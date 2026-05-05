@@ -1,78 +1,92 @@
-#!/usr/bin/env bash
-# Validates an EvaluationRecord against evaluation gate rules.
-# Usage: validate-evaluation-gate <evaluation_file>
-# Exit 0 = valid, Exit 1 = violation
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
 
-set -euo pipefail
 
-EVALUATION_FILE="${1:-}"
+def fail(reason: str) -> int:
+    print(f"ERROR: {reason}", file=sys.stderr)
+    return 1
 
-if [[ -z "$EVALUATION_FILE" ]]; then
-  echo "ERROR: evaluation file path required" >&2
-  exit 1
-fi
 
-if [[ ! -f "$EVALUATION_FILE" ]]; then
-  echo "ERROR: file not found: $EVALUATION_FILE" >&2
-  exit 1
-fi
+def main() -> int:
+    evaluation_arg = sys.argv[1] if len(sys.argv) > 1 else ""
+    if not evaluation_arg:
+        return fail("evaluation file path required")
 
-python3 - "$EVALUATION_FILE" <<'PYEOF'
-import json, sys
+    evaluation_path = Path(evaluation_arg)
+    if not evaluation_path.is_file():
+        return fail(f"file not found: {evaluation_path}")
 
-path = sys.argv[1]
-with open(path) as f:
-    ev = json.load(f)
+    try:
+        evaluation = json.loads(evaluation_path.read_text())
+    except Exception as exc:
+        return fail(f"cannot parse JSON: {exc}")
 
-errors = []
+    errors = []
+    if evaluation.get("artifact_type") != "EvaluationRecord":
+        errors.append("artifact_type must be EvaluationRecord")
 
-# Must be EvaluationRecord
-if ev.get("artifact_type") != "EvaluationRecord":
-    errors.append("artifact_type must be EvaluationRecord")
+    eval_status = evaluation.get("evaluation_status")
+    if eval_status not in {"draft", "confirmed", "overridden"}:
+        errors.append(f"evaluation_status '{eval_status}' not in [draft, confirmed, overridden]")
 
-# evaluation_status must be valid
-eval_status = ev.get("evaluation_status", "")
-if eval_status not in ("draft", "confirmed", "overridden"):
-    errors.append(f"evaluation_status '{eval_status}' not in [draft, confirmed, overridden]")
+    human = evaluation.get("human_evaluation", {})
+    if not isinstance(human, dict):
+        errors.append("human_evaluation must be an object")
+        human = {}
 
-# overridden requires override_reason
-if eval_status == "overridden":
-    he = ev.get("human_evaluation", {})
-    if not he.get("override_reason"):
-        errors.append("evaluation_status=overridden requires human_evaluation.override_reason")
-    else:
-        reason = he["override_reason"]
-        valid_categories = {"scope_violation", "incorrect_implementation", "criteria_not_met",
-                            "verification_incomplete", "quality_issue", "other"}
-        if reason.get("category") not in valid_categories:
-            errors.append(f"override_reason.category '{reason.get('category')}' not valid")
-        if not reason.get("details") or len(reason["details"]) < 10:
-            errors.append("override_reason.details must be at least 10 characters")
+    if eval_status == "draft":
+        if human.get("status") != "draft":
+            errors.append("draft evaluation requires human_evaluation.status=draft")
+        if human.get("reviewer") not in {None, ""}:
+            errors.append("draft evaluation must not set human_evaluation.reviewer")
 
-# confirmed requires confirmed_at
-if eval_status == "confirmed":
-    he = ev.get("human_evaluation", {})
-    if not he.get("confirmed_at"):
-        errors.append("evaluation_status=confirmed requires human_evaluation.confirmed_at")
-    if not he.get("reviewer"):
-        errors.append("evaluation_status=confirmed requires human_evaluation.reviewer")
+    if eval_status == "confirmed":
+        if human.get("status") != "confirmed":
+            errors.append("confirmed evaluation requires human_evaluation.status=confirmed")
+        if not human.get("confirmed_at"):
+            errors.append("evaluation_status=confirmed requires human_evaluation.confirmed_at")
+        if not human.get("reviewer"):
+            errors.append("evaluation_status=confirmed requires human_evaluation.reviewer")
 
-# criteria_satisfaction_rate in 0–1
-scores = ev.get("scores", {})
-rate = scores.get("criteria_satisfaction_rate")
-if rate is not None and not (0.0 <= rate <= 1.0):
-    errors.append(f"criteria_satisfaction_rate {rate} out of range 0.0–1.0")
+    if eval_status == "overridden":
+        if human.get("status") != "overridden":
+            errors.append("overridden evaluation requires human_evaluation.status=overridden")
+        if not human.get("reviewer"):
+            errors.append("evaluation_status=overridden requires human_evaluation.reviewer")
+        reason = human.get("override_reason")
+        valid_categories = {"scope_violation", "incorrect_implementation", "criteria_not_met", "verification_incomplete", "quality_issue", "other"}
+        if not isinstance(reason, dict):
+            errors.append("evaluation_status=overridden requires human_evaluation.override_reason")
+        else:
+            if reason.get("category") not in valid_categories:
+                errors.append(f"override_reason.category '{reason.get('category')}' not valid")
+            if not reason.get("details") or len(reason["details"]) < 10:
+                errors.append("override_reason.details must be at least 10 characters")
 
-# outcome must be valid
-outcome = ev.get("outcome", "")
-if outcome not in ("success", "partial_success", "failure"):
-    errors.append(f"outcome '{outcome}' not in [success, partial_success, failure]")
+    scores = evaluation.get("scores", {})
+    rate = scores.get("criteria_satisfaction_rate")
+    if not isinstance(rate, (int, float)) or not (0.0 <= rate <= 1.0):
+        errors.append(f"criteria_satisfaction_rate {rate} out of range 0.0–1.0")
 
-if errors:
-    for e in errors:
-        print(f"ERROR: {e}", file=sys.stderr)
-    sys.exit(1)
+    outcome = evaluation.get("outcome")
+    if outcome not in {"success", "partial_success", "failure"}:
+        errors.append(f"outcome '{outcome}' not in [success, partial_success, failure]")
 
-print(f"OK: EvaluationRecord valid (outcome={outcome}, status={eval_status})")
-sys.exit(0)
-PYEOF
+    source_refs = evaluation.get("source_refs", {})
+    for key in ("task_manifest", "grill", "plan", "execution", "verification", "review"):
+        if not source_refs.get(key):
+            errors.append(f"source_refs.{key} is required")
+
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+
+    print(f"OK: EvaluationRecord valid (outcome={outcome}, status={eval_status})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

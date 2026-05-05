@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
+import json
 import sys
 from pathlib import Path
-
-import yaml
 
 
 def fail(reason: str) -> int:
@@ -19,12 +18,12 @@ def main() -> int:
         return fail(f"missing artifact: {path}")
 
     try:
-        artifact = yaml.safe_load(path.read_text())
+        artifact = json.loads(path.read_text())
     except Exception as exc:
         return fail(f"unable to read artifact: {exc}")
 
     if not isinstance(artifact, dict):
-        return fail("context packet must be a mapping")
+        return fail("context packet must be a JSON object")
 
     if artifact.get("artifact_type") != "ContextPacketArtifact":
         return fail("artifact_type must be ContextPacketArtifact")

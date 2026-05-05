@@ -1,26 +1,24 @@
 policy_id: artifact-path-policy.v1
 
-artifact_paths:
-  GrillRecord: .github/ai-workflow/artifacts/grill
-  PlanArtifact: .github/ai-workflow/artifacts/plans
-  ExecutionRecord: .github/ai-workflow/artifacts/execution
-  VerificationRecord: .github/ai-workflow/artifacts/verification
-  ReviewRecord: .github/ai-workflow/artifacts/review
-  EvaluationRecord: .github/ai-workflow/artifacts/evaluation
-  TaskManifest: .github/ai-workflow/artifacts/task-manifest
+runtime_root: .github/tasks
+task_folder_pattern: "^TASK-[0-9]{3}$"
+attempts_dirname: attempts
+logs_dirname: logs
 
-filename_pattern: "{task_id}.{artifact_slug}.json"
-
-artifact_slugs:
-  GrillRecord: grill
-  PlanArtifact: plan
-  ExecutionRecord: execution
-  VerificationRecord: verification
-  ReviewRecord: review
-  EvaluationRecord: evaluation
-  TaskManifest: task-manifest
+authoritative_filenames:
+  GrillRecord: grill.json
+  LegacyExplorationRecord: legacy-exploration.json
+  PlanArtifact: plan.json
+  ContextPacketArtifact: context-packet.json
+  ExecutionRecord: execution.json
+  VerificationRecord: verification.json
+  ReviewRecord: review.json
+  EvaluationRecord: evaluation.json
+  TaskManifest: task-manifest.json
+  QuickTaskRecord: quick-task.json
 
 rules:
-  enforce_declared_paths: true
+  enforce_task_folder_root: true
+  enforce_authoritative_filenames: true
   reject_misplaced_artifacts: true
-  require_task_id_in_filename: true
+  require_task_id_folder_match: true

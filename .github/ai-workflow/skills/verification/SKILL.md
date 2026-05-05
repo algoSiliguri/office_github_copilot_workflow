@@ -27,8 +27,8 @@ verification.schema.v1
 ## Required validators
 validate-manifest
 validate-artifact
+validate-artifact-path
 validate-plan-scope
-validate-review-gate
 validate-criteria-coverage
 
 ## Procedure
@@ -39,8 +39,9 @@ validate-criteria-coverage
 5. Record exact verification evidence.
 6. Preserve degraded status honestly when applicable.
 7. Produce the VerificationRecord.
-8. Update TaskManifest: phase → verification, artifact_refs.verification → path; status → blocked if BLOCKED.
-9. Run validators including validate-criteria-coverage.
+8. If `verification.json` already exists, preserve it under `attempts/verification/<ISO_TIMESTAMP>.json` before replacement.
+9. Update TaskManifest: phase → verification, artifact_refs.verification → path; status → blocked if BLOCKED.
+10. Run validators including validate-criteria-coverage.
 
 ## Failure behavior
 Missing required dependency blocks.

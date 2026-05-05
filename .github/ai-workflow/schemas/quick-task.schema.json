@@ -9,6 +9,7 @@
     "task_id",
     "primary_surface",
     "task_summary",
+    "created_at",
     "files",
     "change_class",
     "verification",
@@ -27,6 +28,7 @@
       "items": { "type": "string" }
     },
     "task_summary": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
     "files": {
       "type": "object",
       "additionalProperties": false,

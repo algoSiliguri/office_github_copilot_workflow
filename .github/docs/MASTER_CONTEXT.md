@@ -159,7 +159,7 @@ bash .github/ai-workflow/validators/validate-evaluation-gate <evaluation.json>
 
 ### Layer 5 — TaskManifest (lifecycle tracker)
 
-Every task has one `TaskManifest` at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`. It is:
+Every task has one `TaskManifest` at `.github/tasks/TASK-{NNN}/task-manifest.json`. It is:
 - **Created** at `/grill` time
 - **Updated** at every phase transition (plan → execution → verification → review → evaluated)
 - **Read first** by `/evaluate` to determine if a task is complete before scoring
@@ -199,6 +199,11 @@ Developer: /write-plan
   AI produces PlanArtifact
   AI updates TaskManifest (phase: plan)
 
+Developer: /context-packet (optional)
+  AI reads PlanArtifact
+  AI builds ContextPacketArtifact only when the plan requires it
+  AI updates TaskManifest (phase: context_packet)
+
 Developer: /execute-plan
   AI reads PlanArtifact
   AI edits ONLY declared files
@@ -227,6 +232,7 @@ Developer: /review
   AI computes scores from all 5 upstream artifacts
   AI classifies outcome using declared rules
   AI produces EvaluationRecord (evaluation_status: draft)
+  AI updates TaskManifest (phase: review, artifact_refs.evaluation populated)
   AI presents confirmation block to human
   Human: "confirm evaluation by <name>" or "override evaluation: <category> — <details>"
   AI updates EvaluationRecord (confirmed/overridden)
@@ -243,7 +249,7 @@ Developer: /review
 - Evaluation gives you a score. After each task: did the AI actually achieve what was declared in the grill session?
 
 **For teams:**
-- Artifacts are the audit trail. Any team member can open `TASK-042/grill.yaml` and see the original intent, then `TASK-042/review.yaml` and see whether scope was respected.
+- Artifacts are the audit trail. Any team member can open `TASK-042/grill.json` and see the original intent, then `TASK-042/review.json` and see whether scope was respected.
 - Human approval is recorded. Who approved what, when, and why rejection happened.
 - Evaluation trends expose system-level problems before they become silent drift.
 
@@ -306,7 +312,7 @@ The rejection reason is now structured: `category + details`. This is the most v
 ## How to Identify Where the System Fails
 
 ### Signal 1 — EvaluationRecord outcome
-After every task, read the EvaluationRecord at `.github/ai-workflow/artifacts/evaluation/TASK-{NNN}.evaluation.json`.
+After every task, read the EvaluationRecord at `.github/tasks/TASK-{NNN}/evaluation.json`.
 
 | Outcome | Meaning |
 |---------|---------|
@@ -342,30 +348,30 @@ If multiple tasks in a skill area show `criteria_satisfaction_rate` below 0.7, t
 
 ```bash
 # 1. Find the TaskManifest — shows lifecycle state and all artifact paths
-cat .github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json
+cat .github/tasks/TASK-{NNN}/task-manifest.json
 
 # 2. Read the GrillRecord — what was the declared intent?
-cat .github/tasks/TASK-{NNN}/grill.yaml
+cat .github/tasks/TASK-{NNN}/grill.json
 # Check: success_criteria, approach, decision, task_type
 
 # 3. Read the PlanArtifact — what scope was declared?
-cat .github/tasks/TASK-{NNN}/plan.yaml
+cat .github/tasks/TASK-{NNN}/plan.json
 # Check: files_in_scope, verification_command, steps[].risk_class
 
 # 4. Read the ExecutionRecord — what actually happened?
-cat .github/tasks/TASK-{NNN}/execution.yaml
+cat .github/tasks/TASK-{NNN}/execution.json
 # Check: actual_changes.unplanned_files_touched, decision.status, commands_run
 
 # 5. Read the VerificationRecord — was verification real?
-cat .github/tasks/TASK-{NNN}/verification.yaml
+cat .github/tasks/TASK-{NNN}/verification.json
 # Check: criteria_outcomes[].met, evidence[], command_output
 
 # 6. Read the ReviewRecord — did scope drift? Did human approve?
-cat .github/tasks/TASK-{NNN}/review.yaml
+cat .github/tasks/TASK-{NNN}/review.json
 # Check: scope_violations, scope_match, human_authorization.status, human_authorization.reason
 
 # 7. Read the EvaluationRecord — final score
-cat .github/ai-workflow/artifacts/evaluation/TASK-{NNN}.evaluation.json
+cat .github/tasks/TASK-{NNN}/evaluation.json
 # Check: outcome, scores.criteria_satisfaction_rate, human_evaluation.status
 ```
 
@@ -374,20 +380,20 @@ cat .github/ai-workflow/artifacts/evaluation/TASK-{NNN}.evaluation.json
 ```bash
 # Validate any artifact against its schema
 bash .github/ai-workflow/validators/validate-artifact \
-  .github/tasks/TASK-{NNN}/verification.yaml
+  .github/tasks/TASK-{NNN}/verification.json
 
 # Validate criteria coverage (cross-artifact)
 bash .github/ai-workflow/validators/validate-criteria-coverage \
-  .github/tasks/TASK-{NNN}/verification.yaml \
-  .github/tasks/TASK-{NNN}/grill.yaml
+  .github/tasks/TASK-{NNN}/verification.json \
+  .github/tasks/TASK-{NNN}/grill.json
 
 # Validate evaluation artifact
 bash .github/ai-workflow/validators/validate-evaluation-gate \
-  .github/ai-workflow/artifacts/evaluation/TASK-{NNN}.evaluation.json
+  .github/tasks/TASK-{NNN}/evaluation.json
 
 # Validate artifact is in correct directory
 bash .github/ai-workflow/validators/validate-artifact-path \
-  .github/ai-workflow/artifacts/evaluation/TASK-{NNN}.evaluation.json
+  .github/tasks/TASK-{NNN}/evaluation.json
 ```
 
 ### Common error patterns
@@ -485,7 +491,7 @@ Human reads, identifies root cause: grill criteria are not verifiable
 /grill (task_type: system_improvement)
   triggered_by:
     source_type: evaluation_failure
-    evaluation_refs: [artifacts/evaluation/TASK-042.evaluation.json]
+    evaluation_refs: [.github/tasks/TASK-042/evaluation.json]
     failure_category: criteria_not_met
         ↓
 /write-plan → /execute-plan → /verify → /review → /evaluate

@@ -15,12 +15,13 @@ Project-specific config: `.github/workflow/config.yaml` — written by `/setup-w
 | `/execute-plan` | Implementation | Plugin + CLI |
 | `/verify` | Evidence-backed verification | CLI |
 | `/review` | Scope-check before merge | Plugin |
+| `/evaluate` | Human-confirmed task evaluation | Plugin |
 | `/quick-task` | Lightweight path | Plugin |
 
 ## Workflow phase order
 
 ```
-setup-workflow → grill → [legacy-explore if required] → write-plan → [context-packet] → execute-plan → verify → review
+setup-workflow → grill → [legacy-explore if required] → write-plan → [context-packet] → execute-plan → verify → review → evaluate
                                               ↑
                                          quick-task (parallel escape hatch)
 ```
@@ -58,10 +59,10 @@ Always show CLI handoff block and wait for human approval before switching surfa
 - No CLI handoff without human approval
 - No plan creation until GrillRecord has `decision: proceed`
 - No plan creation when GrillRecord says exploration is required and no LegacyExplorationRecord exists
-- All artifacts saved to `.github/tasks/TASK-{NNN}/`
+- All full-workflow runtime artifacts saved as JSON under `.github/tasks/TASK-{NNN}/`
 
 ## Instruction hierarchy
 
-`.github/instructions/` > `.github/agents/` > `.github/prompts/`
+`.github/copilot-instructions.md` is always-on. `.github/instructions/*.instructions.md` may add scoped instructions. `.github/prompts/*.prompt.md` are reusable user-invoked prompts. Only `.agent.md` files under `.github/agents/` should be treated as supported custom agent profiles.
 
 Manifest at `.github/ai-workflow/manifest.yaml` is a machine-readable registry for CLI validators only — do not load it as an instruction source.

@@ -8,14 +8,19 @@ output_artifacts:
   - type: GrillRecord
     schema: grill.schema.v1
     required: true
+  - type: TaskManifest
+    schema: task-manifest.schema.v1
+    required: true
 
 required_validators:
   after:
     - validate-artifact
+    - validate-artifact-path
 
 authority:
   may_create:
     - GrillRecord
+    - TaskManifest
   may_modify: []
   may_read:
     - task_scope_files_only
@@ -34,3 +39,4 @@ semantics:
     - capture_approach_decisions_with_alternatives_rejected
     - record_decision_proceed_or_stop
     - save_grill_record_to_task_folder
+    - create_task_manifest_at_task_birth

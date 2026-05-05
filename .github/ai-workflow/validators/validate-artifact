@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
+import json
+import re
 import sys
 from pathlib import Path
-
-import yaml
 
 
 ALLOWED_OPERATIONS = {"create", "modify", "delete"}
 ALLOWED_QUICK_TASK_STATUS = {"PASS_QUICK", "FAIL", "ESCALATED_TO_FULL_WORKFLOW"}
-ALLOWED_PLAN_STATUS = {"READY", "DEGRADED", "BLOCKED"}
 ALLOWED_VERIFICATION_STATUS = {"VERIFIED", "VERIFIED_WITH_DEGRADATION", "FAILED", "BLOCKED"}
 ALLOWED_REVIEW_STATUS = {"PASS", "PASS_WITH_DEGRADATION", "FAIL", "BLOCKED"}
+TASK_ID_RE = re.compile(r"^TASK-\d{3}$")
+
 EXPECTED_TUPLES = {
     "grill.schema.v1": ("grill.v1", "grill.schema.v1"),
     "legacy-explore.schema.v1": ("legacy-explore.v1", "legacy-explore.schema.v1"),
@@ -19,25 +20,34 @@ EXPECTED_TUPLES = {
     "execution-checkpoint.schema.v1": ("execute-plan.v1", "execution-checkpoint.schema.v1"),
     "verification.schema.v1": ("verify.v1", "verification.schema.v1"),
     "review.schema.v1": ("review.v1", "review.schema.v1"),
+    "task-manifest.schema.v1": ("grill.v1", "task-manifest.schema.v1"),
+    "evaluation.schema.v1": ("evaluate.v1", "evaluation.schema.v1"),
 }
 
+ARTIFACT_REF_KEYS = [
+    "grill",
+    "legacy_exploration",
+    "plan",
+    "context_packet",
+    "execution",
+    "verification",
+    "review",
+    "evaluation",
+]
 
-MONOLITH_FIELDS = ["blast_radius", "test_surface_quality", "has_generated_code", "has_stored_procedures", "planning_constraints"]
+OUTCOME_REASON_CATEGORIES = {
+    "scope_violation",
+    "incorrect_implementation",
+    "criteria_not_met",
+    "verification_incomplete",
+    "quality_issue",
+    "other",
+}
 
 
 def fail(reason: str) -> int:
     print(f"FAIL: {reason}")
     return 1
-
-
-def migration_required(artifact_path: str, artifact_type: str, missing_fields: list, found_schema: str, expected_schema: str) -> int:
-    print(f"MIGRATION_REQUIRED: {artifact_path}")
-    print(f"  artifact_type:    {artifact_type}")
-    print(f"  found_schema:     {found_schema}")
-    print(f"  expected_schema:  {expected_schema}")
-    print(f"  missing_fields:   {', '.join(missing_fields)}")
-    print(f"  action:           re-run the phase command that produced this artifact")
-    return 2
 
 
 def require(condition: bool, reason: str):
@@ -49,26 +59,37 @@ def require_string(value, path: str):
     require(isinstance(value, str) and value.strip(), f"{path} must be a non-empty string")
 
 
-def load_artifact(path_arg: str):
+def load_json(path_arg: str):
     path = Path(path_arg)
     require(path.exists(), f"artifact does not exist: {path}")
-    data = yaml.safe_load(path.read_text())
-    require(isinstance(data, dict), "artifact must be a mapping")
+    with path.open() as handle:
+        data = json.load(handle)
+    require(isinstance(data, dict), "artifact must be a JSON object")
     return data
 
 
-def validate_string_list(entries, path: str):
+def validate_string_list(entries, path: str, allow_empty: bool = True):
     require(isinstance(entries, list), f"{path} must be a list")
+    if not allow_empty:
+        require(bool(entries), f"{path} must be non-empty")
     for idx, value in enumerate(entries):
         require_string(value, f"{path}[{idx}]")
 
 
-def validate_file_entries(entries, path: str):
+def validate_file_entries(entries, path: str, allow_empty: bool = True):
     require(isinstance(entries, list), f"{path} must be a list")
+    if not allow_empty:
+        require(bool(entries), f"{path} must be non-empty")
     for idx, entry in enumerate(entries):
-        require(isinstance(entry, dict), f"{path}[{idx}] must be a mapping")
+        require(isinstance(entry, dict), f"{path}[{idx}] must be an object")
         require_string(entry.get("path"), f"{path}[{idx}].path")
         require(entry.get("operation") in ALLOWED_OPERATIONS, f"{path}[{idx}].operation must be one of {sorted(ALLOWED_OPERATIONS)}")
+
+
+def validate_reason(reason, path: str):
+    require(isinstance(reason, dict), f"{path} must be an object")
+    require(reason.get("category") in OUTCOME_REASON_CATEGORIES, f"{path}.category must be a supported category")
+    require_string(reason.get("details"), f"{path}.details")
 
 
 def validate_validated_under(artifact):
@@ -76,7 +97,7 @@ def validate_validated_under(artifact):
     require(schema_version in EXPECTED_TUPLES, f"unsupported schema_version: {schema_version!r}")
     expected_command, expected_schema = EXPECTED_TUPLES[schema_version]
     vu = artifact.get("validated_under")
-    require(isinstance(vu, dict), "validated_under must be a mapping")
+    require(isinstance(vu, dict), "validated_under must be an object")
     require(vu.get("workflow_manifest_version") == 1, "validated_under.workflow_manifest_version must be 1")
     require(vu.get("workflow_contract_version") == 1, "validated_under.workflow_contract_version must be 1")
     require(vu.get("command_contract_id") == expected_command, f"validated_under.command_contract_id must be {expected_command}")
@@ -85,73 +106,97 @@ def validate_validated_under(artifact):
     require(vu.get("config_instruction_version") == "v1", "validated_under.config_instruction_version must be v1")
 
 
-def validate_grill(artifact):
-    require(artifact.get("artifact_type") == "GrillRecord", "artifact_type must be GrillRecord")
+def validate_common(artifact, expected_type: str):
+    require(artifact.get("artifact_type") == expected_type, f"artifact_type must be {expected_type}")
     require_string(artifact.get("task_id"), "task_id")
+    require(TASK_ID_RE.match(artifact["task_id"]) is not None, "task_id must match TASK-{NNN}")
+    if "created_at" in artifact:
+        require_string(artifact.get("created_at"), "created_at")
+
+
+def validate_grill(artifact):
+    validate_common(artifact, "GrillRecord")
+    require(artifact.get("task_type") in {"feature", "bugfix", "system_improvement", "exploration"}, "task_type must be valid")
     require(artifact.get("primary_surface") in {"copilot_plugin", "copilot_cli"}, "primary_surface must be copilot_plugin or copilot_cli")
     require_string(artifact.get("goal"), "goal")
     require_string(artifact.get("problem_statement"), "problem_statement")
+    validate_string_list(artifact.get("assumptions", []), "assumptions")
+    questions = artifact.get("questions", [])
+    require(isinstance(questions, list), "questions must be a list")
+    for idx, question in enumerate(questions):
+        require(isinstance(question, dict), f"questions[{idx}] must be an object")
+        require_string(question.get("question"), f"questions[{idx}].question")
+        require_string(question.get("answer"), f"questions[{idx}].answer")
+    validate_string_list(artifact.get("risks", []), "risks")
+    validate_string_list(artifact.get("constraints", []), "constraints")
     approach = artifact.get("approach")
     require(isinstance(approach, list) and approach, "approach must be a non-empty list")
     for idx, item in enumerate(approach):
-        require(isinstance(item, dict), f"approach[{idx}] must be a mapping")
+        require(isinstance(item, dict), f"approach[{idx}] must be an object")
         require_string(item.get("decision"), f"approach[{idx}].decision")
         require_string(item.get("rationale"), f"approach[{idx}].rationale")
         validate_string_list(item.get("alternatives_rejected"), f"approach[{idx}].alternatives_rejected")
-    exploration_required = artifact.get("exploration_required")
-    require(isinstance(exploration_required, bool), "exploration_required must be boolean")
-    exploration_reasons = artifact.get("exploration_reasons")
-    validate_string_list(exploration_reasons, "exploration_reasons")
-    if exploration_required:
-        require(bool(exploration_reasons), "exploration_required=true requires exploration_reasons")
-    else:
-        require(not exploration_reasons, "exploration_reasons must be empty when exploration_required=false")
-    require(artifact.get("decision") in {"proceed", "stop"}, "decision must be proceed or stop")
-
-
-class MigrationRequired(Exception):
-    def __init__(self, missing_fields: list):
-        self.missing_fields = missing_fields
+    require(isinstance(artifact.get("exploration_required"), bool), "exploration_required must be boolean")
+    validate_string_list(artifact.get("exploration_reasons"), "exploration_reasons")
+    decision = artifact.get("decision")
+    require(decision in {"proceed", "stop"}, "decision must be proceed or stop")
+    if decision == "proceed":
+        validate_string_list(artifact.get("success_criteria"), "success_criteria", allow_empty=False)
+    if decision == "stop":
+        validate_string_list(artifact.get("open_blockers"), "open_blockers", allow_empty=False)
+    if artifact.get("task_type") == "system_improvement":
+        triggered_by = artifact.get("triggered_by")
+        require(isinstance(triggered_by, dict), "triggered_by must be an object for system_improvement")
+        require_string(triggered_by.get("source_type"), "triggered_by.source_type")
+        validate_string_list(triggered_by.get("evaluation_refs"), "triggered_by.evaluation_refs", allow_empty=False)
+        require(triggered_by.get("failure_category") in OUTCOME_REASON_CATEGORIES, "triggered_by.failure_category must be valid")
 
 
 def validate_legacy_explore(artifact):
-    require(artifact.get("artifact_type") == "LegacyExplorationRecord", "artifact_type must be LegacyExplorationRecord")
-    require_string(artifact.get("task_id"), "task_id")
+    validate_common(artifact, "LegacyExplorationRecord")
     require_string(artifact.get("source_grill"), "source_grill")
-    validate_string_list(artifact.get("trigger_reasons"), "trigger_reasons")
-    validate_string_list(artifact.get("files_reviewed"), "files_reviewed")
+    validate_string_list(artifact.get("trigger_reasons"), "trigger_reasons", allow_empty=False)
+    validate_string_list(artifact.get("files_reviewed"), "files_reviewed", allow_empty=False)
+    validate_string_list(artifact.get("modules_reviewed", []), "modules_reviewed")
     require_string(artifact.get("summary"), "summary")
-    validate_string_list(artifact.get("findings"), "findings")
-    validate_string_list(artifact.get("risks"), "risks")
-    validate_file_entries(artifact.get("recommended_files_in_scope"), "recommended_files_in_scope")
-    require(artifact.get("decision") in {"proceed", "stop"}, "decision must be proceed or stop")
-    if artifact.get("decision") == "stop":
-        validate_string_list(artifact.get("open_blockers"), "open_blockers")
-        require(bool(artifact.get("open_blockers")), "stop decision requires open_blockers")
-    missing = [f for f in MONOLITH_FIELDS if f not in artifact]
-    if missing:
-        raise MigrationRequired(missing)
+    validate_string_list(artifact.get("findings", []), "findings")
+    validate_string_list(artifact.get("risks", []), "risks")
+    validate_file_entries(artifact.get("recommended_files_in_scope"), "recommended_files_in_scope", allow_empty=False)
+    validate_string_list(artifact.get("recommended_files_out_of_scope", []), "recommended_files_out_of_scope")
+    blast_radius = artifact.get("blast_radius")
+    require(isinstance(blast_radius, dict), "blast_radius must be an object")
+    for key in ("affected_files", "affected_modules", "caller_count"):
+        require(key in blast_radius, f"blast_radius.{key} is required")
+    require(blast_radius.get("confidence") in {"low", "medium", "high"}, "blast_radius.confidence must be valid")
+    require(artifact.get("test_surface_quality") in {"low", "medium", "high"}, "test_surface_quality must be valid")
+    require(isinstance(artifact.get("has_generated_code"), bool), "has_generated_code must be boolean")
+    require(isinstance(artifact.get("has_stored_procedures"), bool), "has_stored_procedures must be boolean")
+    validate_string_list(artifact.get("planning_constraints", []), "planning_constraints")
+    decision = artifact.get("decision")
+    require(decision in {"proceed", "stop"}, "decision must be proceed or stop")
+    if decision == "stop":
+        validate_string_list(artifact.get("open_blockers"), "open_blockers", allow_empty=False)
 
 
 def validate_quick_task(artifact):
-    require(artifact.get("artifact_type") == "QuickTaskRecord", "artifact_type must be QuickTaskRecord")
-    require_string(artifact.get("task_id"), "task_id")
+    validate_common(artifact, "QuickTaskRecord")
+    require(artifact.get("primary_surface") in {"copilot_plugin", "copilot_cli"}, "primary_surface must be valid")
     require_string(artifact.get("task_summary"), "task_summary")
     files = artifact.get("files")
-    require(isinstance(files, dict), "files must be a mapping")
-    validate_file_entries(files.get("planned"), "files.planned")
+    require(isinstance(files, dict), "files must be an object")
+    validate_file_entries(files.get("planned"), "files.planned", allow_empty=False)
     validate_file_entries(files.get("actual"), "files.actual")
     planned = {entry["path"] for entry in files["planned"]}
     actual = {entry["path"] for entry in files["actual"]}
     require(actual.issubset(planned), "files.actual must be a subset of files.planned")
     change_class = artifact.get("change_class")
-    require(isinstance(change_class, dict), "change_class must be a mapping")
+    require(isinstance(change_class, dict), "change_class must be an object")
     require_string(change_class.get("value"), "change_class.value")
     require(isinstance(change_class.get("policy_allowed"), bool), "change_class.policy_allowed must be boolean")
     require(change_class.get("classification_status") in {"proposed", "revised_before_edit", "locked_for_execution"}, "change_class.classification_status must be valid")
     require(isinstance(change_class.get("public_behavior_change"), bool), "change_class.public_behavior_change must be boolean")
     verification = artifact.get("verification")
-    require(isinstance(verification, dict), "verification must be a mapping")
+    require(isinstance(verification, dict), "verification must be an object")
     require_string(verification.get("command"), "verification.command")
     validate_string_list(verification.get("evidence"), "verification.evidence")
     require(isinstance(artifact.get("escalation_triggered"), bool), "escalation_triggered must be boolean")
@@ -161,84 +206,71 @@ def validate_quick_task(artifact):
     if artifact.get("escalation_triggered"):
         require(status == "ESCALATED_TO_FULL_WORKFLOW", "escalation_triggered=true requires ESCALATED_TO_FULL_WORKFLOW")
         require(bool(artifact.get("escalation_reason")), "escalation requires escalation_reason")
-    if change_class.get("policy_allowed") is False or change_class.get("public_behavior_change") is True:
-        require(status == "ESCALATED_TO_FULL_WORKFLOW", "forbidden or public-behavior-changing quick-task must escalate")
-    if status == "PASS_QUICK":
-        require(change_class.get("policy_allowed") is True, "PASS_QUICK requires policy_allowed=true")
-        require(bool(verification.get("evidence")), "PASS_QUICK requires verification evidence")
 
 
 def validate_plan(artifact):
-    require(artifact.get("artifact_type") == "PlanArtifact", "artifact_type must be PlanArtifact")
-    require_string(artifact.get("task_id"), "task_id")
+    validate_common(artifact, "PlanArtifact")
+    require(artifact.get("primary_surface") in {"copilot_plugin", "copilot_cli"}, "primary_surface must be valid")
     require_string(artifact.get("source_grill"), "source_grill")
     source_exploration = artifact.get("source_exploration")
     require(source_exploration is None or (isinstance(source_exploration, str) and source_exploration.strip()), "source_exploration must be null or non-empty string")
-    validate_file_entries(artifact.get("files_in_scope"), "files_in_scope")
-    validate_string_list(artifact.get("files_out_of_scope"), "files_out_of_scope")
+    validate_file_entries(artifact.get("files_in_scope"), "files_in_scope", allow_empty=False)
+    validate_string_list(artifact.get("files_out_of_scope", []), "files_out_of_scope")
     require(isinstance(artifact.get("context_packet_required"), bool), "context_packet_required must be boolean")
-    if artifact.get("context_packet_required"):
-        require_string(artifact.get("context_packet_path"), "context_packet_path")
+    context_packet_path = artifact.get("context_packet_path")
+    if artifact["context_packet_required"]:
+        require_string(context_packet_path, "context_packet_path")
     scope_paths = {entry["path"] for entry in artifact["files_in_scope"]}
     steps = artifact.get("steps")
     require(isinstance(steps, list) and steps, "steps must be a non-empty list")
-    step_ids = set()
     for idx, step in enumerate(steps):
-        require(isinstance(step, dict), f"steps[{idx}] must be a mapping")
-        sid = step.get("id")
-        require_string(sid, f"steps[{idx}].id")
-        require(sid not in step_ids, f"steps[{idx}].id must be unique")
-        step_ids.add(sid)
-        require_string(step.get("summary"), f"steps[{idx}].summary")
-        require(step.get("preferred_surface") in {"copilot_plugin", "copilot_cli"}, f"steps[{idx}].preferred_surface must be copilot_plugin or copilot_cli")
+        require(isinstance(step, dict), f"steps[{idx}] must be an object")
+        for key in ("id", "summary", "verification_command", "risk_reason"):
+            require_string(step.get(key), f"steps[{idx}].{key}")
+        require(step.get("preferred_surface") in {"copilot_plugin", "copilot_cli"}, f"steps[{idx}].preferred_surface must be valid")
         validate_file_entries(step.get("files"), f"steps[{idx}].files")
-        for fidx, fentry in enumerate(step["files"]):
-            require(fentry["path"] in scope_paths, f"steps[{idx}].files[{fidx}].path '{fentry['path']}' is not declared in files_in_scope")
+        for fidx, entry in enumerate(step.get("files", [])):
+            require(entry["path"] in scope_paths, f"steps[{idx}].files[{fidx}].path must be in files_in_scope")
         validate_string_list(step.get("allowed_cli_commands"), f"steps[{idx}].allowed_cli_commands")
-        require_string(step.get("verification_command"), f"steps[{idx}].verification_command")
-        require(step.get("risk_class") in {"safe", "degraded", "high-risk"}, f"steps[{idx}].risk_class must be safe, degraded, or high-risk")
+        require(step.get("risk_class") in {"safe", "degraded", "high-risk"}, f"steps[{idx}].risk_class must be valid")
         require(isinstance(step.get("requires_human_ack"), bool), f"steps[{idx}].requires_human_ack must be boolean")
-        require_string(step.get("risk_reason"), f"steps[{idx}].risk_reason")
         validate_string_list(step.get("depends_on"), f"steps[{idx}].depends_on")
-        if step.get("risk_class") in {"degraded", "high-risk"}:
-            require(step.get("requires_human_ack") is True, f"steps[{idx}] with risk_class {step.get('risk_class')} must require human ack")
         if step.get("risk_class") == "safe":
             require(step.get("requires_human_ack") is False, f"steps[{idx}] with risk_class safe must not require human ack")
+        else:
+            require(step.get("requires_human_ack") is True, f"steps[{idx}] with risk_class {step.get('risk_class')} must require human ack")
         if step.get("preferred_surface") == "copilot_cli":
             require(bool(step.get("allowed_cli_commands")), f"steps[{idx}] with preferred_surface=copilot_cli must declare allowed_cli_commands")
     require_string(artifact.get("verification_command"), "verification_command")
-    validate_string_list(artifact.get("constraints"), "constraints")
+    validate_string_list(artifact.get("constraints", []), "constraints")
 
 
 def validate_context_packet(artifact):
-    require(artifact.get("artifact_type") == "ContextPacketArtifact", "artifact_type must be ContextPacketArtifact")
-    require_string(artifact.get("task_id"), "task_id")
+    validate_common(artifact, "ContextPacketArtifact")
     require_string(artifact.get("phase_id"), "phase_id")
     require_string(artifact.get("source_plan"), "source_plan")
     require_string(artifact.get("generated_at"), "generated_at")
-    require(isinstance(artifact.get("scope"), dict), "scope must be a mapping")
-    require(isinstance(artifact.get("retrieval_policy"), dict), "retrieval_policy must be a mapping")
-    require(isinstance(artifact.get("coverage"), dict), "coverage must be a mapping")
+    for key in ("scope", "retrieval_policy", "coverage", "execution_decision", "validation"):
+        require(isinstance(artifact.get(key), dict), f"{key} must be an object")
     require(isinstance(artifact.get("included_context"), list), "included_context must be a list")
-    require(isinstance(artifact.get("execution_decision"), dict), "execution_decision must be a mapping")
-    require(isinstance(artifact.get("validation"), dict), "validation must be a mapping")
 
 
 def validate_execution(artifact):
-    require(artifact.get("artifact_type") == "ExecutionRecord", "artifact_type must be ExecutionRecord")
-    require_string(artifact.get("task_id"), "task_id")
+    validate_common(artifact, "ExecutionRecord")
+    require(artifact.get("primary_surface") in {"copilot_plugin", "copilot_cli"}, "primary_surface must be valid")
     require_string(artifact.get("source_plan"), "source_plan")
-    validate_string_list(artifact.get("step_ids"), "step_ids")
-    require(artifact.get("status") in {"in_progress", "completed", "blocked", "escalated"}, "status must be in_progress, completed, blocked, or escalated")
+    validate_string_list(artifact.get("step_ids"), "step_ids", allow_empty=False)
+    status = artifact.get("status")
+    require(status in {"in_progress", "completed", "blocked", "escalated"}, "status must be valid")
     plan_scope = artifact.get("plan_scope")
-    require(isinstance(plan_scope, dict), "plan_scope must be a mapping")
-    validate_string_list(plan_scope.get("files_authorized"), "plan_scope.files_authorized")
+    require(isinstance(plan_scope, dict), "plan_scope must be an object")
+    validate_string_list(plan_scope.get("files_authorized"), "plan_scope.files_authorized", allow_empty=False)
     actual_changes = artifact.get("actual_changes")
-    require(isinstance(actual_changes, dict), "actual_changes must be a mapping")
+    require(isinstance(actual_changes, dict), "actual_changes must be an object")
     validate_string_list(actual_changes.get("files_touched"), "actual_changes.files_touched")
     validate_string_list(actual_changes.get("unplanned_files_touched"), "actual_changes.unplanned_files_touched")
     cli_handoff = artifact.get("cli_handoff")
-    require(isinstance(cli_handoff, dict), "cli_handoff must be a mapping")
+    require(isinstance(cli_handoff, dict), "cli_handoff must be an object")
     require(cli_handoff.get("approval_status") in {"not_required", "pending", "approved", "rejected"}, "cli_handoff.approval_status must be valid")
     require_string(cli_handoff.get("reason"), "cli_handoff.reason")
     validate_string_list(cli_handoff.get("allowed_commands"), "cli_handoff.allowed_commands")
@@ -248,7 +280,7 @@ def validate_execution(artifact):
     human_acks = artifact.get("human_acknowledgments")
     require(isinstance(human_acks, list), "human_acknowledgments must be a list")
     for idx, ack in enumerate(human_acks):
-        require(isinstance(ack, dict), f"human_acknowledgments[{idx}] must be a mapping")
+        require(isinstance(ack, dict), f"human_acknowledgments[{idx}] must be an object")
         require_string(ack.get("step_id"), f"human_acknowledgments[{idx}].step_id")
         require(ack.get("status") in {"pending", "approved", "rejected"}, f"human_acknowledgments[{idx}].status must be valid")
         require_string(ack.get("reviewer"), f"human_acknowledgments[{idx}].reviewer")
@@ -256,42 +288,52 @@ def validate_execution(artifact):
     commands_run = artifact.get("commands_run")
     require(isinstance(commands_run, list), "commands_run must be a list")
     for idx, cmd in enumerate(commands_run):
-        require(isinstance(cmd, dict), f"commands_run[{idx}] must be a mapping")
+        require(isinstance(cmd, dict), f"commands_run[{idx}] must be an object")
         require_string(cmd.get("command"), f"commands_run[{idx}].command")
         require_string(cmd.get("output"), f"commands_run[{idx}].output")
     decision = artifact.get("decision")
-    require(isinstance(decision, dict), "decision must be a mapping")
+    require(isinstance(decision, dict), "decision must be an object")
     require(decision.get("status") in {"continue", "stop", "escalate"}, "decision.status must be continue, stop, or escalate")
     require_string(decision.get("reason"), "decision.reason")
+    unplanned = actual_changes.get("unplanned_files_touched", [])
+    if unplanned:
+        require(status in {"blocked", "escalated"}, "unplanned_files_touched requires blocked or escalated execution status")
+        require(decision.get("status") == "escalate", "unplanned_files_touched requires decision.status=escalate")
 
 
 def validate_verification(artifact):
-    require(artifact.get("artifact_type") == "VerificationRecord", "artifact_type must be VerificationRecord")
-    require_string(artifact.get("task_id"), "task_id")
+    validate_common(artifact, "VerificationRecord")
+    require(artifact.get("primary_surface") in {"copilot_plugin", "copilot_cli"}, "primary_surface must be valid")
     require_string(artifact.get("plan_ref"), "plan_ref")
     require_string(artifact.get("execution_ref"), "execution_ref")
     validate_string_list(artifact.get("changed_files"), "changed_files")
     require_string(artifact.get("verification_command"), "verification_command")
     require_string(artifact.get("verification_command_run"), "verification_command_run")
     require_string(artifact.get("command_output"), "command_output")
-    validate_string_list(artifact.get("evidence"), "evidence")
+    validate_string_list(artifact.get("evidence"), "evidence", allow_empty=False)
+    outcomes = artifact.get("criteria_outcomes")
+    require(isinstance(outcomes, list) and outcomes, "criteria_outcomes must be a non-empty list")
+    for idx, outcome in enumerate(outcomes):
+        require(isinstance(outcome, dict), f"criteria_outcomes[{idx}] must be an object")
+        require_string(outcome.get("criterion"), f"criteria_outcomes[{idx}].criterion")
+        require(isinstance(outcome.get("met"), bool), f"criteria_outcomes[{idx}].met must be boolean")
+        require_string(outcome.get("evidence"), f"criteria_outcomes[{idx}].evidence")
+        require_string(outcome.get("verification_command_ref"), f"criteria_outcomes[{idx}].verification_command_ref")
     status = artifact.get("status")
     require(status in ALLOWED_VERIFICATION_STATUS, f"status must be one of {sorted(ALLOWED_VERIFICATION_STATUS)}")
-    degraded_reason = artifact.get("degraded_reason")
     human_ack = artifact.get("human_acknowledgment")
     if status == "VERIFIED_WITH_DEGRADATION":
-        require(isinstance(degraded_reason, str) and degraded_reason.strip(), "VERIFIED_WITH_DEGRADATION requires degraded_reason")
+        require_string(artifact.get("degraded_reason"), "degraded_reason")
         require(isinstance(human_ack, dict), "VERIFIED_WITH_DEGRADATION requires human_acknowledgment")
         require(human_ack.get("status") == "approved", "degraded verification requires approved human_acknowledgment")
         require_string(human_ack.get("reviewer"), "human_acknowledgment.reviewer")
-        require_string(human_ack.get("reason"), "human_acknowledgment.reason")
     elif human_ack is not None:
-        require(isinstance(human_ack, dict), "human_acknowledgment must be null or a mapping")
+        require(isinstance(human_ack, dict), "human_acknowledgment must be null or an object")
 
 
 def validate_review(artifact):
-    require(artifact.get("artifact_type") == "ReviewRecord", "artifact_type must be ReviewRecord")
-    require_string(artifact.get("task_id"), "task_id")
+    validate_common(artifact, "ReviewRecord")
+    require(artifact.get("primary_surface") in {"copilot_plugin", "copilot_cli"}, "primary_surface must be valid")
     require_string(artifact.get("plan_ref"), "plan_ref")
     require_string(artifact.get("execution_ref"), "execution_ref")
     require_string(artifact.get("verification_ref"), "verification_ref")
@@ -299,29 +341,88 @@ def validate_review(artifact):
     validate_string_list(artifact.get("scope_violations"), "scope_violations")
     scope_match = artifact.get("scope_match")
     require(isinstance(scope_match, bool), "scope_match must be boolean")
+    status = artifact.get("status")
+    require(status in ALLOWED_REVIEW_STATUS, f"status must be one of {sorted(ALLOWED_REVIEW_STATUS)}")
+    human_auth = artifact.get("human_authorization")
     if scope_match:
         require(not artifact.get("scope_violations"), "scope_match=true requires empty scope_violations")
     else:
         require(bool(artifact.get("scope_violations")), "scope_match=false requires scope_violations")
-    status = artifact.get("status")
-    require(status in ALLOWED_REVIEW_STATUS, f"status must be one of {sorted(ALLOWED_REVIEW_STATUS)}")
-    human_auth = artifact.get("human_authorization")
+        require(status == "FAIL", "any scope violation requires review status FAIL")
     if status in {"PASS", "PASS_WITH_DEGRADATION"}:
         require(scope_match is True, f"{status} requires scope_match=true")
         require(isinstance(human_auth, dict), f"{status} requires human_authorization")
         require(human_auth.get("status") == "approved", f"{status} requires approved human_authorization")
         require_string(human_auth.get("reviewer"), "human_authorization.reviewer")
     if status == "PASS_WITH_DEGRADATION":
-        require(isinstance(artifact.get("degraded_reason"), str) and artifact["degraded_reason"].strip(), "PASS_WITH_DEGRADATION requires degraded_reason")
+        require_string(artifact.get("degraded_reason"), "degraded_reason")
+    if isinstance(human_auth, dict) and human_auth.get("status") == "rejected":
+        require_string(human_auth.get("reviewer"), "human_authorization.reviewer")
+        validate_reason(human_auth.get("reason"), "human_authorization.reason")
+
+
+def validate_task_manifest(artifact):
+    validate_common(artifact, "TaskManifest")
+    require(artifact.get("task_type") in {"feature", "bugfix", "system_improvement", "exploration"}, "task_type must be valid")
+    require_string(artifact.get("updated_at"), "updated_at")
+    require(artifact.get("status") in {"in_progress", "completed", "blocked", "abandoned"}, "status must be valid")
+    require(artifact.get("phase") in {"grill", "legacy_exploration", "plan", "context_packet", "execution", "verification", "review", "evaluated"}, "phase must be valid")
+    artifact_refs = artifact.get("artifact_refs")
+    require(isinstance(artifact_refs, dict), "artifact_refs must be an object")
+    for key in ARTIFACT_REF_KEYS:
+        require(key in artifact_refs, f"artifact_refs.{key} is required")
+        value = artifact_refs[key]
+        require(value is None or (isinstance(value, str) and value.strip()), f"artifact_refs.{key} must be null or non-empty string")
+    require(isinstance(artifact_refs.get("grill"), str) and artifact_refs["grill"].strip(), "artifact_refs.grill must be populated")
+    if artifact.get("phase") == "evaluated":
+        require(isinstance(artifact_refs.get("evaluation"), str) and artifact_refs["evaluation"].strip(), "evaluated tasks require artifact_refs.evaluation")
+
+
+def validate_evaluation(artifact):
+    validate_common(artifact, "EvaluationRecord")
+    source_refs = artifact.get("source_refs")
+    require(isinstance(source_refs, dict), "source_refs must be an object")
+    for key in ("task_manifest", "grill", "plan", "execution", "verification", "review"):
+        require_string(source_refs.get(key), f"source_refs.{key}")
+    scores = artifact.get("scores")
+    require(isinstance(scores, dict), "scores must be an object")
+    rate = scores.get("criteria_satisfaction_rate")
+    require(isinstance(rate, (int, float)) and 0.0 <= rate <= 1.0, "scores.criteria_satisfaction_rate must be between 0.0 and 1.0")
+    summary = scores.get("criteria_outcomes_summary")
+    require(isinstance(summary, list) and summary, "scores.criteria_outcomes_summary must be a non-empty list")
+    for idx, item in enumerate(summary):
+        require(isinstance(item, dict), f"scores.criteria_outcomes_summary[{idx}] must be an object")
+        require_string(item.get("criterion"), f"scores.criteria_outcomes_summary[{idx}].criterion")
+        require(isinstance(item.get("met"), bool), f"scores.criteria_outcomes_summary[{idx}].met must be boolean")
+    require(isinstance(scores.get("scope_adherence"), bool), "scores.scope_adherence must be boolean")
+    require(isinstance(scores.get("unplanned_files_count"), int) and scores["unplanned_files_count"] >= 0, "scores.unplanned_files_count must be a non-negative integer")
+    require(scores.get("verification_status") in ALLOWED_VERIFICATION_STATUS, "scores.verification_status must be valid")
+    require(scores.get("review_status") in ALLOWED_REVIEW_STATUS, "scores.review_status must be valid")
+    require(scores.get("human_approval_first_pass") in {"approved", "rejected", "pending"}, "scores.human_approval_first_pass must be valid")
+    require(artifact.get("outcome") in {"success", "partial_success", "failure"}, "outcome must be valid")
+    require(artifact.get("evaluation_status") in {"draft", "confirmed", "overridden"}, "evaluation_status must be valid")
+    human = artifact.get("human_evaluation")
+    require(isinstance(human, dict), "human_evaluation must be an object")
+    require(human.get("status") in {"draft", "confirmed", "overridden"}, "human_evaluation.status must be valid")
+    require("reviewer" in human, "human_evaluation.reviewer is required")
+    if artifact.get("evaluation_status") == "draft":
+        require(human.get("status") == "draft", "draft evaluation requires human_evaluation.status=draft")
+    if artifact.get("evaluation_status") == "confirmed":
+        require(human.get("status") == "confirmed", "confirmed evaluation requires human_evaluation.status=confirmed")
+        require_string(human.get("reviewer"), "human_evaluation.reviewer")
+        require_string(human.get("confirmed_at"), "human_evaluation.confirmed_at")
+    if artifact.get("evaluation_status") == "overridden":
+        require(human.get("status") == "overridden", "overridden evaluation requires human_evaluation.status=overridden")
+        require_string(human.get("reviewer"), "human_evaluation.reviewer")
+        validate_reason(human.get("override_reason"), "human_evaluation.override_reason")
 
 
 def main() -> int:
     if len(sys.argv) != 2:
         return fail("usage: validate-artifact <artifact-path>")
 
-    artifact_path = sys.argv[1]
     try:
-        artifact = load_artifact(artifact_path)
+        artifact = load_json(sys.argv[1])
         validate_validated_under(artifact)
         schema_version = artifact.get("schema_version")
         if schema_version == "grill.schema.v1":
@@ -340,18 +441,14 @@ def main() -> int:
             validate_verification(artifact)
         elif schema_version == "review.schema.v1":
             validate_review(artifact)
+        elif schema_version == "task-manifest.schema.v1":
+            validate_task_manifest(artifact)
+        elif schema_version == "evaluation.schema.v1":
+            validate_evaluation(artifact)
         else:
             raise ValueError("unsupported schema_version")
         print("PASS")
         return 0
-    except MigrationRequired as exc:
-        return migration_required(
-            artifact_path,
-            artifact.get("artifact_type", "unknown"),
-            exc.missing_fields,
-            artifact.get("schema_version", "unknown"),
-            "legacy-explore.schema.v1 (current)",
-        )
     except ValueError as exc:
         return fail(str(exc))
     except Exception as exc:

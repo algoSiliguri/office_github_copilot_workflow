@@ -1,0 +1,40 @@
+{
+  "artifact_type": "EvaluationRecord",
+  "schema_version": "evaluation.schema.v1",
+  "task_id": "TASK-902",
+  "created_at": "2026-05-05T12:13:00Z",
+  "source_refs": {
+    "task_manifest": ".github/ai-workflow/artifacts/examples/valid/TASK-001/task-manifest.json",
+    "grill": ".github/ai-workflow/artifacts/examples/valid/TASK-001/grill.json",
+    "plan": ".github/ai-workflow/artifacts/examples/valid/TASK-001/plan.json",
+    "execution": ".github/ai-workflow/artifacts/examples/valid/TASK-001/execution.json",
+    "verification": ".github/ai-workflow/artifacts/examples/valid/TASK-001/verification.json",
+    "review": ".github/ai-workflow/artifacts/examples/valid/TASK-001/review.json"
+  },
+  "scores": {
+    "criteria_satisfaction_rate": 1.0,
+    "criteria_outcomes_summary": [
+      {"criterion": "a", "met": true}
+    ],
+    "scope_adherence": true,
+    "unplanned_files_count": 0,
+    "verification_status": "VERIFIED",
+    "review_status": "PASS",
+    "human_approval_first_pass": "approved"
+  },
+  "outcome": "success",
+  "evaluation_status": "confirmed",
+  "human_evaluation": {
+    "status": "confirmed",
+    "reviewer": null,
+    "confirmed_at": "2026-05-05T12:14:00Z"
+  },
+  "validated_under": {
+    "workflow_manifest_version": 1,
+    "workflow_contract_version": 1,
+    "command_contract_id": "evaluate.v1",
+    "command_contract_version": 1,
+    "artifact_schema": "evaluation.schema.v1",
+    "config_instruction_version": "v1"
+  }
+}

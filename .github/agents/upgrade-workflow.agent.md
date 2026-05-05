@@ -28,11 +28,11 @@ After scanning all artifacts, produce a report:
 ```
 UPGRADE SCAN — bundle version: <VERSION>
 ─────────────────────────────────────────
-TASK-001/grill.yaml         compatible
-TASK-001/legacy-explore.yaml  migration_required
+TASK-001/grill.json         compatible
+TASK-001/legacy-exploration.json  migration_required
   missing: blast_radius, test_surface_quality, has_generated_code, has_stored_procedures, planning_constraints
   action:  re-run /legacy-explore for TASK-001
-TASK-002/plan.yaml          compatible
+TASK-002/plan.json          compatible
 ─────────────────────────────────────────
 summary: <N> compatible, <N> migration_required, <N> regenerate
 ```

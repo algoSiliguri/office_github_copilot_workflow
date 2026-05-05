@@ -1,63 +1,53 @@
-#!/usr/bin/env bash
-# Cross-artifact validator: checks criteria_outcomes in VerificationRecord
-# matches success_criteria count in GrillRecord for the same task.
-# Usage: validate-criteria-coverage <verification_file> <grill_file>
-# Exit 0 = valid, Exit 1 = mismatch or missing
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
 
-set -euo pipefail
 
-VERIFICATION_FILE="${1:-}"
-GRILL_FILE="${2:-}"
+def fail(reason: str) -> int:
+    print(f"ERROR: {reason}", file=sys.stderr)
+    return 1
 
-if [[ -z "$VERIFICATION_FILE" || -z "$GRILL_FILE" ]]; then
-  echo "ERROR: usage: validate-criteria-coverage <verification_file> <grill_file>" >&2
-  exit 1
-fi
 
-if [[ ! -f "$VERIFICATION_FILE" ]]; then
-  echo "ERROR: verification file not found: $VERIFICATION_FILE" >&2
-  exit 1
-fi
+def main() -> int:
+    if len(sys.argv) != 3:
+        return fail("usage: validate-criteria-coverage <verification_file> <grill_file>")
 
-if [[ ! -f "$GRILL_FILE" ]]; then
-  echo "ERROR: grill file not found: $GRILL_FILE" >&2
-  exit 1
-fi
+    verification_path = Path(sys.argv[1])
+    grill_path = Path(sys.argv[2])
+    if not verification_path.is_file():
+        return fail(f"verification file not found: {verification_path}")
+    if not grill_path.is_file():
+        return fail(f"grill file not found: {grill_path}")
 
-CRITERIA_COUNT=$(python3 -c "
-import json, sys
-g = json.load(open('$GRILL_FILE'))
-criteria = g.get('success_criteria', [])
-print(len(criteria))
-" 2>/dev/null || echo "-1")
+    try:
+        verification = json.loads(verification_path.read_text())
+        grill = json.loads(grill_path.read_text())
+    except Exception as exc:
+        return fail(f"cannot parse JSON: {exc}")
 
-OUTCOMES_COUNT=$(python3 -c "
-import json, sys
-v = json.load(open('$VERIFICATION_FILE'))
-outcomes = v.get('criteria_outcomes', [])
-print(len(outcomes))
-" 2>/dev/null || echo "-1")
+    declared = grill.get("success_criteria", [])
+    outcomes = verification.get("criteria_outcomes", [])
+    if not declared:
+        print("WARN: grill has no success_criteria — cannot validate coverage", file=sys.stderr)
+        return 0
+    if len(declared) != len(outcomes):
+        return fail(f"criteria_outcomes count ({len(outcomes)}) != success_criteria count ({len(declared)})")
 
-if [[ "$CRITERIA_COUNT" == "-1" ]]; then
-  echo "ERROR: cannot parse grill file: $GRILL_FILE" >&2
-  exit 1
-fi
+    outcome_criteria = [entry.get("criterion") for entry in outcomes]
+    if outcome_criteria != declared:
+        missing = [criterion for criterion in declared if criterion not in outcome_criteria]
+        extras = [criterion for criterion in outcome_criteria if criterion not in declared]
+        detail = []
+        if missing:
+            detail.append(f"missing={missing}")
+        if extras:
+            detail.append(f"unexpected={extras}")
+        return fail("criteria_outcomes must map 1:1 to GrillRecord.success_criteria in declared order" + (f" ({'; '.join(detail)})" if detail else ""))
 
-if [[ "$OUTCOMES_COUNT" == "-1" ]]; then
-  echo "ERROR: cannot parse verification file: $VERIFICATION_FILE" >&2
-  exit 1
-fi
+    print(f"OK: criteria coverage valid ({len(outcomes)}/{len(declared)} criteria covered)")
+    return 0
 
-if [[ "$CRITERIA_COUNT" == "0" ]]; then
-  echo "WARN: grill has no success_criteria — cannot validate coverage" >&2
-  exit 0
-fi
 
-if [[ "$CRITERIA_COUNT" != "$OUTCOMES_COUNT" ]]; then
-  echo "ERROR: criteria_outcomes count ($OUTCOMES_COUNT) != success_criteria count ($CRITERIA_COUNT)" >&2
-  echo "  Every success criterion must have exactly one criteria_outcomes entry." >&2
-  exit 1
-fi
-
-echo "OK: criteria coverage valid ($OUTCOMES_COUNT/$CRITERIA_COUNT criteria covered)"
-exit 0
+if __name__ == "__main__":
+    sys.exit(main())

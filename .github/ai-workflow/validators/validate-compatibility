@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import sys
 from pathlib import Path
 
@@ -14,6 +15,8 @@ EXPECTED_TUPLES = {
     "execution-checkpoint.schema.v1": ("execute-plan.v1", "execution-checkpoint.schema.v1"),
     "verification.schema.v1": ("verify.v1", "verification.schema.v1"),
     "review.schema.v1": ("review.v1", "review.schema.v1"),
+    "task-manifest.schema.v1": ("grill.v1", "task-manifest.schema.v1"),
+    "evaluation.schema.v1": ("evaluate.v1", "evaluation.schema.v1"),
 }
 
 
@@ -31,7 +34,7 @@ def main() -> int:
         return emit("FAIL", f"missing artifact: {path}")
 
     try:
-        artifact = yaml.safe_load(path.read_text())
+        artifact = json.loads(path.read_text())
         manifest = yaml.safe_load(Path(".github/ai-workflow/manifest.yaml").read_text())
         config = yaml.safe_load(Path(".github/workflow/config.yaml").read_text())
     except Exception as exc:

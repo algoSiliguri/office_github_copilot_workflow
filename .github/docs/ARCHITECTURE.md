@@ -10,10 +10,10 @@ This bundle is a plugin-first AI workflow for GitHub Copilot. It gives Copilot a
   Top-level workflow rules, command order, CLI handoff rules, and hard constraints.
 
 - `prompts/`
-  The slash-command entrypoints a user invokes in Copilot Chat.
+  Reusable user-invoked prompt files. They are helpers, not a guaranteed slash-command runtime.
 
 - `agents/`
-  The operational behavior for each command. This is where command-specific logic and output requirements live.
+  Optional custom agent profiles when files use the supported `.agent.md` model, plus command-specific guidance files used by this bundle.
 
 - `ai-workflow/manifest.yaml`
   The authoritative workflow graph. It defines which commands exist, their allowed predecessors, required inputs, outputs, and handoffs.
@@ -37,7 +37,7 @@ This bundle is a plugin-first AI workflow for GitHub Copilot. It gives Copilot a
 
 The governed path is:
 
-`setup-workflow -> grill -> legacy-explore if needed -> write-plan -> context-packet if needed -> execute-plan -> verify -> review`
+`setup-workflow -> grill -> legacy-explore if needed -> write-plan -> context-packet if needed -> execute-plan -> verify -> review -> evaluate`
 
 There is also a narrow escape hatch:
 
@@ -51,6 +51,7 @@ This path is only for small, low-risk, tightly scoped work. If scope or risk gro
 - Implementation must stay within declared file scope.
 - Verification must use real command output.
 - Review must compare actual changed files against plan scope.
+- Evaluation is mandatory after any accepted full-workflow review and is not terminal until a human confirms or overrides the draft.
 - CLI execution requires explicit human approval when the workflow says so.
 
 ## What is canonical
@@ -60,3 +61,7 @@ For behavior, trust `.github/` over any external notes.
 - Human guidance: `copilot-instructions.md`, `docs/`
 - Command behavior: `prompts/`, `agents/`
 - Enforcement and machine authority: `manifest.yaml`, contracts, policies, schemas, validators
+
+## Runtime artifacts
+
+Full-workflow runtime artifacts are canonical only under `.github/tasks/TASK-{NNN}/` and use strict JSON filenames such as `task-manifest.json`, `grill.json`, `plan.json`, `execution.json`, `verification.json`, `review.json`, and `evaluation.json`.

@@ -6,7 +6,7 @@ input_artifacts:
   - type: PlanArtifact
     schema: plan.schema.v1
     required: true
-  - type: context_packet_artifact
+  - type: ContextPacketArtifact
     schema: context-packet.schema.v1
     required: false
 
@@ -21,19 +21,20 @@ required_validators:
     - validate-plan-scope
   after:
     - validate-artifact
+    - validate-artifact-path
 
 authority:
   may_create:
     - ExecutionRecord
   may_modify:
     - files_declared_in_plan_scope
+    - TaskManifest
   may_read:
     - PlanArtifact
-    - optional_context_packet_artifact
+    - optional_ContextPacketArtifact
     - files_in_plan_scope
   forbidden:
     - edit_outside_plan_scope
-    - modify_manifest
     - modify_schemas
     - modify_policies
     - generate_context_packet_implicitly
@@ -46,3 +47,4 @@ semantics:
     - show_cli_handoff_block_and_wait_for_approval
     - record_unplanned_files_touched
     - save_execution_record_to_task_folder
+    - update_task_manifest_phase_and_artifact_refs

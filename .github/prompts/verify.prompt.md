@@ -4,8 +4,8 @@ Run the verification command from the plan and record output as evidence.
 
 ## Pre-conditions
 
-1. Read the PlanArtifact at `.github/tasks/TASK-{NNN}/plan.yaml`.
-2. Read the ExecutionRecord at `.github/tasks/TASK-{NNN}/execution.yaml`.
+1. Read the PlanArtifact at `.github/tasks/TASK-{NNN}/plan.json`.
+2. Read the ExecutionRecord at `.github/tasks/TASK-{NNN}/execution.json`.
 3. Confirm `execution.status: completed`. If blocked or escalated, stop and tell the user.
 
 ## Verification steps
@@ -27,7 +27,8 @@ Verification evidence must be real command output — paraphrase or assumption d
 
 ## Output
 
-Save a VerificationRecord to `.github/tasks/TASK-{NNN}/verification.yaml`.
+Save a VerificationRecord to `.github/tasks/TASK-{NNN}/verification.json`.
+If `verification.json` already exists, first copy the previous authoritative artifact to `.github/tasks/TASK-{NNN}/attempts/verification/<ISO_TIMESTAMP>.json`.
 
 Required fields:
 - `artifact_type: VerificationRecord`
@@ -35,8 +36,8 @@ Required fields:
 - `task_id`
 - `primary_surface: copilot_cli` (verification always runs commands)
 - `secondary_surfaces_allowed: [copilot_plugin]`
-- `plan_ref: .github/tasks/TASK-{NNN}/plan.yaml`
-- `execution_ref: .github/tasks/TASK-{NNN}/execution.yaml`
+- `plan_ref: .github/tasks/TASK-{NNN}/plan.json`
+- `execution_ref: .github/tasks/TASK-{NNN}/execution.json`
 - `changed_files` — list of files from execution.actual_changes.files_touched
 - `verification_command` — exact command from plan
 - `verification_command_run` — exact command actually run
@@ -46,13 +47,13 @@ Required fields:
 - `status: VERIFIED | VERIFIED_WITH_DEGRADATION | FAILED | BLOCKED`
 - `degraded_reason` — required when status is VERIFIED_WITH_DEGRADATION
 - `created_at` — ISO 8601 datetime, populate at artifact write time
-- `human_acknowledgment` — required and approved when status is VERIFIED_WITH_DEGRADATION. When status is `rejected`, must include `reason: { category: enum, details: string }` — present this block to the human reviewer and capture their structured reason.
+- `human_acknowledgment` — required and approved when status is VERIFIED_WITH_DEGRADATION. If a human rejects degraded verification, capture `reason: { category: enum, details: string }`.
 - `validated_under` — exact workflow/command/schema/config tuple
 
-After saving the VerificationRecord, update the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+After saving the VerificationRecord, update the TaskManifest at `.github/tasks/TASK-{NNN}/task-manifest.json`:
 - Set `phase: verification`
 - Set `updated_at: <ISO 8601 timestamp>`
-- Set `artifact_refs.verification: .github/tasks/TASK-{NNN}/verification.yaml`
+- Set `artifact_refs.verification: .github/tasks/TASK-{NNN}/verification.json`
 - If status is `BLOCKED`, set `status: blocked`
 
 After saving, output:
@@ -62,6 +63,6 @@ STATUS: verify complete
 TASK: TASK-{NNN}
 COMMAND: <verification_command>
 RESULT: VERIFIED | FAILED
-ARTIFACT: .github/tasks/TASK-{NNN}/verification.yaml
+ARTIFACT: .github/tasks/TASK-{NNN}/verification.json
 NEXT: /review
 ```

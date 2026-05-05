@@ -157,7 +157,9 @@
         "context_packet",
         "execution_checkpoint",
         "verification",
-        "review"
+        "review",
+        "task_manifest",
+        "evaluation"
       ]
     },
     "policies": {
@@ -172,7 +174,9 @@
         "workflow",
         "retrieval",
         "verification",
-        "review"
+        "review",
+        "artifact_path",
+        "evaluation"
       ]
     },
     "validators": {
@@ -188,8 +192,12 @@
         "context_packet",
         "manifest",
         "artifact",
+        "artifact_path",
         "plan_scope",
-        "review_gate"
+        "review_gate",
+        "quick_task_preclassify",
+        "criteria_coverage",
+        "evaluation_gate"
       ]
     }
   }

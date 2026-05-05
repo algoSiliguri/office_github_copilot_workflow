@@ -4,8 +4,8 @@ Compare changed files against plan scope. Catch scope creep before merge.
 
 ## Pre-conditions
 
-1. Read the PlanArtifact at `.github/tasks/TASK-{NNN}/plan.yaml`.
-2. Read the VerificationRecord at `.github/tasks/TASK-{NNN}/verification.yaml`.
+1. Read the PlanArtifact at `.github/tasks/TASK-{NNN}/plan.json`.
+2. Read the VerificationRecord at `.github/tasks/TASK-{NNN}/verification.json`.
 3. Confirm `verification.status` is `VERIFIED` or `VERIFIED_WITH_DEGRADATION`. If not, stop and tell the user to fix verification first.
 
 ## Stage review rules
@@ -40,7 +40,8 @@ Record the reviewer name in `human_authorization.reviewer`.
 
 ## Output
 
-Save a ReviewRecord to `.github/tasks/TASK-{NNN}/review.yaml`.
+Save a ReviewRecord to `.github/tasks/TASK-{NNN}/review.json`.
+If `review.json` already exists, first copy the previous authoritative artifact to `.github/tasks/TASK-{NNN}/attempts/review/<ISO_TIMESTAMP>.json`.
 
 Required fields:
 - `artifact_type: ReviewRecord`
@@ -54,14 +55,14 @@ Required fields:
 - `scope_match: true | false`
 - `status: PASS | PASS_WITH_DEGRADATION | FAIL | BLOCKED`
 - `created_at` — ISO 8601 datetime, populate at artifact write time
-- `human_authorization` — required for PASS/PASS_WITH_DEGRADATION. When status is `rejected`, must include `reason: { category: enum, details: string }` — present this block to the human reviewer and capture their structured reason. Category enum: `scope_violation | incorrect_implementation | criteria_not_met | verification_incomplete | quality_issue | other`.
+- `human_authorization` — required for PASS/PASS_WITH_DEGRADATION. The first decision is immutable. If the human rejects, capture `reason: { category: enum, details: string }`. Category enum: `scope_violation | incorrect_implementation | criteria_not_met | verification_incomplete | quality_issue | other`.
 - `degraded_reason` — required for PASS_WITH_DEGRADATION
 - `validated_under` — exact workflow/command/schema/config tuple
 
-After saving the ReviewRecord, update the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+After saving the ReviewRecord, update the TaskManifest at `.github/tasks/TASK-{NNN}/task-manifest.json`:
 - Set `phase: review`
 - Set `updated_at: <ISO 8601 timestamp>`
-- Set `artifact_refs.review: .github/tasks/TASK-{NNN}/review.yaml`
+- Set `artifact_refs.review: .github/tasks/TASK-{NNN}/review.json`
 - If status is `PASS` or `PASS_WITH_DEGRADATION`, set `status: completed`
 - If status is `FAIL` or `BLOCKED`, set `status: blocked`
 
@@ -72,7 +73,7 @@ STATUS: review complete
 TASK: TASK-{NNN}
 SCOPE_VIOLATIONS: none | [N violations]
 RESULT: PASS | FAIL
-ARTIFACT: .github/tasks/TASK-{NNN}/review.yaml
+ARTIFACT: .github/tasks/TASK-{NNN}/review.json
 NEXT: /evaluate
 ```
 

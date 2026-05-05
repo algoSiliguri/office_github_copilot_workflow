@@ -9,6 +9,7 @@
     "task_id",
     "task_type",
     "created_at",
+    "updated_at",
     "status",
     "phase",
     "artifact_refs"
@@ -29,15 +30,17 @@
     },
     "phase": {
       "type": "string",
-      "enum": ["grill", "plan", "execution", "verification", "review", "evaluated"]
+      "enum": ["grill", "legacy_exploration", "plan", "context_packet", "execution", "verification", "review", "evaluated"]
     },
     "artifact_refs": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["grill", "plan", "execution", "verification", "review", "evaluation"],
+      "required": ["grill", "legacy_exploration", "plan", "context_packet", "execution", "verification", "review", "evaluation"],
       "properties": {
         "grill": { "type": ["string", "null"] },
+        "legacy_exploration": { "type": ["string", "null"] },
         "plan": { "type": ["string", "null"] },
+        "context_packet": { "type": ["string", "null"] },
         "execution": { "type": ["string", "null"] },
         "verification": { "type": ["string", "null"] },
         "review": { "type": ["string", "null"] },

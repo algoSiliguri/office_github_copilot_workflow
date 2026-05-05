@@ -31,7 +31,7 @@ Save a QuickTaskRecord with `escalation_triggered: true`, `status: ESCALATED_TO_
 If no triggers fire:
 1. Make the change directly — no plan required.
 2. Keep changes to declared files only.
-3. Save a QuickTaskRecord to `.github/tasks/TASK-{NNN}/quick-task.yaml`.
+3. Save a QuickTaskRecord to `.github/tasks/TASK-{NNN}/quick-task.json`.
 
 Required fields:
 - `artifact_type: QuickTaskRecord`
@@ -40,6 +40,7 @@ Required fields:
 - `primary_surface: copilot_plugin`
 - `secondary_surfaces_allowed: [copilot_cli]`
 - `task_summary` — one sentence
+- `created_at` — ISO 8601 timestamp
 - `files.planned` — exact list of files expected before editing
 - `files.actual` — actual edited files after execution
 - `change_class.value`
@@ -61,5 +62,5 @@ After saving, output:
 STATUS: quick-task complete
 TASK: TASK-{NNN}
 FILES: [list of files touched]
-ARTIFACT: .github/tasks/TASK-{NNN}/quick-task.yaml
+ARTIFACT: .github/tasks/TASK-{NNN}/quick-task.json
 ```

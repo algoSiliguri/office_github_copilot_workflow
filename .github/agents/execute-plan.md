@@ -19,7 +19,7 @@ When executing a phased or degraded plan, record a checkpoint at each step bound
 ## Pre-conditions
 
 Before making any changes:
-1. Read the PlanArtifact at `.github/tasks/TASK-{NNN}/plan.yaml`.
+1. Read the PlanArtifact at `.github/tasks/TASK-{NNN}/plan.json`.
 2. If `context_packet_required: true`, check that `context_packet_path` exists. If missing, stop and tell the user to run `/context-packet` first.
 3. Read `files_in_scope` from the plan. This is the only set of files you may touch.
 
@@ -48,7 +48,7 @@ Task path: .github/tasks/TASK-{NNN}/
 Allowed commands: <list from plan steps>
 Allowed files: <list from plan.files_in_scope>
 Blocked actions: git push, rm -rf, any command outside allowed list
-Expected return artifact: ExecutionRecord at .github/tasks/TASK-{NNN}/execution.yaml
+Expected return artifact: ExecutionRecord at .github/tasks/TASK-{NNN}/execution.json
 HUMAN APPROVAL REQUIRED — type "approved" to continue, or "cancel" to abort.
 ---
 ```
@@ -59,7 +59,8 @@ For any plan step where `requires_human_ack: true`, stop before executing that s
 
 ## Output
 
-After completing all steps, save an ExecutionRecord to `.github/tasks/TASK-{NNN}/execution.yaml`.
+After completing all steps, save an ExecutionRecord to `.github/tasks/TASK-{NNN}/execution.json`.
+If `execution.json` already exists, first copy the previous authoritative artifact to `.github/tasks/TASK-{NNN}/attempts/execution/<ISO_TIMESTAMP>.json`.
 
 Required fields:
 - `artifact_type: ExecutionRecord`
@@ -67,7 +68,7 @@ Required fields:
 - `task_id` — matching the task folder
 - `primary_surface: copilot_plugin` (or `copilot_cli` if handoff occurred)
 - `secondary_surfaces_allowed: [copilot_cli]`
-- `source_plan: .github/tasks/TASK-{NNN}/plan.yaml`
+- `source_plan: .github/tasks/TASK-{NNN}/plan.json`
 - `step_ids` — IDs of all steps executed
 - `status: completed | blocked | escalated`
 - `plan_scope.files_authorized` — from plan.files_in_scope paths
@@ -85,10 +86,10 @@ Required fields:
 - `decision.reason`
 - `validated_under` — exact workflow/command/schema/config tuple
 
-After saving the ExecutionRecord, update the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+After saving the ExecutionRecord, update the TaskManifest at `.github/tasks/TASK-{NNN}/task-manifest.json`:
 - Set `phase: execution`
 - Set `updated_at: <ISO 8601 timestamp>`
-- Set `artifact_refs.execution: .github/tasks/TASK-{NNN}/execution.yaml`
+- Set `artifact_refs.execution: .github/tasks/TASK-{NNN}/execution.json`
 - If execution status is `blocked` or `escalated`, set `status: blocked`
 
 After saving, output:
@@ -99,6 +100,6 @@ TASK: TASK-{NNN}
 STEPS: [list of step IDs executed]
 CLI_HANDOFF: yes | no
 UNPLANNED_FILES: none | [list]
-ARTIFACT: .github/tasks/TASK-{NNN}/execution.yaml
+ARTIFACT: .github/tasks/TASK-{NNN}/execution.json
 NEXT: /verify
 ```

@@ -11,7 +11,7 @@ You are the legacy-explore agent. Your job is to reduce ambiguity before plannin
 ## Context restriction
 
 Read only:
-1. The GrillRecord for this task (`.github/tasks/TASK-{NNN}/grill.yaml`)
+1. The GrillRecord for this task (`.github/tasks/TASK-{NNN}/grill.json`)
 2. Files or modules directly implicated by the grill artifact
 3. One-hop dependencies only when needed to explain risk or ownership
 
@@ -78,11 +78,18 @@ If detected:
 
 ## Output
 
-Save a `LegacyExplorationRecord` to `.github/tasks/TASK-{NNN}/legacy-explore.yaml`.
+Save a `LegacyExplorationRecord` to `.github/tasks/TASK-{NNN}/legacy-exploration.json`.
 
 The artifact must conform to `legacy-explore.schema.v1` and include all five monolith fields: `blast_radius`, `test_surface_quality`, `has_generated_code`, `has_stored_procedures`, `planning_constraints`.
+Include `created_at` as an ISO 8601 timestamp.
 
 The artifact must conform to `legacy-explore.schema.v1`.
+
+After saving the artifact, update `.github/tasks/TASK-{NNN}/task-manifest.json`:
+- Set `phase: legacy_exploration`
+- Set `updated_at: <ISO 8601 timestamp>`
+- Set `artifact_refs.legacy_exploration: .github/tasks/TASK-{NNN}/legacy-exploration.json`
+- If decision is `stop`, set `status: blocked`
 
 After saving, output:
 
@@ -91,6 +98,6 @@ STATUS: legacy-explore complete
 TASK: TASK-{NNN}
 FILES_REVIEWED: [N]
 DECISION: proceed | stop
-ARTIFACT: .github/tasks/TASK-{NNN}/legacy-explore.yaml
+ARTIFACT: .github/tasks/TASK-{NNN}/legacy-exploration.json
 NEXT: /write-plan
 ```

@@ -1,0 +1,43 @@
+{
+  "artifact_type": "GrillRecord",
+  "schema_version": "grill.schema.v1",
+  "task_id": "TASK-001",
+  "task_type": "bugfix",
+  "primary_surface": "copilot_plugin",
+  "secondary_surfaces_allowed": ["copilot_cli"],
+  "goal": "Keep workflow fixtures valid",
+  "problem_statement": "The repository needs a valid full-chain fixture set for validator coverage.",
+  "assumptions": ["Fixtures are governance-only examples."],
+  "questions": [
+    {
+      "question": "Should examples model the full workflow?",
+      "answer": "Yes, one valid full chain is required for v1."
+    }
+  ],
+  "risks": ["Fixture drift if validators change without example updates."],
+  "constraints": ["Runtime artifacts stay under .github/tasks only."],
+  "approach": [
+    {
+      "decision": "Ship a single valid chain plus targeted invalid fixtures",
+      "rationale": "This keeps coverage high without bloating the repo.",
+      "alternatives_rejected": ["Ship no fixtures", "Ship many redundant fixtures"]
+    }
+  ],
+  "success_criteria": [
+    "validate-artifact passes for every full-workflow artifact in the valid chain",
+    "review scope remains clean",
+    "evaluation is human-confirmed before terminal state"
+  ],
+  "exploration_required": false,
+  "exploration_reasons": [],
+  "decision": "proceed",
+  "created_at": "2026-05-05T12:00:00Z",
+  "validated_under": {
+    "workflow_manifest_version": 1,
+    "workflow_contract_version": 1,
+    "command_contract_id": "grill.v1",
+    "command_contract_version": 1,
+    "artifact_schema": "grill.schema.v1",
+    "config_instruction_version": "v1"
+  }
+}

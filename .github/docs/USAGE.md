@@ -126,6 +126,7 @@ No automated writes to system files. Every improvement is an evaluatable task. E
 - Keep `files_in_scope` tight. Large scope invites sloppy execution.
 - Treat CLI handoff as a controlled escalation, not a convenience shortcut.
 - Put all generated artifacts under `.github/tasks/TASK-{NNN}/`.
+- Use strict JSON filenames for runtime artifacts such as `task-manifest.json`, `grill.json`, `plan.json`, `execution.json`, `verification.json`, `review.json`, and `evaluation.json`.
 - Re-run validation after changing workflow files.
 
 ## CLI handoff guidance
@@ -155,4 +156,3 @@ python3 .github/ai-workflow/validators/bootstrap
 python3 .github/ai-workflow/validators/validate-manifest
 python3 .github/ai-workflow/validators/validate-config .github/workflow/config.yaml
 ```
-

@@ -1,0 +1,28 @@
+{
+  "artifact_type": "ReviewRecord",
+  "schema_version": "review.schema.v1",
+  "task_id": "TASK-900",
+  "primary_surface": "copilot_plugin",
+  "secondary_surfaces_allowed": ["copilot_cli"],
+  "plan_ref": ".github/ai-workflow/artifacts/examples/valid/TASK-001/plan.json",
+  "execution_ref": ".github/ai-workflow/artifacts/examples/invalid/execution-scope-violation.json",
+  "verification_ref": ".github/ai-workflow/artifacts/examples/valid/TASK-001/verification.json",
+  "actual_changed_files": [".github/ai-workflow/artifacts/examples/README.md", "package.json"],
+  "scope_violations": ["package.json"],
+  "scope_match": false,
+  "status": "PASS",
+  "degraded_reason": null,
+  "created_at": "2026-05-05T12:10:00Z",
+  "human_authorization": {
+    "status": "approved",
+    "reviewer": "Workflow Maintainer"
+  },
+  "validated_under": {
+    "workflow_manifest_version": 1,
+    "workflow_contract_version": 1,
+    "command_contract_id": "review.v1",
+    "command_contract_version": 1,
+    "artifact_schema": "review.schema.v1",
+    "config_instruction_version": "v1"
+  }
+}

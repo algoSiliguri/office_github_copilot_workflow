@@ -1,53 +1,101 @@
-#!/usr/bin/env bash
-# Validates that an artifact file lives in its declared directory.
-# Usage: validate-artifact-path <artifact_file_path>
-# Exit 0 = valid, Exit 1 = violation
+#!/usr/bin/env python3
+"""Validate canonical task artifact placement.
 
-set -euo pipefail
+Usage: validate-artifact-path <artifact_file_path>
+Exit 0 = valid, Exit 1 = violation
+"""
 
-ARTIFACT_FILE="${1:-}"
+import json
+import re
+import sys
+from pathlib import Path
 
-if [[ -z "$ARTIFACT_FILE" ]]; then
-  echo "ERROR: artifact file path required" >&2
-  exit 1
-fi
 
-if [[ ! -f "$ARTIFACT_FILE" ]]; then
-  echo "ERROR: file not found: $ARTIFACT_FILE" >&2
-  exit 1
-fi
+RUNTIME_ROOT = Path(".github/tasks")
+TASK_ID_RE = re.compile(r"^TASK-\d{3}$")
+AUTHORITATIVE_FILENAMES = {
+    "GrillRecord": "grill.json",
+    "LegacyExplorationRecord": "legacy-exploration.json",
+    "PlanArtifact": "plan.json",
+    "ContextPacketArtifact": "context-packet.json",
+    "ExecutionRecord": "execution.json",
+    "VerificationRecord": "verification.json",
+    "ReviewRecord": "review.json",
+    "EvaluationRecord": "evaluation.json",
+    "TaskManifest": "task-manifest.json",
+    "QuickTaskRecord": "quick-task.json",
+}
 
-ARTIFACT_TYPE=$(python3 -c "import json,sys; d=json.load(open('$ARTIFACT_FILE')); print(d.get('artifact_type',''))" 2>/dev/null || echo "")
 
-if [[ -z "$ARTIFACT_TYPE" ]]; then
-  echo "ERROR: cannot read artifact_type from $ARTIFACT_FILE" >&2
-  exit 1
-fi
+def fail(reason: str) -> int:
+    print(f"ERROR: {reason}", file=sys.stderr)
+    return 1
 
-declare -A EXPECTED_DIRS=(
-  ["GrillRecord"]=".github/ai-workflow/artifacts/grill"
-  ["PlanArtifact"]=".github/ai-workflow/artifacts/plans"
-  ["ExecutionRecord"]=".github/ai-workflow/artifacts/execution"
-  ["VerificationRecord"]=".github/ai-workflow/artifacts/verification"
-  ["ReviewRecord"]=".github/ai-workflow/artifacts/review"
-  ["EvaluationRecord"]=".github/ai-workflow/artifacts/evaluation"
-  ["TaskManifest"]=".github/ai-workflow/artifacts/task-manifest"
-)
 
-EXPECTED_DIR="${EXPECTED_DIRS[$ARTIFACT_TYPE]:-}"
+def main() -> int:
+    artifact_arg = sys.argv[1] if len(sys.argv) > 1 else ""
+    if not artifact_arg:
+        return fail("artifact file path required")
 
-if [[ -z "$EXPECTED_DIR" ]]; then
-  echo "WARN: unknown artifact_type '$ARTIFACT_TYPE' — skipping path check" >&2
-  exit 0
-fi
+    artifact_file = Path(artifact_arg)
+    if not artifact_file.is_file():
+        return fail(f"file not found: {artifact_file}")
 
-ACTUAL_DIR=$(dirname "$ARTIFACT_FILE")
-ACTUAL_DIR="${ACTUAL_DIR#./}"
+    try:
+        with artifact_file.open() as handle:
+            data = json.load(handle)
+    except Exception as exc:
+        return fail(f"cannot parse JSON from {artifact_file}: {exc}")
 
-if [[ "$ACTUAL_DIR" != *"$EXPECTED_DIR"* ]]; then
-  echo "ERROR: $ARTIFACT_TYPE must be in $EXPECTED_DIR but found in $ACTUAL_DIR" >&2
-  exit 1
-fi
+    artifact_type = data.get("artifact_type")
+    task_id = data.get("task_id")
+    if not artifact_type:
+        return fail(f"cannot read artifact_type from {artifact_file}")
+    if not task_id:
+        return fail(f"cannot read task_id from {artifact_file}")
+    if not TASK_ID_RE.match(task_id):
+        return fail(f"task_id must match TASK-{{NNN}}: {task_id}")
 
-echo "OK: $ARTIFACT_TYPE path valid ($ACTUAL_DIR)"
-exit 0
+    expected_filename = AUTHORITATIVE_FILENAMES.get(artifact_type)
+    if not expected_filename:
+        print(f"WARN: unknown artifact_type '{artifact_type}' — skipping path check", file=sys.stderr)
+        return 0
+
+    if artifact_file.is_absolute():
+        try:
+            relative_path = artifact_file.resolve().relative_to(Path.cwd().resolve())
+        except ValueError:
+            relative_path = artifact_file
+    else:
+        relative_path = artifact_file
+
+    normalized = Path(*[part for part in relative_path.parts if part != "."])
+    parts = normalized.parts
+    if len(parts) < 3 or parts[0:2] != (".github", "tasks"):
+        return fail(f"{artifact_type} must live under {RUNTIME_ROOT} but found {normalized}")
+
+    folder_task_id = parts[2]
+    if folder_task_id != task_id:
+        return fail(f"folder task_id {folder_task_id} does not match artifact task_id {task_id}")
+    if not TASK_ID_RE.match(folder_task_id):
+        return fail(f"task folder must match TASK-{{NNN}} but found {folder_task_id}")
+
+    if len(parts) == 4:
+        if parts[3] != expected_filename:
+            return fail(f"{artifact_type} must use filename {expected_filename} but found {parts[3]}")
+        print(f"OK: {artifact_type} path valid ({normalized})")
+        return 0
+
+    if len(parts) >= 6 and parts[3] == "attempts":
+        if artifact_file.suffix != ".json":
+            return fail("attempt history artifacts must be .json")
+        if parts[-1] == expected_filename:
+            return fail("attempt history files must use timestamped names, not authoritative filenames")
+        print(f"OK: {artifact_type} historical attempt path valid ({normalized})")
+        return 0
+
+    return fail(f"{artifact_type} is misplaced: {normalized}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

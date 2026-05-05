@@ -24,13 +24,14 @@ This repository is not a standalone application. It contains the contents you co
 | `/execute-plan` | Implement only the declared plan scope |
 | `/verify` | Run the declared verification command and capture evidence |
 | `/review` | Final scope and quality review |
+| `/evaluate` | Mandatory post-review evaluation draft plus human confirmation |
 | `/quick-task` | Small-task fast path without full workflow overhead |
 
 ## Recommended flow
 
 For non-trivial work:
 
-`/setup-workflow -> /grill -> [/legacy-explore] -> /write-plan -> [/context-packet] -> /execute-plan -> /verify -> /review`
+`/setup-workflow -> /grill -> [/legacy-explore] -> /write-plan -> [/context-packet] -> /execute-plan -> /verify -> /review -> /evaluate`
 
 For small bounded changes:
 
@@ -40,7 +41,7 @@ For small bounded changes:
 
 This repo mirrors a target `.github/` folder:
 
-- `agents/` contains agent role instructions
+- `agents/` contains custom agent profiles and command-specific guidance
 - `ai-workflow/` contains manifest, contracts, policies, schemas, validators, and examples
 - `instructions/` contains editing rules for workflow files
 - `prompts/` contains command prompt files
@@ -73,6 +74,7 @@ python3 .github/ai-workflow/validators/validate-config .github/workflow/config.y
 - Repo-specific values belong in `.github/workflow/config.yaml`
 - Workflow edits should preserve portability across repositories
 - `/verify` must run a real command and capture real output before claiming success
+- Full-workflow task artifacts live only under `.github/tasks/TASK-{NNN}/` as JSON files
 
 ## Docs
 

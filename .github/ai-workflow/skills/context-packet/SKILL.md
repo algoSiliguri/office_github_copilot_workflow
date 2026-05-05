@@ -14,6 +14,7 @@ ContextPacketArtifact.
 
 ## Authority limits
 May create only a ContextPacketArtifact.
+May update the TaskManifest for this task.
 May not edit source files.
 
 ## Required policies
@@ -27,6 +28,7 @@ context-packet.schema.v1
 ## Required validators
 validate-manifest
 validate-artifact
+validate-artifact-path
 validate-context-packet
 
 ## Procedure
@@ -34,4 +36,5 @@ validate-context-packet
 2. Read the plan and decide whether the packet covers the declared phase scope.
 3. Retrieve only bounded context required by the plan and config budget.
 4. Record included context, gaps, and execution decision.
-5. Run validators.
+5. Update TaskManifest: phase → context_packet, artifact_refs.context_packet → path.
+6. Run validators.

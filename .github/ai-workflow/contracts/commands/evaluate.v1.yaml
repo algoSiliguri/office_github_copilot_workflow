@@ -33,6 +33,7 @@ required_validators:
     - validate-manifest
   after:
     - validate-artifact
+    - validate-artifact-path
     - validate-evaluation-gate
 
 authority:
@@ -62,4 +63,5 @@ semantics:
     - classify_outcome_using_declared_rules
     - write_evaluation_record_with_status_draft
     - present_human_evaluation_block_for_confirmation
-    - update_task_manifest_phase_to_evaluated
+    - keep_task_manifest_phase_at_review_until_human_confirmation
+    - update_task_manifest_phase_to_evaluated_only_after_confirmation_or_override

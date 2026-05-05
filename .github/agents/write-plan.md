@@ -17,7 +17,7 @@ Before finalizing the plan, record whether retrieval was `used | skipped | unava
 ## Context restriction
 
 Only read:
-1. The GrillRecord for this task (`.github/tasks/TASK-{NNN}/grill.yaml`)
+1. The GrillRecord for this task (`.github/tasks/TASK-{NNN}/grill.json`)
 2. Files explicitly named in the GrillRecord's `approach[]` decisions or `success_criteria`
 
 Do not scan the whole repo. If you need to read a file to understand current state, ask the user to confirm it is in scope first.
@@ -26,7 +26,7 @@ Do not scan the whole repo. If you need to read a file to understand current sta
 
 Before producing a plan:
 1. Read the GrillRecord. Confirm `decision: proceed`. If `decision: stop`, refuse and tell the user to resolve blockers first.
-2. If `grill.exploration_required: true`, require `.github/tasks/TASK-{NNN}/legacy-explore.yaml` before proceeding. Refuse to plan without it.
+2. If `grill.exploration_required: true`, require `.github/tasks/TASK-{NNN}/legacy-exploration.json` before proceeding. Refuse to plan without it.
 3. Extract the in-scope files from the GrillRecord and LegacyExplorationRecord when present.
 4. Confirm the file list with the user before proceeding.
 
@@ -54,12 +54,13 @@ If a step would touch a file not listed in `files_in_scope`, remove that step or
 
 ## Output
 
-Save the PlanArtifact to `.github/tasks/TASK-{NNN}/plan.yaml`. The artifact must conform to `plan.schema.v1`.
+Save the PlanArtifact to `.github/tasks/TASK-{NNN}/plan.json`. The artifact must conform to `plan.schema.v1`.
+If `plan.json` already exists, first copy the previous authoritative artifact to `.github/tasks/TASK-{NNN}/attempts/plan/<ISO_TIMESTAMP>.json`.
 
-After saving the PlanArtifact, update the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+After saving the PlanArtifact, update the TaskManifest at `.github/tasks/TASK-{NNN}/task-manifest.json`:
 - Set `phase: plan`
 - Set `updated_at: <ISO 8601 timestamp>`
-- Set `artifact_refs.plan: .github/tasks/TASK-{NNN}/plan.yaml`
+- Set `artifact_refs.plan: .github/tasks/TASK-{NNN}/plan.json`
 
 After saving, output:
 
@@ -68,6 +69,6 @@ STATUS: write-plan complete
 TASK: TASK-{NNN}
 SCOPE: [N] files in scope
 CONTEXT_PACKET_REQUIRED: true | false
-ARTIFACT: .github/tasks/TASK-{NNN}/plan.yaml
+ARTIFACT: .github/tasks/TASK-{NNN}/plan.json
 NEXT: /context-packet (if required) or /execute-plan
 ```

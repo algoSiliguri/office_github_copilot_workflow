@@ -4,7 +4,7 @@ Score a completed task against its declared success criteria and produce an Eval
 
 ## Pre-conditions
 
-1. Read the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`.
+1. Read the TaskManifest at `.github/tasks/TASK-{NNN}/task-manifest.json`.
 2. If `status` is not `completed`, stop and tell the user the task is not in a completed state — evaluation requires a completed task chain.
 3. Read all upstream artifacts via `artifact_refs` in the TaskManifest.
 
@@ -29,7 +29,7 @@ Apply these rules in order — first match wins:
 
 ## Output
 
-Save EvaluationRecord to `.github/ai-workflow/artifacts/evaluation/TASK-{NNN}.evaluation.json` with `evaluation_status: draft`.
+Save EvaluationRecord to `.github/tasks/TASK-{NNN}/evaluation.json` with `evaluation_status: draft`.
 
 Required fields:
 - `artifact_type: EvaluationRecord`
@@ -41,6 +41,7 @@ Required fields:
 - `outcome` — classified result
 - `evaluation_status: draft`
 - `human_evaluation.status: draft`, `reviewer: null`, `confirmed_at: null`
+- `validated_under` — exact workflow/command/schema/config tuple
 
 After saving, present this block to the human reviewer:
 
@@ -66,10 +67,15 @@ When human confirms: set `evaluation_status: confirmed`, `human_evaluation.statu
 
 When human overrides: set `evaluation_status: overridden`, `human_evaluation.status: overridden`, `human_evaluation.reviewer: <name>`, `human_evaluation.override_reason: { category: <category>, details: <details> }`.
 
-After human responds, update the saved EvaluationRecord, then update the TaskManifest:
+After saving the draft EvaluationRecord, update the TaskManifest:
+- Keep `status: completed`
+- Keep `phase: review`
+- Set `updated_at: <ISO 8601>`
+- Set `artifact_refs.evaluation: .github/tasks/TASK-{NNN}/evaluation.json`
+
+After human confirms or overrides, update the saved EvaluationRecord, then update the TaskManifest:
 - Set `phase: evaluated`
 - Set `updated_at: <ISO 8601>`
-- Set `artifact_refs.evaluation: .github/ai-workflow/artifacts/evaluation/TASK-{NNN}.evaluation.json`
 
 After completing, output:
 
@@ -79,5 +85,5 @@ TASK: TASK-{NNN}
 OUTCOME: success | partial_success | failure
 CRITERIA_RATE: X/Y
 EVALUATION_STATUS: confirmed | overridden
-ARTIFACT: .github/ai-workflow/artifacts/evaluation/TASK-{NNN}.evaluation.json
+ARTIFACT: .github/tasks/TASK-{NNN}/evaluation.json
 ```

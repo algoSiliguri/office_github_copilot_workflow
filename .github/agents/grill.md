@@ -29,7 +29,7 @@ Work through these areas in order (skip if clearly not applicable):
 
 ## Output
 
-When the session is complete, produce a GrillRecord YAML artifact. Save it to `.github/tasks/TASK-{NNN}/grill.yaml` where NNN is the next sequential task ID (check existing folders under `.github/tasks/`).
+When the session is complete, produce a GrillRecord JSON artifact. Save it to `.github/tasks/TASK-{NNN}/grill.json` where NNN is the next sequential task ID (check existing folders under `.github/tasks/`).
 
 The artifact must conform to `grill.schema.v1`. Required fields:
 - `artifact_type: GrillRecord`
@@ -60,24 +60,29 @@ The artifact must conform to `grill.schema.v1`. Required fields:
   - `artifact_schema: grill.schema.v1`
   - `config_instruction_version: v1`
 
-After saving the GrillRecord, create a TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+After saving the GrillRecord, create a TaskManifest at `.github/tasks/TASK-{NNN}/task-manifest.json`:
 
-```yaml
-artifact_type: TaskManifest
-schema_version: task-manifest.schema.v1
-task_id: TASK-{NNN}
-task_type: <same as GrillRecord.task_type>
-created_at: <ISO 8601 timestamp>
-updated_at: <ISO 8601 timestamp>
-status: in_progress
-phase: grill
-artifact_refs:
-  grill: .github/tasks/TASK-{NNN}/grill.yaml
-  plan: null
-  execution: null
-  verification: null
-  review: null
-  evaluation: null
+```json
+{
+  "artifact_type": "TaskManifest",
+  "schema_version": "task-manifest.schema.v1",
+  "task_id": "TASK-{NNN}",
+  "task_type": "<same as GrillRecord.task_type>",
+  "created_at": "<ISO 8601 timestamp>",
+  "updated_at": "<ISO 8601 timestamp>",
+  "status": "in_progress",
+  "phase": "grill",
+  "artifact_refs": {
+    "grill": ".github/tasks/TASK-{NNN}/grill.json",
+    "legacy_exploration": null,
+    "plan": null,
+    "context_packet": null,
+    "execution": null,
+    "verification": null,
+    "review": null,
+    "evaluation": null
+  }
+}
 ```
 
 After saving the artifact, output:
@@ -86,7 +91,7 @@ After saving the artifact, output:
 STATUS: grill complete
 TASK: TASK-{NNN}
 DECISION: proceed | stop
-ARTIFACT: .github/tasks/TASK-{NNN}/grill.yaml
+ARTIFACT: .github/tasks/TASK-{NNN}/grill.json
 NEXT: /legacy-explore or /write-plan
 ```
 

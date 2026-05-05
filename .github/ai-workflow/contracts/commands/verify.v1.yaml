@@ -20,18 +20,20 @@ required_validators:
     - validate-artifact
   after:
     - validate-artifact
+    - validate-artifact-path
+    - validate-criteria-coverage
 
 authority:
   may_create:
     - VerificationRecord
-  may_modify: []
+  may_modify:
+    - TaskManifest
   may_read:
     - PlanArtifact
     - ExecutionRecord
     - changed_files
   forbidden:
     - edit_source_files
-    - modify_manifest
     - modify_schemas
     - modify_policies
     - claim_verified_without_command_output
@@ -43,3 +45,4 @@ semantics:
     - record_command_output_verbatim
     - never_claim_verified_without_real_output
     - save_verification_record_to_task_folder
+    - update_task_manifest_phase_and_artifact_refs

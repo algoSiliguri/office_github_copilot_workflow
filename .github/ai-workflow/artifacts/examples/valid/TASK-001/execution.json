@@ -1,0 +1,40 @@
+{
+  "artifact_type": "ExecutionRecord",
+  "schema_version": "execution-checkpoint.schema.v1",
+  "task_id": "TASK-001",
+  "primary_surface": "copilot_plugin",
+  "secondary_surfaces_allowed": ["copilot_cli"],
+  "source_plan": ".github/ai-workflow/artifacts/examples/valid/TASK-001/plan.json",
+  "step_ids": ["step-1"],
+  "status": "completed",
+  "plan_scope": {
+    "files_authorized": [".github/ai-workflow/artifacts/examples/README.md"]
+  },
+  "actual_changes": {
+    "files_touched": [".github/ai-workflow/artifacts/examples/README.md"],
+    "unplanned_files_touched": []
+  },
+  "cli_handoff": {
+    "approval_status": "not_required",
+    "reason": "Plugin edit only",
+    "allowed_commands": [],
+    "allowed_files": [".github/ai-workflow/artifacts/examples/README.md"],
+    "blocked_actions": ["git push"],
+    "expected_return_artifact": ".github/ai-workflow/artifacts/examples/valid/TASK-001/execution.json"
+  },
+  "human_acknowledgments": [],
+  "commands_run": [],
+  "decision": {
+    "status": "continue",
+    "reason": "Completed within approved scope"
+  },
+  "created_at": "2026-05-05T12:02:00Z",
+  "validated_under": {
+    "workflow_manifest_version": 1,
+    "workflow_contract_version": 1,
+    "command_contract_id": "execute-plan.v1",
+    "command_contract_version": 1,
+    "artifact_schema": "execution-checkpoint.schema.v1",
+    "config_instruction_version": "v1"
+  }
+}

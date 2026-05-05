@@ -21,6 +21,7 @@
     "has_stored_procedures",
     "planning_constraints",
     "decision",
+    "created_at",
     "validated_under"
   ],
   "properties": {
@@ -92,6 +93,7 @@
       "items": { "type": "string", "minLength": 1 }
     },
     "decision": { "enum": ["proceed", "stop"] },
+    "created_at": { "type": "string", "format": "date-time" },
     "open_blockers": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 }

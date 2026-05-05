@@ -15,6 +15,7 @@ required_validators:
     - validate-quick-task-preclassify
   after:
     - validate-artifact
+    - validate-artifact-path
     - validate-plan-scope
 
 authority:

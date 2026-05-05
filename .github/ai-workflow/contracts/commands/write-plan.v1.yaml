@@ -17,18 +17,19 @@ required_validators:
     - validate-artifact
   after:
     - validate-artifact
+    - validate-artifact-path
     - validate-plan-scope
 
 authority:
   may_create:
     - PlanArtifact
-  may_modify: []
+  may_modify:
+    - TaskManifest
   may_read:
     - GrillRecord
     - files_declared_in_grill_record_approach
   forbidden:
     - edit_source_files
-    - modify_manifest
     - modify_schemas
     - modify_policies
     - plan_files_not_in_grill_scope
@@ -42,3 +43,4 @@ semantics:
     - declare_preferred_surface_per_step
     - refuse_if_grill_decision_is_not_proceed
     - save_plan_to_task_folder
+    - update_task_manifest_phase_and_artifact_refs

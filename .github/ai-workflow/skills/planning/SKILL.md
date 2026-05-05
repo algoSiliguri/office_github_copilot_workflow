@@ -27,6 +27,7 @@ plan.schema.v1
 
 ## Required validators
 validate-artifact
+validate-artifact-path
 validate-plan-scope
 
 ## Procedure
@@ -38,8 +39,9 @@ validate-plan-scope
 6. Declare the preferred execution surface per step.
 7. Declare the exact verification command.
 8. Save plan to task folder.
-9. Update TaskManifest: phase → plan, artifact_refs.plan → path.
-10. Run validators.
+9. If `plan.json` already exists, preserve it under `attempts/plan/<ISO_TIMESTAMP>.json` before replacement.
+10. Update TaskManifest: phase → plan, artifact_refs.plan → path.
+11. Run validators.
 
 ## Failure behavior
 Missing required dependency blocks.

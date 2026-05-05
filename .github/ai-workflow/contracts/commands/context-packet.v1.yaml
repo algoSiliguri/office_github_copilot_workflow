@@ -8,7 +8,7 @@ input_artifacts:
     required: true
 
 output_artifacts:
-  - type: context_packet_artifact
+  - type: ContextPacketArtifact
     schema: context-packet.schema.v1
     required: true
 
@@ -17,18 +17,19 @@ required_validators:
     - validate-artifact
   after:
     - validate-artifact
+    - validate-artifact-path
 
 authority:
   may_create:
-    - context_packet_artifact
-  may_modify: []
+    - ContextPacketArtifact
+  may_modify:
+    - TaskManifest
   may_read:
     - PlanArtifact
     - files_in_plan_scope
     - one_hop_imports_only
   forbidden:
     - edit_source_files
-    - modify_manifest
     - modify_schemas
     - modify_policies
     - expand_beyond_one_hop
@@ -39,3 +40,4 @@ semantics:
     - confirm_context_packet_required_is_true
     - load_only_in_scope_files_plus_one_hop
     - save_context_packet_to_declared_path
+    - update_task_manifest_phase_and_artifact_refs

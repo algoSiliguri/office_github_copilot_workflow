@@ -27,12 +27,13 @@ evaluation.schema.v1
 ## Required validators
 validate-manifest
 validate-artifact
+validate-artifact-path
 validate-evaluation-gate
 
 ## Procedure
 1. Load manifest, command contract, policy, and schema.
 2. Read TaskManifest. If status is not `completed`, stop — do not evaluate incomplete or abandoned tasks.
-3. Read all 5 upstream artifacts: GrillRecord, PlanArtifact, ExecutionRecord, VerificationRecord, ReviewRecord.
+3. Read all 5 upstream workflow artifacts referenced by TaskManifest: GrillRecord, PlanArtifact, ExecutionRecord, VerificationRecord, ReviewRecord.
 4. Compute scores:
    - criteria_satisfaction_rate = (count of criteria_outcomes where met=true) / (total criteria_outcomes)
    - criteria_outcomes_summary = [{criterion, met}] from VerificationRecord.criteria_outcomes
@@ -43,9 +44,10 @@ validate-evaluation-gate
    - human_approval_first_pass = ReviewRecord.human_authorization.status
 5. Classify outcome using declared rules from evaluation-policy.v1.
 6. Write EvaluationRecord with evaluation_status: draft. Do not set confirmed_at.
-7. Present human_evaluation block to the human reviewer for confirmation or override.
-8. Update TaskManifest: phase → evaluated, artifact_refs.evaluation → path.
-9. Run validators.
+7. Update TaskManifest: keep phase → review, keep status → completed, and set artifact_refs.evaluation → path.
+8. Present human_evaluation block to the human reviewer for confirmation or override.
+9. Only after human confirmation or override, update TaskManifest: phase → evaluated.
+10. Run validators.
 
 ## Failure behavior
 TaskManifest status not completed blocks evaluation.

@@ -17,11 +17,13 @@ required_validators:
     - validate-artifact
   after:
     - validate-artifact
+    - validate-artifact-path
 
 authority:
   may_create:
     - LegacyExplorationRecord
-  may_modify: []
+  may_modify:
+    - TaskManifest
   may_read:
     - GrillRecord
     - bounded_related_files_only
@@ -39,3 +41,4 @@ semantics:
     - keep_search_bounded_to_implicated_modules
     - record_findings_risks_and_recommended_scope
     - save_exploration_record_to_task_folder
+    - update_task_manifest_phase_and_artifact_refs

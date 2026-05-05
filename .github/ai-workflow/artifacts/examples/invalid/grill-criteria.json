@@ -1,0 +1,37 @@
+{
+  "artifact_type": "GrillRecord",
+  "schema_version": "grill.schema.v1",
+  "task_id": "TASK-901",
+  "task_type": "bugfix",
+  "primary_surface": "copilot_plugin",
+  "secondary_surfaces_allowed": ["copilot_cli"],
+  "goal": "Trigger criteria mismatch",
+  "problem_statement": "The invalid coverage fixture should fail strict 1:1 mapping.",
+  "assumptions": [],
+  "questions": [],
+  "risks": [],
+  "constraints": [],
+  "approach": [
+    {
+      "decision": "Use mismatched criteria",
+      "rationale": "Exercise the coverage validator",
+      "alternatives_rejected": ["Skip mismatch"]
+    }
+  ],
+  "success_criteria": [
+    "first criterion",
+    "second criterion"
+  ],
+  "exploration_required": false,
+  "exploration_reasons": [],
+  "decision": "proceed",
+  "created_at": "2026-05-05T12:11:00Z",
+  "validated_under": {
+    "workflow_manifest_version": 1,
+    "workflow_contract_version": 1,
+    "command_contract_id": "grill.v1",
+    "command_contract_version": 1,
+    "artifact_schema": "grill.schema.v1",
+    "config_instruction_version": "v1"
+  }
+}

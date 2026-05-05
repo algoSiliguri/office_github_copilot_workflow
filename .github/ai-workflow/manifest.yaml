@@ -17,17 +17,8 @@ paths:
   skills_root: .github/ai-workflow/skills
   protocols_root: .github/ai-workflow/protocols
   validators_root: .github/ai-workflow/validators
-  artifacts_root: .github/ai-workflow/artifacts
-  logs_root: .github/ai-workflow/logs
-
-artifact_paths:
-  GrillRecord: .github/ai-workflow/artifacts/grill
-  PlanArtifact: .github/ai-workflow/artifacts/plans
-  ExecutionRecord: .github/ai-workflow/artifacts/execution
-  VerificationRecord: .github/ai-workflow/artifacts/verification
-  ReviewRecord: .github/ai-workflow/artifacts/review
-  EvaluationRecord: .github/ai-workflow/artifacts/evaluation
-  TaskManifest: .github/ai-workflow/artifacts/task-manifest
+  artifacts_root: .github/tasks
+  logs_root: .github/tasks/TASK-{NNN}/logs
 
 commands:
   /setup-workflow:
@@ -109,7 +100,7 @@ commands:
       - PlanArtifact
     conditional_inputs: []
     produces:
-      - context_packet_artifact
+      - ContextPacketArtifact
     may_edit_source: false
     may_search_outside_plan_files: true
     allowed_handoffs:
@@ -123,7 +114,7 @@ commands:
     required_inputs:
       - PlanArtifact
     conditional_inputs:
-      - context_packet_artifact
+      - ContextPacketArtifact
     produces:
       - ExecutionRecord
     may_edit_source: true

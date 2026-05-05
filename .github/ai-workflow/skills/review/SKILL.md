@@ -26,6 +26,7 @@ review.schema.v1
 ## Required validators
 validate-manifest
 validate-artifact
+validate-artifact-path
 validate-plan-scope
 validate-review-gate
 
@@ -35,8 +36,9 @@ validate-review-gate
 3. Require artifacts rather than narrative summaries.
 4. Record findings and final disposition honestly.
 5. Fail or block on scope drift, missing evidence, or missing required context state.
-6. Update TaskManifest: phase → review, artifact_refs.review → path; status → completed if PASS/PASS_WITH_DEGRADATION, blocked if FAIL/BLOCKED.
-7. Run validators.
+6. If `review.json` already exists, preserve it under `attempts/review/<ISO_TIMESTAMP>.json` before replacement.
+7. Update TaskManifest: phase → review, artifact_refs.review → path; status → completed if PASS/PASS_WITH_DEGRADATION, blocked if FAIL/BLOCKED.
+8. Run validators.
 
 ## Failure behavior
 Missing required dependency blocks.

@@ -13,7 +13,8 @@ PlanArtifact, ExecutionRecord, VerificationRecord, and ContextPacketArtifact whe
 ReviewRecord.
 
 ## Authority limits
-May create only a ReviewRecord.
+May create a ReviewRecord.
+May update the TaskManifest for this task.
 May not edit source files.
 
 ## Required policies
@@ -34,7 +35,8 @@ validate-review-gate
 3. Require artifacts rather than narrative summaries.
 4. Record findings and final disposition honestly.
 5. Fail or block on scope drift, missing evidence, or missing required context state.
-6. Run validators.
+6. Update TaskManifest: phase → review, artifact_refs.review → path; status → completed if PASS/PASS_WITH_DEGRADATION, blocked if FAIL/BLOCKED.
+7. Run validators.
 
 ## Failure behavior
 Missing required dependency blocks.

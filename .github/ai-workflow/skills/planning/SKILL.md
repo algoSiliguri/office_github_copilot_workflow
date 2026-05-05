@@ -13,7 +13,8 @@ GrillRecord.
 PlanArtifact.
 
 ## Authority limits
-May create only a PlanArtifact.
+May create a PlanArtifact.
+May update the TaskManifest for this task.
 May not edit source files.
 
 ## Required policies
@@ -37,7 +38,8 @@ validate-plan-scope
 6. Declare the preferred execution surface per step.
 7. Declare the exact verification command.
 8. Save plan to task folder.
-9. Run validators.
+9. Update TaskManifest: phase → plan, artifact_refs.plan → path.
+10. Run validators.
 
 ## Failure behavior
 Missing required dependency blocks.

@@ -85,6 +85,12 @@ Required fields:
 - `decision.reason`
 - `validated_under` — exact workflow/command/schema/config tuple
 
+After saving the ExecutionRecord, update the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+- Set `phase: execution`
+- Set `updated_at: <ISO 8601 timestamp>`
+- Set `artifact_refs.execution: .github/tasks/TASK-{NNN}/execution.yaml`
+- If execution status is `blocked` or `escalated`, set `status: blocked`
+
 After saving, output:
 
 ```

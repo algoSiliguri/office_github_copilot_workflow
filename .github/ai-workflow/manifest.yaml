@@ -173,6 +173,7 @@ schemas:
   execution_checkpoint: .github/ai-workflow/schemas/execution-checkpoint.schema.json
   verification: .github/ai-workflow/schemas/verification.schema.json
   review: .github/ai-workflow/schemas/review.schema.json
+  task_manifest: .github/ai-workflow/schemas/task-manifest.schema.json
 
 policies:
   context: .github/ai-workflow/policies/context-policy.v1.yaml

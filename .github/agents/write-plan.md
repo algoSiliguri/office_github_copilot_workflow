@@ -56,6 +56,11 @@ If a step would touch a file not listed in `files_in_scope`, remove that step or
 
 Save the PlanArtifact to `.github/tasks/TASK-{NNN}/plan.yaml`. The artifact must conform to `plan.schema.v1`.
 
+After saving the PlanArtifact, update the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+- Set `phase: plan`
+- Set `updated_at: <ISO 8601 timestamp>`
+- Set `artifact_refs.plan: .github/tasks/TASK-{NNN}/plan.yaml`
+
 After saving, output:
 
 ```

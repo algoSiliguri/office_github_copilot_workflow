@@ -49,6 +49,12 @@ Required fields:
 - `human_acknowledgment` — required and approved when status is VERIFIED_WITH_DEGRADATION. When status is `rejected`, must include `reason: { category: enum, details: string }` — present this block to the human reviewer and capture their structured reason.
 - `validated_under` — exact workflow/command/schema/config tuple
 
+After saving the VerificationRecord, update the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+- Set `phase: verification`
+- Set `updated_at: <ISO 8601 timestamp>`
+- Set `artifact_refs.verification: .github/tasks/TASK-{NNN}/verification.yaml`
+- If status is `BLOCKED`, set `status: blocked`
+
 After saving, output:
 
 ```

@@ -58,6 +58,13 @@ Required fields:
 - `degraded_reason` — required for PASS_WITH_DEGRADATION
 - `validated_under` — exact workflow/command/schema/config tuple
 
+After saving the ReviewRecord, update the TaskManifest at `.github/ai-workflow/artifacts/task-manifest/TASK-{NNN}.task-manifest.json`:
+- Set `phase: review`
+- Set `updated_at: <ISO 8601 timestamp>`
+- Set `artifact_refs.review: .github/tasks/TASK-{NNN}/review.yaml`
+- If status is `PASS` or `PASS_WITH_DEGRADATION`, set `status: completed`
+- If status is `FAIL` or `BLOCKED`, set `status: blocked`
+
 After saving, output:
 
 ```

@@ -13,7 +13,8 @@ PlanArtifact plus ExecutionRecord, and ContextPacketArtifact when required.
 VerificationRecord.
 
 ## Authority limits
-May create only a VerificationRecord.
+May create a VerificationRecord.
+May update the TaskManifest for this task.
 May not edit source files.
 
 ## Required policies
@@ -36,7 +37,8 @@ validate-review-gate
 4. Record exact verification evidence.
 5. Preserve degraded status honestly when applicable.
 6. Produce the VerificationRecord.
-6. Run validators.
+7. Update TaskManifest: phase → verification, artifact_refs.verification → path; status → blocked if BLOCKED.
+8. Run validators.
 
 ## Failure behavior
 Missing required dependency blocks.

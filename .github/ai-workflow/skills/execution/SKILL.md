@@ -14,6 +14,7 @@ ExecutionRecord plus code changes and evidence for `/verify`.
 
 ## Authority limits
 May modify only files declared in the active plan.
+May update the TaskManifest for this task.
 Must stop if scope or risk changes.
 
 ## Required policies
@@ -36,7 +37,8 @@ validate-compatibility
 3. If the plan requires a context packet, stop unless a valid packet is present in a proceed state.
 4. Execute only the declared scope.
 5. Produce an ExecutionRecord recording touched files, evidence, and context state.
-6. Stop and escalate back to planning if scope changes.
+6. Update TaskManifest: phase → execution, artifact_refs.execution → path; status → blocked if escalated.
+7. Stop and escalate back to planning if scope changes.
 
 ## Failure behavior
 Missing required dependency blocks.

@@ -1,0 +1,40 @@
+policy_id: evaluation-policy.v1
+
+allowed_outcomes:
+  - success
+  - partial_success
+  - failure
+
+allowed_evaluation_statuses:
+  - draft
+  - confirmed
+  - overridden
+
+rules:
+  evaluation_status_at_creation: draft
+  human_confirmation_required_before_authoritative: true
+  overridden_requires_structured_reason: true
+  skip_incomplete_tasks: true
+  incomplete_task_statuses:
+    - in_progress
+    - abandoned
+
+outcome_rules:
+  success:
+    - all criteria_outcomes met = true
+    - scope_adherence = true
+    - review_status in [PASS, PASS_WITH_DEGRADATION]
+    - human_approval_first_pass = approved
+  partial_success:
+    - criteria_satisfaction_rate >= 0.5
+    - OR verification_status = VERIFIED_WITH_DEGRADATION
+    - OR review_status = PASS_WITH_DEGRADATION
+  failure:
+    - criteria_satisfaction_rate < 0.5
+    - OR review_status in [FAIL, BLOCKED]
+    - OR human_approval_first_pass = rejected
+
+improvement_loop:
+  failure_triggers_system_improvement_task: true
+  task_type_for_improvement: system_improvement
+  triggered_by_required: true

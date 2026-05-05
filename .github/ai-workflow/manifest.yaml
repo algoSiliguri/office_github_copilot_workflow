@@ -159,6 +159,25 @@ commands:
       - ReviewRecord
     may_edit_source: false
     may_search_outside_plan_files: false
+    allowed_handoffs:
+      - /evaluate
+  /evaluate:
+    contract: evaluate.v1
+    file: .github/ai-workflow/contracts/commands/evaluate.v1.yaml
+    allowed_predecessors:
+      - /review
+    required_inputs:
+      - TaskManifest
+      - GrillRecord
+      - PlanArtifact
+      - ExecutionRecord
+      - VerificationRecord
+      - ReviewRecord
+    conditional_inputs: []
+    produces:
+      - EvaluationRecord
+    may_edit_source: false
+    may_search_outside_plan_files: false
     allowed_handoffs: []
 
 schemas:
@@ -184,6 +203,7 @@ policies:
   verification: .github/ai-workflow/policies/verification-policy.v1.yaml
   review: .github/ai-workflow/policies/review-policy.v1.yaml
   artifact_path: .github/ai-workflow/policies/artifact-path-policy.v1.yaml
+  evaluation: .github/ai-workflow/policies/evaluation-policy.v1.yaml
 
 validators:
   bootstrap: .github/ai-workflow/validators/bootstrap
@@ -197,3 +217,4 @@ validators:
   review_gate: .github/ai-workflow/validators/validate-review-gate
   quick_task_preclassify: .github/ai-workflow/validators/validate-quick-task-preclassify
   criteria_coverage: .github/ai-workflow/validators/validate-criteria-coverage
+  evaluation_gate: .github/ai-workflow/validators/validate-evaluation-gate

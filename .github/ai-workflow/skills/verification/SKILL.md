@@ -29,16 +29,18 @@ validate-manifest
 validate-artifact
 validate-plan-scope
 validate-review-gate
+validate-criteria-coverage
 
 ## Procedure
 1. Load manifest, command contract, policies, and schema.
 2. Compare execution checkpoint changes against the plan scope.
 3. Verify required context-packet state when one was required.
-4. Record exact verification evidence.
-5. Preserve degraded status honestly when applicable.
-6. Produce the VerificationRecord.
-7. Update TaskManifest: phase → verification, artifact_refs.verification → path; status → blocked if BLOCKED.
-8. Run validators.
+4. Read GrillRecord success_criteria — produce one criteria_outcomes entry per criterion (1:1). criteria_outcomes is the authoritative pass/fail record per declared success criterion. Multiple criteria may share one verification_command_ref.
+5. Record exact verification evidence.
+6. Preserve degraded status honestly when applicable.
+7. Produce the VerificationRecord.
+8. Update TaskManifest: phase → verification, artifact_refs.verification → path; status → blocked if BLOCKED.
+9. Run validators including validate-criteria-coverage.
 
 ## Failure behavior
 Missing required dependency blocks.

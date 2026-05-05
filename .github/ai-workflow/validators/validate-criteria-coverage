@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Cross-artifact validator: checks criteria_outcomes in VerificationRecord
+# matches success_criteria count in GrillRecord for the same task.
+# Usage: validate-criteria-coverage <verification_file> <grill_file>
+# Exit 0 = valid, Exit 1 = mismatch or missing
+
+set -euo pipefail
+
+VERIFICATION_FILE="${1:-}"
+GRILL_FILE="${2:-}"
+
+if [[ -z "$VERIFICATION_FILE" || -z "$GRILL_FILE" ]]; then
+  echo "ERROR: usage: validate-criteria-coverage <verification_file> <grill_file>" >&2
+  exit 1
+fi
+
+if [[ ! -f "$VERIFICATION_FILE" ]]; then
+  echo "ERROR: verification file not found: $VERIFICATION_FILE" >&2
+  exit 1
+fi
+
+if [[ ! -f "$GRILL_FILE" ]]; then
+  echo "ERROR: grill file not found: $GRILL_FILE" >&2
+  exit 1
+fi
+
+CRITERIA_COUNT=$(python3 -c "
+import json, sys
+g = json.load(open('$GRILL_FILE'))
+criteria = g.get('success_criteria', [])
+print(len(criteria))
+" 2>/dev/null || echo "-1")
+
+OUTCOMES_COUNT=$(python3 -c "
+import json, sys
+v = json.load(open('$VERIFICATION_FILE'))
+outcomes = v.get('criteria_outcomes', [])
+print(len(outcomes))
+" 2>/dev/null || echo "-1")
+
+if [[ "$CRITERIA_COUNT" == "-1" ]]; then
+  echo "ERROR: cannot parse grill file: $GRILL_FILE" >&2
+  exit 1
+fi
+
+if [[ "$OUTCOMES_COUNT" == "-1" ]]; then
+  echo "ERROR: cannot parse verification file: $VERIFICATION_FILE" >&2
+  exit 1
+fi
+
+if [[ "$CRITERIA_COUNT" == "0" ]]; then
+  echo "WARN: grill has no success_criteria — cannot validate coverage" >&2
+  exit 0
+fi
+
+if [[ "$CRITERIA_COUNT" != "$OUTCOMES_COUNT" ]]; then
+  echo "ERROR: criteria_outcomes count ($OUTCOMES_COUNT) != success_criteria count ($CRITERIA_COUNT)" >&2
+  echo "  Every success criterion must have exactly one criteria_outcomes entry." >&2
+  exit 1
+fi
+
+echo "OK: criteria coverage valid ($OUTCOMES_COUNT/$CRITERIA_COUNT criteria covered)"
+exit 0

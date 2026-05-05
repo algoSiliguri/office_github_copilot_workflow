@@ -195,3 +195,4 @@ validators:
   plan_scope: .github/ai-workflow/validators/validate-plan-scope
   review_gate: .github/ai-workflow/validators/validate-review-gate
   quick_task_preclassify: .github/ai-workflow/validators/validate-quick-task-preclassify
+  criteria_coverage: .github/ai-workflow/validators/validate-criteria-coverage

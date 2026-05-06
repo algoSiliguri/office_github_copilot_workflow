@@ -10,6 +10,8 @@
     "created_at",
     "source_refs",
     "scores",
+    "task_outcome",
+    "process_quality",
     "outcome",
     "evaluation_status",
     "human_evaluation",
@@ -204,6 +206,59 @@
             "partial_success_low",
             "failure"
           ]
+        }
+      }
+    },
+    "task_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "criteria_satisfaction_rate",
+        "criteria_count",
+        "criteria_met_count",
+        "criteria_unmet_count",
+        "outcome_band"
+      ],
+      "properties": {
+        "criteria_satisfaction_rate": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "criteria_count": { "type": "integer", "minimum": 1 },
+        "criteria_met_count": { "type": "integer", "minimum": 0 },
+        "criteria_unmet_count": { "type": "integer", "minimum": 0 },
+        "outcome_band": {
+          "enum": ["success", "partial_success_high", "partial_success_low", "failure"]
+        }
+      }
+    },
+    "process_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "diagnosis_used_when_required",
+        "retrieval_decision_recorded",
+        "tdd_decision_recorded",
+        "tdd_followed_when_required",
+        "verification_evidence_present",
+        "scope_adherence",
+        "human_gate_respected",
+        "status",
+        "violations"
+      ],
+      "properties": {
+        "diagnosis_used_when_required": { "type": "boolean" },
+        "retrieval_decision_recorded": { "type": "boolean" },
+        "tdd_decision_recorded": { "type": "boolean" },
+        "tdd_followed_when_required": { "type": "boolean" },
+        "verification_evidence_present": { "type": "boolean" },
+        "scope_adherence": { "type": "boolean" },
+        "human_gate_respected": { "type": "boolean" },
+        "status": { "enum": ["pass", "degraded", "fail"] },
+        "violations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
         }
       }
     },

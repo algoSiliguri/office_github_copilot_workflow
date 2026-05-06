@@ -1,0 +1,58 @@
+command_contract_id: evaluate-system.v1
+stable_alias: /evaluate-system
+contract_version: 1
+
+input_artifacts:
+  - type: EvaluationRecord
+    schema: evaluation.schema.v1
+    required: false
+  - type: TaskManifest
+    schema: task-manifest.schema.v1
+    required: false
+
+output_artifacts:
+  - type: SystemEvaluationReport
+    schema: system-evaluation.schema.v1
+    required: true
+
+required_validators:
+  before:
+    - validate-manifest
+  after:
+    - validate-artifact
+    - validate-artifact-path
+
+authority:
+  may_create:
+    - SystemEvaluationReport
+  may_modify: []
+  may_read:
+    - completed_task_artifacts
+    - evaluation_records
+    - task_manifests
+    - upstream_artifact_refs
+    - raw_logs_only_as_cited_evidence_for_specific_patterns
+  forbidden:
+    - edit_source_files
+    - modify_manifest
+    - modify_schemas
+    - modify_policies
+    - modify_prompts
+    - modify_command_contracts
+    - self_apply_improvements
+    - bypass_validation
+
+semantics:
+  required:
+    - run_periodically_not_after_every_task
+    - trigger_after_five_evaluated_tasks_or_any_human_override_or_before_workflow_change
+    - evaluate_system_from_observable_artifacts_only
+    - read_structured_artifacts_before_raw_logs
+    - do_not_bulk_summarize_raw_logs
+    - cite_raw_logs_only_when_needed_to_explain_a_metric_or_pattern
+    - aggregate_task_outcome_and_process_quality_separately
+    - identify_repeated_problem_patterns_not_one_off_noise
+    - map_each_pattern_to_evidence_refs_and_implicated_workflow_component
+    - produce_human_decision_request_with_ranked_improvement_candidates
+    - recommend_grill_for_any_workflow_change
+    - never_self_modify_workflow_from_retrospective

@@ -21,6 +21,7 @@ required_validators:
   after:
     - validate-artifact
     - validate-artifact-path
+    # validate-criteria-coverage invocation: validate-criteria-coverage <verification.json> <grill.json>
     - validate-criteria-coverage
 
 authority:

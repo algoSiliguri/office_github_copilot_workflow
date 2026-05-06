@@ -9,10 +9,9 @@ Checks:
   2. change_class.policy_allowed == True  (forbidden class must escalate, not edit)
   3. files.planned is non-empty with exact paths
 """
+import json
 import sys
 from pathlib import Path
-
-import yaml
 
 
 def fail(reason: str) -> int:
@@ -34,7 +33,7 @@ def main() -> int:
         if not path.exists():
             return fail(f"artifact not found: {path}")
 
-        artifact = yaml.safe_load(path.read_text())
+        artifact = json.loads(path.read_text())
         require(isinstance(artifact, dict), "artifact must be a mapping")
 
         # Gate 1: classification must be locked before edits start

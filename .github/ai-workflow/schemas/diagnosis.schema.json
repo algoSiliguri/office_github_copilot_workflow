@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DiagnosisRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_type",
+    "schema_version",
+    "task_id",
+    "task_type",
+    "primary_surface",
+    "bug_summary",
+    "reported_behavior",
+    "expected_behavior",
+    "reproduction",
+    "minimal_case",
+    "hypotheses",
+    "suspected_root_cause",
+    "recommended_files_in_scope",
+    "test_surface",
+    "confidence",
+    "decision",
+    "created_at",
+    "validated_under"
+  ],
+  "properties": {
+    "artifact_type": { "const": "DiagnosisRecord" },
+    "schema_version": { "const": "diagnosis.schema.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "task_type": { "const": "bugfix" },
+    "primary_surface": { "enum": ["copilot_plugin", "copilot_cli"] },
+    "secondary_surfaces_allowed": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "bug_summary": { "type": "string", "minLength": 1 },
+    "reported_behavior": { "type": "string", "minLength": 1 },
+    "expected_behavior": { "type": "string", "minLength": 1 },
+    "reproduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "output", "reproduced"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "output": { "type": "string", "minLength": 1 },
+        "reproduced": { "type": "boolean" }
+      }
+    },
+    "minimal_case": { "type": "string", "minLength": 1 },
+    "hypotheses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "summary", "prediction", "evidence", "status"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^H-[0-9]{3}$" },
+          "summary": { "type": "string", "minLength": 1 },
+          "prediction": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["confirmed", "rejected", "untested"] }
+        }
+      }
+    },
+    "suspected_root_cause": { "type": "string", "minLength": 1 },
+    "recommended_files_in_scope": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "operation"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "operation": { "enum": ["create", "modify", "delete"] }
+        }
+      }
+    },
+    "recommended_files_out_of_scope": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "test_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quality", "recommended_regression_test"],
+      "properties": {
+        "quality": { "enum": ["low", "medium", "high"] },
+        "recommended_regression_test": { "type": "string", "minLength": 1 }
+      }
+    },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "decision": { "enum": ["proceed", "blocked"] },
+    "open_blockers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "validated_under": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_manifest_version",
+        "workflow_contract_version",
+        "command_contract_id",
+        "command_contract_version",
+        "artifact_schema",
+        "config_instruction_version"
+      ],
+      "properties": {
+        "workflow_manifest_version": { "type": "integer", "const": 1 },
+        "workflow_contract_version": { "type": "integer", "const": 1 },
+        "command_contract_id": { "type": "string", "const": "diagnose.v1" },
+        "command_contract_version": { "type": "integer", "const": 1 },
+        "artifact_schema": { "type": "string", "const": "diagnosis.schema.v1" },
+        "config_instruction_version": { "type": "string", "const": "v1" }
+      }
+    }
+  }
+}

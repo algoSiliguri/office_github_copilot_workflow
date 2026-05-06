@@ -1,6 +1,6 @@
 policy_id: quick-task-policy.v1
 
-max_files: 3
+max_files: 2
 
 allowed_change_classes:
   - docs_copy
@@ -26,7 +26,11 @@ required_checks:
   - exact_files_listed
   - change_class_declared
   - verification_evidence_present
+  - retrieval_bypass_justified
+  - tdd_bypass_justified
+  - evaluation_bypass_justified
 
 on_forbidden_class: ESCALATED_TO_FULL_WORKFLOW
 on_file_limit_exceeded: ESCALATED_TO_FULL_WORKFLOW
 on_missing_verification: FAIL
+on_missing_bypass_justification: ESCALATED_TO_FULL_WORKFLOW

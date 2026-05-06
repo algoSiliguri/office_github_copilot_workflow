@@ -6,6 +6,7 @@ attempts_dirname: attempts
 logs_dirname: logs
 
 authoritative_filenames:
+  DiagnosisRecord: diagnosis.json
   GrillRecord: grill.json
   LegacyExplorationRecord: legacy-exploration.json
   PlanArtifact: plan.json
@@ -14,8 +15,20 @@ authoritative_filenames:
   VerificationRecord: verification.json
   ReviewRecord: review.json
   EvaluationRecord: evaluation.json
+  SystemEvaluationReport: system-evaluation.json
+  FleetEvaluationReport: fleet-evaluation.json
+  RawSourceReviewRecord: raw-source-review.json
   TaskManifest: task-manifest.json
   QuickTaskRecord: quick-task.json
+
+system_evaluation_path:
+  pattern: .github/tasks/system-evaluations/SYS-EVAL-{YYYYMMDD}-{HHMMSS}/system-evaluation.json
+
+fleet_evaluation_path:
+  pattern: .github/tasks/fleet-evaluations/FLEET-EVAL-{YYYYMMDD}-{HHMMSS}/fleet-evaluation.json
+
+raw_source_review_path:
+  pattern: .github/tasks/fleet-evaluations/FLEET-EVAL-{YYYYMMDD}-{HHMMSS}/raw-source-reviews/RAW-SOURCE-REVIEW-{YYYYMMDD}-{HHMMSS}/raw-source-review.json
 
 rules:
   enforce_task_folder_root: true

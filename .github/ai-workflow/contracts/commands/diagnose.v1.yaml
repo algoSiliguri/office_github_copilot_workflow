@@ -1,0 +1,48 @@
+command_contract_id: diagnose.v1
+stable_alias: /diagnose
+contract_version: 1
+
+input_artifacts: []
+
+output_artifacts:
+  - type: DiagnosisRecord
+    schema: diagnosis.schema.v1
+    required: true
+  - type: TaskManifest
+    schema: task-manifest.schema.v1
+    required: true
+
+required_validators:
+  after:
+    - validate-artifact
+    - validate-artifact-path
+
+authority:
+  may_create:
+    - DiagnosisRecord
+    - TaskManifest
+  may_modify:
+    - TaskManifest
+  may_read:
+    - bounded_reproduction_files
+    - bounded_related_files
+  may_run:
+    - safe_reproduction_commands
+  forbidden:
+    - edit_source_files
+    - modify_manifest
+    - modify_schemas
+    - modify_policies
+    - claim_fixed_without_execution
+    - bypass_validation
+
+semantics:
+  required:
+    - reproduce_or_record_reproduction_blocker
+    - rank_hypotheses_before_instrumentation
+    - test_hypotheses_one_at_a_time
+    - record_suspected_root_cause_and_confidence
+    - recommend_files_in_scope_for_fix
+    - save_diagnosis_record_to_task_folder
+    - create_task_manifest_at_task_birth
+    - hand_off_to_grill_or_quick_task_without_editing_source

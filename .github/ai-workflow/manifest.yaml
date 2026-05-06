@@ -33,14 +33,31 @@ commands:
     may_search_outside_plan_files: true
     allowed_handoffs:
       - /grill
+      - /diagnose
       - /quick-task
-  /grill:
-    contract: grill.v2
-    file: .github/ai-workflow/contracts/commands/grill.v2.yaml
+  /diagnose:
+    contract: diagnose.v1
+    file: .github/ai-workflow/contracts/commands/diagnose.v1.yaml
     allowed_predecessors:
       - /setup-workflow
     required_inputs: []
     conditional_inputs: []
+    produces:
+      - DiagnosisRecord
+    may_edit_source: false
+    may_search_outside_plan_files: true
+    allowed_handoffs:
+      - /grill
+      - /quick-task
+  /grill:
+    contract: grill.v1
+    file: .github/ai-workflow/contracts/commands/grill.v1.yaml
+    allowed_predecessors:
+      - /setup-workflow
+      - /diagnose
+    required_inputs: []
+    conditional_inputs:
+      - DiagnosisRecord
     produces:
       - GrillRecord
     may_edit_source: false
@@ -169,11 +186,44 @@ commands:
       - EvaluationRecord
     may_edit_source: false
     may_search_outside_plan_files: false
-    allowed_handoffs: []
+    allowed_handoffs:
+      - /evaluate-system
+  /evaluate-system:
+    contract: evaluate-system.v1
+    file: .github/ai-workflow/contracts/commands/evaluate-system.v1.yaml
+    allowed_predecessors:
+      - /setup-workflow
+      - /evaluate
+    required_inputs: []
+    conditional_inputs:
+      - EvaluationRecord
+      - TaskManifest
+    produces:
+      - SystemEvaluationReport
+    may_edit_source: false
+    may_search_outside_plan_files: false
+    allowed_handoffs:
+      - /grill
+      - /evaluate-fleet
+  /evaluate-fleet:
+    contract: evaluate-fleet.v1
+    file: .github/ai-workflow/contracts/commands/evaluate-fleet.v1.yaml
+    allowed_predecessors:
+      - /evaluate-system
+      - /setup-workflow
+    required_inputs:
+      - SystemEvaluationReport
+    conditional_inputs: []
+    produces:
+      - FleetEvaluationReport
+    may_edit_source: false
+    may_search_outside_plan_files: false
+    allowed_handoffs:
+      - /grill
 
 schemas:
+  diagnosis: .github/ai-workflow/schemas/diagnosis.schema.json
   grill: .github/ai-workflow/schemas/grill.schema.json
-  grill_v2: .github/ai-workflow/schemas/grill.schema.v2.json
   legacy_explore: .github/ai-workflow/schemas/legacy-explore.schema.json
   manifest: .github/ai-workflow/schemas/manifest.schema.json
   command_contract: .github/ai-workflow/schemas/command-contract.schema.json
@@ -186,6 +236,9 @@ schemas:
   review: .github/ai-workflow/schemas/review.schema.json
   task_manifest: .github/ai-workflow/schemas/task-manifest.schema.json
   evaluation: .github/ai-workflow/schemas/evaluation.schema.json
+  system_evaluation: .github/ai-workflow/schemas/system-evaluation.schema.json
+  fleet_evaluation: .github/ai-workflow/schemas/fleet-evaluation.schema.json
+  raw_source_review: .github/ai-workflow/schemas/raw-source-review.schema.json
 
 policies:
   context: .github/ai-workflow/policies/context-policy.v1.yaml
@@ -196,6 +249,7 @@ policies:
   review: .github/ai-workflow/policies/review-policy.v1.yaml
   artifact_path: .github/ai-workflow/policies/artifact-path-policy.v1.yaml
   evaluation: .github/ai-workflow/policies/evaluation-policy.v1.yaml
+  release_readiness: .github/ai-workflow/policies/release-readiness-policy.v1.yaml
 
 validators:
   bootstrap: .github/ai-workflow/validators/bootstrap
@@ -210,3 +264,4 @@ validators:
   quick_task_preclassify: .github/ai-workflow/validators/validate-quick-task-preclassify
   criteria_coverage: .github/ai-workflow/validators/validate-criteria-coverage
   evaluation_gate: .github/ai-workflow/validators/validate-evaluation-gate
+  release_readiness: .github/ai-workflow/validators/validate-release-readiness

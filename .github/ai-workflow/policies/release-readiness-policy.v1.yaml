@@ -1,0 +1,36 @@
+policy_id: release-readiness-policy.v1
+
+release_target: v1
+readiness_status: stable_for_local_plugin_use
+
+scope:
+  primary_runtime: GitHub Copilot Chat in JetBrains
+  secondary_runtime: GitHub Copilot CLI handoff
+  excluded:
+    - automatic_self_modification
+    - hard_phase_enforcement_without_validator_invocation
+    - centralized_fleet_collection_service
+
+required_release_bar:
+  manifest_validation_passes: true
+  config_validation_passes: true
+  governed_schemas_parse: true
+  valid_example_artifacts_pass: true
+  negative_safety_tests_fail_correctly: true
+  authority_boundaries_documented: true
+  self_modification_forbidden: true
+  readme_states_v1_runtime_scope: true
+
+negative_safety_tests:
+  - fleet_report_with_raw_excerpts_allowed_must_fail
+  - fleet_report_without_raw_detail_reason_code_gate_must_fail
+  - raw_source_review_with_copied_raw_detail_must_fail
+
+stopping_rule:
+  description: "V1 grilling can stop when validate-release-readiness passes and no unresolved V1-stability blocker remains."
+  continue_grilling_only_for:
+    - missing_validator_coverage
+    - ambiguous_authority_boundary
+    - privacy_or_safety_gap
+    - task_success_metric_gap
+    - workflow_path_that_cannot_be_audited

@@ -14,6 +14,12 @@
     "files_touched": [".github/ai-workflow/artifacts/examples/README.md"],
     "unplanned_files_touched": []
   },
+  "tdd_execution": {
+    "required": false,
+    "used": false,
+    "evidence": [],
+    "deviation_reason": null
+  },
   "cli_handoff": {
     "approval_status": "not_required",
     "reason": "Plugin edit only",

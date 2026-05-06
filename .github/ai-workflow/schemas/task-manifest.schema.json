@@ -30,13 +30,14 @@
     },
     "phase": {
       "type": "string",
-      "enum": ["grill", "legacy_exploration", "plan", "context_packet", "execution", "verification", "review", "evaluated"]
+      "enum": ["diagnosis", "grill", "legacy_exploration", "plan", "context_packet", "execution", "verification", "review", "evaluated"]
     },
     "artifact_refs": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["grill", "legacy_exploration", "plan", "context_packet", "execution", "verification", "review", "evaluation"],
+      "required": ["diagnosis", "grill", "legacy_exploration", "plan", "context_packet", "execution", "verification", "review", "evaluation"],
       "properties": {
+        "diagnosis": { "type": ["string", "null"] },
         "grill": { "type": ["string", "null"] },
         "legacy_exploration": { "type": ["string", "null"] },
         "plan": { "type": ["string", "null"] },

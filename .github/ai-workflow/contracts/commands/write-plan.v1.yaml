@@ -39,8 +39,11 @@ semantics:
   required:
     - ground_plan_in_grill_record
     - declare_files_in_scope_and_out_of_scope
+    - record_retrieval_decision_even_when_skipped
+    - record_tdd_decision_and_test_first_plan_when_required
     - declare_context_packet_requirement
     - declare_preferred_surface_per_step
     - refuse_if_grill_decision_is_not_proceed
+    - block_low_confidence_diagnosis_for_production_fix
     - save_plan_to_task_folder
     - update_task_manifest_phase_and_artifact_refs

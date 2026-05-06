@@ -35,10 +35,13 @@ Before producing a plan:
 ## Plan structure
 
 The plan must declare:
+- `diagnosis_confidence_gate` — applies for diagnosis-backed bugfixes. Low-confidence diagnosis blocks production fixes; allowed low-confidence work is limited to reproduction tests, instrumentation, or test-surface improvements.
 - `files_in_scope` — every file that will be touched, with operation (create/modify/delete)
 - `files_out_of_scope` — explicit list of files that are adjacent but must NOT be touched
+- `retrieval_decision` — `used | skipped | unavailable`, reasons, and files considered. This is mandatory; do not confuse "skipped" with "not considered".
 - `context_packet_required` — true if the task involves >3 files or unfamiliar modules; false otherwise
 - `context_packet_path` — required if `context_packet_required: true`
+- `tdd_decision` — whether TDD is required, why, and the test-first plan when required. TDD is required for behavior changes, bugfixes, shared logic, public APIs, persistence/data shape, permissions/security, and cross-module behavior.
 - `source_exploration` — required when bounded exploration was required before planning
 - `steps[]` — ordered implementation steps, each with:
   - `preferred_surface: copilot_plugin` or `copilot_cli`

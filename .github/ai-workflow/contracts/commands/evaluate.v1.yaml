@@ -60,7 +60,10 @@ semantics:
   required:
     - read_task_manifest_first_skip_if_not_completed
     - compute_criteria_satisfaction_rate_from_criteria_outcomes
+    - keep_task_outcome_separate_from_process_quality
+    - never_downgrade_task_outcome_due_only_to_process_quality_failure
     - classify_outcome_using_declared_rules
+    - report_process_quality_failures_as_process_violations
     - write_evaluation_record_with_status_draft
     - present_human_evaluation_block_for_confirmation
     - keep_task_manifest_phase_at_review_until_human_confirmation

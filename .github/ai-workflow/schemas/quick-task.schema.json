@@ -12,6 +12,7 @@
     "created_at",
     "files",
     "change_class",
+    "bypass_justification",
     "verification",
     "escalation_triggered",
     "escalation_reason",
@@ -155,6 +156,44 @@
           "items": {
             "type": "string",
             "minLength": 1
+          }
+        }
+      }
+    },
+    "bypass_justification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retrieval_decision",
+        "tdd_decision",
+        "evaluation_decision"
+      ],
+      "properties": {
+        "retrieval_decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bypassed", "reason"],
+          "properties": {
+            "bypassed": { "type": "boolean", "const": true },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        },
+        "tdd_decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bypassed", "reason"],
+          "properties": {
+            "bypassed": { "type": "boolean", "const": true },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        },
+        "evaluation_decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bypassed", "reason"],
+          "properties": {
+            "bypassed": { "type": "boolean", "const": true },
+            "reason": { "type": "string", "minLength": 1 }
           }
         }
       }

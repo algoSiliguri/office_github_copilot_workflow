@@ -1,0 +1,69 @@
+command_contract_id: evaluate-fleet.v1
+stable_alias: /evaluate-fleet
+contract_version: 1
+
+input_artifacts:
+  - type: SystemEvaluationReport
+    schema: system-evaluation.schema.v1
+    required: true
+
+output_artifacts:
+  - type: FleetEvaluationReport
+    schema: fleet-evaluation.schema.v1
+    required: true
+  - type: RawSourceReviewRecord
+    schema: raw-source-review.schema.v1
+    required: false
+
+required_validators:
+  before:
+    - validate-manifest
+  after:
+    - validate-artifact
+    - validate-artifact-path
+
+authority:
+  may_create:
+    - FleetEvaluationReport
+    - RawSourceReviewRecord
+  may_modify: []
+  may_read:
+    - exported_system_evaluation_reports
+  forbidden:
+    - read_raw_task_logs
+    - read_source_code
+    - edit_source_files
+    - modify_manifest
+    - modify_schemas
+    - modify_policies
+    - modify_prompts
+    - modify_command_contracts
+    - self_apply_improvements
+    - bypass_validation
+
+semantics:
+  required:
+    - aggregate_only_opt_in_structured_system_evaluation_reports
+    - ignore_raw_logs_and_source_code
+    - forbid_raw_excerpts_in_fleet_reports
+    - require_evidence_refs_plus_paraphrased_pattern_summaries
+    - require_reason_code_for_controlled_raw_source_report_review
+    - create_raw_source_review_record_when_raw_source_report_detail_is_reviewed
+    - forbid_raw_excerpts_in_raw_source_review_records
+    - use_source_ids_only_for_independence_deduplication_and_safe_evidence_refs
+    - never_rank_score_or_blame_developers_by_source_id
+    - require_minimum_two_independent_sources_for_main_bundle_candidate_in_v1
+    - require_human_grill_before_any_main_bundle_change
+    - preserve_local_candidate_changes_as_local_until_cross_developer_pattern_exists
+    - group_candidates_by_normalized_problem_component_target_and_metric_not_exact_text
+    - classify_shared_candidates_as_universal_or_stack_specific
+    - route_stack_specific_candidates_to_optional_profiles_not_default_workflow
+    - require_stack_specific_profiles_to_be_passive_guidance_only_in_v1
+    - require_profile_signals_to_remain_diagnostic_not_core_metrics_in_v1
+    - require_profile_diagnostic_signals_to_use_controlled_kebab_case_ids_plus_explanations
+    - require_diagnostic_signal_renames_and_merges_to_use_explicit_alias_records
+    - require_human_grill_before_canonicalizing_diagnostic_signal_aliases
+    - rank_common_repeated_patterns_by_frequency_severity_and_blast_radius
+    - produce_candidate_main_bundle_changes_only
+    - recommend_grill_for_any_main_bundle_change
+    - never_self_modify_workflow_from_fleet_evaluation

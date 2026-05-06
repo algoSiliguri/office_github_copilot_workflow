@@ -1,4 +1,4 @@
-<!-- v2 FEATURE: /diagnose is not a v1 governed command. This agent definition is non-canonical and non-invocable in v1. -->
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
 
 ---
 name: Diagnose
@@ -82,3 +82,7 @@ Recommended next step:   /quick-task | /grill | /write-plan
 - Do not write or edit any files
 - Do not claim the bug is fixed without a confirmed hypothesis
 - Do not skip to Phase 5 without completing Phases 3 and 4
+
+## Output
+
+Produce a `DiagnosisRecord` at `.github/tasks/TASK-{NNN}/diagnosis.json`. Create the task manifest with `artifact_refs.diagnosis` populated, `artifact_refs.grill: null`, `status: in_progress`, and `phase: diagnosis`.

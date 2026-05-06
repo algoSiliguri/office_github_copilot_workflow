@@ -31,9 +31,32 @@
     "unplanned_files_count": 0,
     "verification_status": "VERIFIED",
     "review_status": "PASS",
-    "human_approval_first_pass": "approved"
+    "human_approval_first_pass": "approved",
+    "criteria_count": 3,
+    "criteria_met_count": 3,
+    "criteria_unmet_count": 0,
+    "outcome_band": "success"
+  },
+  "task_outcome": {
+    "criteria_satisfaction_rate": 1.0,
+    "criteria_count": 3,
+    "criteria_met_count": 3,
+    "criteria_unmet_count": 0,
+    "outcome_band": "success"
+  },
+  "process_quality": {
+    "diagnosis_used_when_required": true,
+    "retrieval_decision_recorded": true,
+    "tdd_decision_recorded": true,
+    "tdd_followed_when_required": true,
+    "verification_evidence_present": true,
+    "scope_adherence": true,
+    "human_gate_respected": true,
+    "status": "pass",
+    "violations": []
   },
   "outcome": "success",
+  "improvement_signal": "none",
   "evaluation_status": "confirmed",
   "human_evaluation": {
     "status": "confirmed",

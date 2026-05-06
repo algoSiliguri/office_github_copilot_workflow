@@ -19,7 +19,7 @@
       "verification_command_ref": "python3 .github/ai-workflow/validators/validate-manifest"
     },
     {
-      "criterion": "review scope remains clean",
+      "criterion": "review scope remains clean for the valid fixture chain",
       "met": true,
       "evidence": "Only the approved fixture README path changed",
       "verification_command_ref": "python3 .github/ai-workflow/validators/validate-manifest"

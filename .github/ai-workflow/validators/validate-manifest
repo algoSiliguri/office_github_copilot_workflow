@@ -21,6 +21,7 @@ ALLOWED_TOP_LEVEL_KEYS = {
 }
 REQUIRED_COMMANDS = {
     "/setup-workflow": "setup-workflow.v1",
+    "/diagnose": "diagnose.v1",
     "/grill": "grill.v1",
     "/legacy-explore": "legacy-explore.v1",
     "/quick-task": "quick-task.v1",
@@ -30,8 +31,11 @@ REQUIRED_COMMANDS = {
     "/verify": "verify.v1",
     "/review": "review.v1",
     "/evaluate": "evaluate.v1",
+    "/evaluate-system": "evaluate-system.v1",
+    "/evaluate-fleet": "evaluate-fleet.v1",
 }
 REQUIRED_SCHEMAS = {
+    "diagnosis",
     "grill",
     "legacy_explore",
     "manifest",
@@ -45,9 +49,12 @@ REQUIRED_SCHEMAS = {
     "review",
     "task_manifest",
     "evaluation",
+    "system_evaluation",
+    "fleet_evaluation",
+    "raw_source_review",
 }
-REQUIRED_POLICIES = {"context", "quick_task", "workflow", "retrieval", "verification", "review", "artifact_path", "evaluation"}
-REQUIRED_VALIDATORS = {"bootstrap", "compatibility", "config", "context_packet", "manifest", "artifact", "artifact_path", "plan_scope", "review_gate", "quick_task_preclassify", "criteria_coverage", "evaluation_gate"}
+REQUIRED_POLICIES = {"context", "quick_task", "workflow", "retrieval", "verification", "review", "artifact_path", "evaluation", "release_readiness"}
+REQUIRED_VALIDATORS = {"bootstrap", "compatibility", "config", "context_packet", "manifest", "artifact", "artifact_path", "plan_scope", "review_gate", "quick_task_preclassify", "criteria_coverage", "evaluation_gate", "release_readiness"}
 
 
 def fail(reason: str) -> int:

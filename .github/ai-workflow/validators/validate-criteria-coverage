@@ -34,16 +34,20 @@ def main() -> int:
     if len(declared) != len(outcomes):
         return fail(f"criteria_outcomes count ({len(outcomes)}) != success_criteria count ({len(declared)})")
 
+    declared_descriptions = [
+        c.get("description", "") if isinstance(c, dict) else c
+        for c in declared
+    ]
     outcome_criteria = [entry.get("criterion") for entry in outcomes]
-    if outcome_criteria != declared:
-        missing = [criterion for criterion in declared if criterion not in outcome_criteria]
-        extras = [criterion for criterion in outcome_criteria if criterion not in declared]
+    if outcome_criteria != declared_descriptions:
+        missing = [d for d in declared_descriptions if d not in outcome_criteria]
+        extras = [o for o in outcome_criteria if o not in declared_descriptions]
         detail = []
         if missing:
             detail.append(f"missing={missing}")
         if extras:
             detail.append(f"unexpected={extras}")
-        return fail("criteria_outcomes must map 1:1 to GrillRecord.success_criteria in declared order" + (f" ({'; '.join(detail)})" if detail else ""))
+        return fail("criteria_outcomes must map 1:1 to GrillRecord.success_criteria descriptions in declared order" + (f" ({'; '.join(detail)})" if detail else ""))
 
     print(f"OK: criteria coverage valid ({len(outcomes)}/{len(declared)} criteria covered)")
     return 0

@@ -11,6 +11,7 @@
     "primary_surface",
     "goal",
     "problem_statement",
+    "source_diagnosis",
     "approach",
     "exploration_required",
     "exploration_reasons",
@@ -56,6 +57,7 @@
     },
     "goal": { "type": "string", "minLength": 1 },
     "problem_statement": { "type": "string", "minLength": 1 },
+    "source_diagnosis": { "type": ["string", "null"] },
     "assumptions": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 }
@@ -100,7 +102,24 @@
     "success_criteria": {
       "type": "array",
       "minItems": 1,
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "verification_type", "expected_signal", "observable"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^SC-[0-9]{3}$" },
+          "description": { "type": "string", "minLength": 10 },
+          "verification_type": { "enum": ["command", "inspection", "log", "metric"] },
+          "verification_command": { "type": "string", "minLength": 1 },
+          "expected_signal": { "type": "string", "minLength": 1 },
+          "observable": { "type": "boolean", "const": true }
+        },
+        "if": {
+          "properties": { "verification_type": { "const": "command" } },
+          "required": ["verification_type"]
+        },
+        "then": { "required": ["verification_command"] }
+      }
     },
     "exploration_required": { "type": "boolean" },
     "exploration_reasons": {

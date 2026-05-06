@@ -20,7 +20,29 @@ Score a completed task against its declared success criteria and produce an Eval
 3. From `ReviewRecord`: read `scope_match` → `scope_adherence`, `status` → `review_status`, `human_authorization.status` → `human_approval_first_pass`.
 4. From `VerificationRecord`: read `status` → `verification_status`.
 
+## Process quality
+
+Compute process quality separately from task outcome. Do not blend these into one score.
+
+Process quality is a workflow-integrity signal, not a functional-outcome signal. If the declared task criteria pass but process gates fail, keep the criteria-derived task outcome intact and set `process_quality.status: fail` with explicit violations. Do not silently downgrade `task_outcome` or `scores.outcome_band` because of process failure alone.
+
+Set:
+- `diagnosis_used_when_required` — true when diagnosis was not required, or when a required DiagnosisRecord exists and was referenced.
+- `retrieval_decision_recorded` — true when PlanArtifact has `retrieval_decision`.
+- `tdd_decision_recorded` — true when PlanArtifact has `tdd_decision`.
+- `tdd_followed_when_required` — true when TDD was not required, or when ExecutionRecord.tdd_execution.required and used are both true.
+- `verification_evidence_present` — true when VerificationRecord.command_output and evidence are non-empty.
+- `scope_adherence` — from ReviewRecord.scope_match.
+- `human_gate_respected` — true when ReviewRecord PASS/PASS_WITH_DEGRADATION has approved human authorization.
+
+Set `process_quality.status`:
+- `pass` when all checks are true.
+- `fail` when any required gate is false.
+- `degraded` only when all hard gates pass but documented degradations exist.
+
 ## Outcome classification
+
+Classify task outcome from declared success criteria plus declared review and human-approval gates. Do not use `process_quality.status` as an input to this classification unless the same issue is already represented by criteria outcomes, review status, scope adherence, or human approval.
 
 Apply these rules in order — first match wins:
 
@@ -60,6 +82,8 @@ Required fields:
 - `created_at` — ISO 8601 timestamp
 - `source_refs` — paths to all 6 artifacts from TaskManifest
 - `scores` — all required score fields: `criteria_satisfaction_rate`, `criteria_count`, `criteria_met_count`, `criteria_unmet_count`, `outcome_band`, `criteria_outcomes_summary`, `scope_adherence`, `unplanned_files_count`, `verification_status`, `review_status`, `human_approval_first_pass`
+- `task_outcome` — criteria-only outcome fields copied from the score fields
+- `process_quality` — process gate booleans, status, and violations
 - `outcome` — classified result
 - `improvement_signal` — derived signal
 - `evaluation_status: draft`

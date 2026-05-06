@@ -13,6 +13,7 @@
     "status",
     "plan_scope",
     "actual_changes",
+    "tdd_execution",
     "cli_handoff",
     "human_acknowledgments",
     "commands_run",
@@ -59,6 +60,20 @@
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
         }
+      }
+    },
+    "tdd_execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "used", "evidence", "deviation_reason"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "used": { "type": "boolean" },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "deviation_reason": { "type": ["string", "null"] }
       }
     },
     "cli_handoff": {

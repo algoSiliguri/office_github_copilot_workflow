@@ -159,7 +159,10 @@
         "verification",
         "review",
         "task_manifest",
-        "evaluation"
+        "evaluation",
+        "system_evaluation",
+        "fleet_evaluation",
+        "raw_source_review"
       ]
     },
     "policies": {
@@ -176,7 +179,8 @@
         "verification",
         "review",
         "artifact_path",
-        "evaluation"
+        "evaluation",
+        "release_readiness"
       ]
     },
     "validators": {
@@ -197,7 +201,8 @@
         "review_gate",
         "quick_task_preclassify",
         "criteria_coverage",
-        "evaluation_gate"
+        "evaluation_gate",
+        "release_readiness"
       ]
     }
   }

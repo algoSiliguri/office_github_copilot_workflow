@@ -16,6 +16,7 @@ Evaluate ALL eight rules. If ANY fails, escalate immediately:
 | Risk | No security, data, migration, or release impact |
 | Verification | Can be verified with one simple command or direct inspection |
 | Acceptance | User has explicitly accepted quick-task mode |
+| Gate bypass | Retrieval, TDD, and full evaluation can each be safely bypassed with a concrete reason |
 
 If escalation triggered:
 1. Do NOT make any changes.
@@ -51,13 +52,16 @@ Required fields:
 - `change_class.policy_allowed`
 - `change_class.classification_status: locked_for_execution`
 - `change_class.public_behavior_change: false`
+- `bypass_justification.retrieval_decision: { bypassed: true, reason }`
+- `bypass_justification.tdd_decision: { bypassed: true, reason }`
+- `bypass_justification.evaluation_decision: { bypassed: true, reason }`
 - `verification.command`
 - `verification.evidence` — must be real evidence (test output, build output, run output, or before/after behavior note). See allowed evidence types:
 
 #file:.github/ai-workflow/protocols/verification-gate.md
 - `escalation_triggered: false`
 - `escalation_reason: []`
-- `eligibility_check` — `all_passed: true`, `failures: []`, all 8 rules listed in `rules_evaluated` with `passed: true`
+- `eligibility_check` — `all_passed: true`, `failures: []`, all 9 rules listed in `rules_evaluated` with `passed: true`
 - `status: PASS_QUICK` (or `FAIL` if something went wrong)
 - `validated_under` — exact workflow/command/schema/config tuple
 

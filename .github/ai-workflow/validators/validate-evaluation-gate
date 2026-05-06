@@ -71,8 +71,8 @@ def main() -> int:
         errors.append(f"criteria_satisfaction_rate {rate} out of range 0.0–1.0")
 
     outcome = evaluation.get("outcome")
-    if outcome not in {"success", "partial_success", "failure"}:
-        errors.append(f"outcome '{outcome}' not in [success, partial_success, failure]")
+    if outcome not in {"success", "partial_success_high", "partial_success_low", "failure"}:
+        errors.append(f"outcome '{outcome}' not in [success, partial_success_high, partial_success_low, failure]")
 
     source_refs = evaluation.get("source_refs", {})
     for key in ("task_manifest", "grill", "plan", "execution", "verification", "review"):

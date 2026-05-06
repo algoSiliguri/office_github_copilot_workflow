@@ -7,6 +7,7 @@ import yaml
 
 
 EXPECTED_TUPLES = {
+    "diagnosis.schema.v1": ("diagnose.v1", "diagnosis.schema.v1"),
     "grill.schema.v1": ("grill.v1", "grill.schema.v1"),
     "legacy-explore.schema.v1": ("legacy-explore.v1", "legacy-explore.schema.v1"),
     "quick-task.schema.v1": ("quick-task.v1", "quick-task.schema.v1"),
@@ -15,8 +16,11 @@ EXPECTED_TUPLES = {
     "execution-checkpoint.schema.v1": ("execute-plan.v1", "execution-checkpoint.schema.v1"),
     "verification.schema.v1": ("verify.v1", "verification.schema.v1"),
     "review.schema.v1": ("review.v1", "review.schema.v1"),
-    "task-manifest.schema.v1": ("grill.v1", "task-manifest.schema.v1"),
+    "task-manifest.schema.v1": (None, "task-manifest.schema.v1"),
     "evaluation.schema.v1": ("evaluate.v1", "evaluation.schema.v1"),
+    "system-evaluation.schema.v1": ("evaluate-system.v1", "system-evaluation.schema.v1"),
+    "fleet-evaluation.schema.v1": ("evaluate-fleet.v1", "fleet-evaluation.schema.v1"),
+    "raw-source-review.schema.v1": ("evaluate-fleet.v1", "raw-source-review.schema.v1"),
 }
 
 
@@ -53,8 +57,8 @@ def main() -> int:
     checks = [
         (validated.get("workflow_manifest_version") == manifest.get("manifest_version"), "workflow_manifest_version mismatch"),
         (validated.get("workflow_contract_version") == manifest.get("workflow_contract_version"), "workflow_contract_version mismatch"),
-        (validated.get("command_contract_id") == expected_command, "command_contract_id mismatch"),
-        (validated.get("command_contract_version") == 1, "command_contract_version mismatch"),
+        (expected_command is None or validated.get("command_contract_id") == expected_command, "command_contract_id mismatch"),
+        (isinstance(validated.get("command_contract_version"), int), "command_contract_version mismatch"),
         (validated.get("artifact_schema") == expected_schema, "artifact_schema mismatch"),
         (validated.get("config_instruction_version") == config.get("workflow", {}).get("instruction_version"), "config_instruction_version mismatch"),
     ]

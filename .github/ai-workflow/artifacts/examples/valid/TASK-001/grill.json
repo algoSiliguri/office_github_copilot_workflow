@@ -7,6 +7,7 @@
   "secondary_surfaces_allowed": ["copilot_cli"],
   "goal": "Keep workflow fixtures valid",
   "problem_statement": "The repository needs a valid full-chain fixture set for validator coverage.",
+  "source_diagnosis": null,
   "assumptions": ["Fixtures are governance-only examples."],
   "questions": [
     {
@@ -24,9 +25,28 @@
     }
   ],
   "success_criteria": [
-    "validate-artifact passes for every full-workflow artifact in the valid chain",
-    "review scope remains clean",
-    "evaluation is human-confirmed before terminal state"
+    {
+      "id": "SC-001",
+      "description": "validate-artifact passes for every full-workflow artifact in the valid chain",
+      "verification_type": "command",
+      "verification_command": "python3 .github/ai-workflow/validators/validate-artifact <artifact>",
+      "expected_signal": "Each valid fixture artifact prints PASS",
+      "observable": true
+    },
+    {
+      "id": "SC-002",
+      "description": "review scope remains clean for the valid fixture chain",
+      "verification_type": "inspection",
+      "expected_signal": "ReviewRecord.scope_match is true and scope_violations is empty",
+      "observable": true
+    },
+    {
+      "id": "SC-003",
+      "description": "evaluation is human-confirmed before terminal state",
+      "verification_type": "inspection",
+      "expected_signal": "EvaluationRecord.evaluation_status is confirmed and TaskManifest.phase is evaluated",
+      "observable": true
+    }
   ],
   "exploration_required": false,
   "exploration_reasons": [],

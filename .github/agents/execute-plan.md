@@ -23,7 +23,8 @@ When executing a phased or degraded plan, record a checkpoint at each step bound
 Before making any changes:
 1. Read the PlanArtifact at `.github/tasks/TASK-{NNN}/plan.json`.
 2. If `context_packet_required: true`, check that `context_packet_path` exists. If missing, stop and tell the user to run `/context-packet` first.
-3. Read `files_in_scope` from the plan. This is the only set of files you may touch.
+3. Read `tdd_decision`. If `required: true`, execute test-first and record evidence in `tdd_execution`; if this cannot be done, stop and return to `/write-plan`.
+4. Read `files_in_scope` from the plan. This is the only set of files you may touch.
 
 ## Scope enforcement
 
@@ -76,6 +77,10 @@ Required fields:
 - `plan_scope.files_authorized` — from plan.files_in_scope paths
 - `actual_changes.files_touched` — actual files modified
 - `actual_changes.unplanned_files_touched` — must be empty; if not, escalate
+- `tdd_execution.required` — copied from plan.tdd_decision.required
+- `tdd_execution.used` — true when a required test-first loop was followed
+- `tdd_execution.evidence` — failing test/reproduction signal, implementation evidence, and verification output references
+- `tdd_execution.deviation_reason` — null when TDD was followed or not required; otherwise the reason execution escalated
 - `cli_handoff.approval_status: not_required | pending | approved | rejected`
 - `cli_handoff.reason`
 - `cli_handoff.allowed_commands`

@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SystemEvaluationReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_type",
+    "schema_version",
+    "evaluation_id",
+    "created_at",
+    "source_task_refs",
+    "sample_window",
+    "aggregate_metrics",
+    "repeated_problem_patterns",
+    "improvement_candidates",
+    "human_decision_request",
+    "validated_under"
+  ],
+  "properties": {
+    "artifact_type": { "const": "SystemEvaluationReport" },
+    "schema_version": { "const": "system-evaluation.schema.v1" },
+    "evaluation_id": {
+      "type": "string",
+      "pattern": "^SYS-EVAL-[0-9]{8}-[0-9]{6}$"
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source_task_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_id", "evaluation_ref"],
+        "properties": {
+          "task_id": { "type": "string", "pattern": "^TASK-[0-9]{3}$" },
+          "evaluation_ref": { "type": "string", "minLength": 1 },
+          "task_manifest_ref": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "sample_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_count", "selection_rule"],
+      "properties": {
+        "task_count": { "type": "integer", "minimum": 1 },
+        "selection_rule": { "type": "string", "minLength": 1 },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "ended_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "aggregate_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "success_rate",
+        "process_pass_rate",
+        "human_override_rate",
+        "scope_violation_count",
+        "verification_failure_count",
+        "tdd_noncompliance_count",
+        "retrieval_decision_missing_count",
+        "diagnosis_missing_when_required_count"
+      ],
+      "properties": {
+        "success_rate": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "process_pass_rate": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "human_override_rate": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "scope_violation_count": { "type": "integer", "minimum": 0 },
+        "verification_failure_count": { "type": "integer", "minimum": 0 },
+        "tdd_noncompliance_count": { "type": "integer", "minimum": 0 },
+        "retrieval_decision_missing_count": { "type": "integer", "minimum": 0 },
+        "diagnosis_missing_when_required_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "repeated_problem_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pattern_id", "problem", "frequency", "severity", "evidence_refs", "implicated_component"],
+        "properties": {
+          "pattern_id": { "type": "string", "minLength": 1 },
+          "problem": { "type": "string", "minLength": 1 },
+          "frequency": { "type": "integer", "minimum": 1 },
+          "severity": { "enum": ["low", "medium", "high"] },
+          "evidence_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "implicated_component": {
+            "description": "Evidence-backed hypothesis about the most likely workflow stack component involved in the repeated pattern. This is not blame and may be unknown.",
+            "enum": ["model", "system_prompt", "tool_permissions", "context_window_usage", "retrieval_strategy", "session_state", "hidden_summaries", "test_feedback", "user_workflow", "workflow_contract", "schema", "validator", "unknown"]
+          }
+        }
+      }
+    },
+    "improvement_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate_id", "recommended_action", "expected_metric_movement", "requires_human_approval", "next_command"],
+        "properties": {
+          "candidate_id": { "type": "string", "minLength": 1 },
+          "recommended_action": { "type": "string", "minLength": 1 },
+          "expected_metric_movement": { "type": "string", "minLength": 1 },
+          "requires_human_approval": { "type": "boolean", "const": true },
+          "next_command": { "type": "string", "const": "/grill" }
+        }
+      }
+    },
+    "human_decision_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question", "options"],
+      "properties": {
+        "question": { "type": "string", "minLength": 1 },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "validated_under": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_manifest_version",
+        "workflow_contract_version",
+        "command_contract_id",
+        "command_contract_version",
+        "artifact_schema",
+        "config_instruction_version"
+      ],
+      "properties": {
+        "workflow_manifest_version": { "type": "integer", "const": 1 },
+        "workflow_contract_version": { "type": "integer", "const": 1 },
+        "command_contract_id": { "type": "string", "const": "evaluate-system.v1" },
+        "command_contract_version": { "type": "integer", "const": 1 },
+        "artifact_schema": { "type": "string", "const": "system-evaluation.schema.v1" },
+        "config_instruction_version": { "type": "string", "const": "v1" }
+      }
+    }
+  }
+}

@@ -7,14 +7,32 @@
   "secondary_surfaces_allowed": ["copilot_cli"],
   "source_grill": ".github/ai-workflow/artifacts/examples/valid/TASK-001/grill.json",
   "source_exploration": null,
+  "diagnosis_confidence_gate": {
+    "applies": false,
+    "source_diagnosis": null,
+    "confidence": "not_applicable",
+    "planning_mode": "not_applicable",
+    "decision": "allowed",
+    "reason": "Fixture documentation task is not a diagnosis-backed bugfix."
+  },
   "files_in_scope": [
     {"path": ".github/ai-workflow/artifacts/examples/README.md", "operation": "modify"}
   ],
   "files_out_of_scope": [
     ".github/README.md"
   ],
+  "retrieval_decision": {
+    "decision": "skipped",
+    "reasons": ["Fixture documentation target is explicit and no broader code context is required."],
+    "files_considered": [".github/ai-workflow/artifacts/examples/README.md"]
+  },
   "context_packet_required": false,
   "context_packet_path": null,
+  "tdd_decision": {
+    "required": false,
+    "reason": "Fixture documentation change does not alter observable product behavior.",
+    "test_first_plan": []
+  },
   "steps": [
     {
       "id": "step-1",

@@ -14,6 +14,14 @@ You are the grill agent. Your job is to run a structured Q&A session that surfac
 
 Only look at files directly related to the task scope described by the user. Do not scan the whole repo. Ask the user to identify relevant files if unclear.
 
+## Bugfix diagnosis gate
+
+For bugfix tasks, first check whether `.github/tasks/TASK-{NNN}/diagnosis.json` exists or whether the user supplied a DiagnosisRecord path.
+
+If the bug reproduction path, suspected root cause, or test surface is unclear, require `/diagnose` before continuing. Do not grill speculative fixes.
+
+If a DiagnosisRecord exists, ground the problem statement, approach, risks, and success criteria in its reproduction evidence, confirmed hypothesis, suspected root cause, recommended files, and regression test recommendation.
+
 ## Session protocol
 
 Ask ONE question at a time. After each question, provide your RECOMMENDED ANSWER based on what you know from the task description and any files the user has referenced. Wait for the user to confirm, override, or skip before continuing.
@@ -33,15 +41,16 @@ Work through these areas in order (skip if clearly not applicable):
 
 When the session is complete, produce a GrillRecord JSON artifact. Save it to `.github/tasks/TASK-{NNN}/grill.json` where NNN is the next sequential task ID (check existing folders under `.github/tasks/`).
 
-The artifact must conform to `grill.schema.v2`. Required fields:
+The artifact must conform to `grill.schema.v1`. Required fields:
 - `artifact_type: GrillRecord`
-- `schema_version: grill.schema.v2`
+- `schema_version: grill.schema.v1`
 - `task_id` — matching the folder name (e.g. TASK-001)
 - `task_type` — one of: `feature | bugfix | system_improvement | exploration`
 - `primary_surface: copilot_plugin`
 - `secondary_surfaces_allowed: [copilot_cli]`
 - `goal` — one sentence
 - `problem_statement` — 1-3 sentences
+- `source_diagnosis` — DiagnosisRecord path when this is a diagnosis-backed bugfix; otherwise null
 - `assumptions` — list of strings
 - `questions` — list of {question, answer} pairs from this session
 - `risks` — list of strings
@@ -71,9 +80,9 @@ The artifact must conform to `grill.schema.v2`. Required fields:
 - `validated_under`:
   - `workflow_manifest_version: 1`
   - `workflow_contract_version: 1`
-  - `command_contract_id: grill.v2`
-  - `command_contract_version: 2`
-  - `artifact_schema: grill.schema.v2`
+  - `command_contract_id: grill.v1`
+  - `command_contract_version: 1`
+  - `artifact_schema: grill.schema.v1`
   - `config_instruction_version: v1`
 
 After saving the GrillRecord, create a TaskManifest at `.github/tasks/TASK-{NNN}/task-manifest.json`:

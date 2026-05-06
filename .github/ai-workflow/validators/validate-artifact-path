@@ -14,6 +14,7 @@ from pathlib import Path
 RUNTIME_ROOT = Path(".github/tasks")
 TASK_ID_RE = re.compile(r"^TASK-\d{3}$")
 AUTHORITATIVE_FILENAMES = {
+    "DiagnosisRecord": "diagnosis.json",
     "GrillRecord": "grill.json",
     "LegacyExplorationRecord": "legacy-exploration.json",
     "PlanArtifact": "plan.json",
@@ -22,6 +23,9 @@ AUTHORITATIVE_FILENAMES = {
     "VerificationRecord": "verification.json",
     "ReviewRecord": "review.json",
     "EvaluationRecord": "evaluation.json",
+    "SystemEvaluationReport": "system-evaluation.json",
+    "FleetEvaluationReport": "fleet-evaluation.json",
+    "RawSourceReviewRecord": "raw-source-review.json",
     "TaskManifest": "task-manifest.json",
     "QuickTaskRecord": "quick-task.json",
 }
@@ -48,6 +52,71 @@ def main() -> int:
         return fail(f"cannot parse JSON from {artifact_file}: {exc}")
 
     artifact_type = data.get("artifact_type")
+    if artifact_type == "SystemEvaluationReport":
+        evaluation_id = data.get("evaluation_id")
+        if not evaluation_id:
+            return fail(f"cannot read evaluation_id from {artifact_file}")
+        if not re.match(r"^SYS-EVAL-\d{8}-\d{6}$", evaluation_id):
+            return fail(f"evaluation_id must match SYS-EVAL-YYYYMMDD-HHMMSS: {evaluation_id}")
+        if artifact_file.is_absolute():
+            try:
+                relative_path = artifact_file.resolve().relative_to(Path.cwd().resolve())
+            except ValueError:
+                relative_path = artifact_file
+        else:
+            relative_path = artifact_file
+        normalized = Path(*[part for part in relative_path.parts if part != "."])
+        expected = Path(".github/tasks/system-evaluations") / evaluation_id / "system-evaluation.json"
+        if normalized != expected:
+            return fail(f"SystemEvaluationReport must live at {expected} but found {normalized}")
+        print(f"OK: SystemEvaluationReport path valid ({normalized})")
+        return 0
+
+    if artifact_type == "FleetEvaluationReport":
+        evaluation_id = data.get("fleet_evaluation_id")
+        if not evaluation_id:
+            return fail(f"cannot read fleet_evaluation_id from {artifact_file}")
+        if not re.match(r"^FLEET-EVAL-\d{8}-\d{6}$", evaluation_id):
+            return fail(f"fleet_evaluation_id must match FLEET-EVAL-YYYYMMDD-HHMMSS: {evaluation_id}")
+        if artifact_file.is_absolute():
+            try:
+                relative_path = artifact_file.resolve().relative_to(Path.cwd().resolve())
+            except ValueError:
+                relative_path = artifact_file
+        else:
+            relative_path = artifact_file
+        normalized = Path(*[part for part in relative_path.parts if part != "."])
+        expected = Path(".github/tasks/fleet-evaluations") / evaluation_id / "fleet-evaluation.json"
+        if normalized != expected:
+            return fail(f"FleetEvaluationReport must live at {expected} but found {normalized}")
+        print(f"OK: FleetEvaluationReport path valid ({normalized})")
+        return 0
+
+    if artifact_type == "RawSourceReviewRecord":
+        review_id = data.get("review_id")
+        source_fleet_evaluation = data.get("source_fleet_evaluation")
+        if not review_id:
+            return fail(f"cannot read review_id from {artifact_file}")
+        if not re.match(r"^RAW-SOURCE-REVIEW-\d{8}-\d{6}$", review_id):
+            return fail(f"review_id must match RAW-SOURCE-REVIEW-YYYYMMDD-HHMMSS: {review_id}")
+        if not source_fleet_evaluation:
+            return fail(f"cannot read source_fleet_evaluation from {artifact_file}")
+        if not re.match(r"^FLEET-EVAL-\d{8}-\d{6}$", source_fleet_evaluation):
+            return fail(f"source_fleet_evaluation must match FLEET-EVAL-YYYYMMDD-HHMMSS: {source_fleet_evaluation}")
+        if artifact_file.is_absolute():
+            try:
+                relative_path = artifact_file.resolve().relative_to(Path.cwd().resolve())
+            except ValueError:
+                relative_path = artifact_file
+        else:
+            relative_path = artifact_file
+        normalized = Path(*[part for part in relative_path.parts if part != "."])
+        expected = Path(".github/tasks/fleet-evaluations") / source_fleet_evaluation / "raw-source-reviews" / review_id / "raw-source-review.json"
+        if normalized != expected:
+            return fail(f"RawSourceReviewRecord must live at {expected} but found {normalized}")
+        print(f"OK: RawSourceReviewRecord path valid ({normalized})")
+        return 0
+
     task_id = data.get("task_id")
     if not artifact_type:
         return fail(f"cannot read artifact_type from {artifact_file}")

@@ -28,72 +28,114 @@ The system is implemented entirely in `.github/` as YAML schemas, JSON schemas, 
 
 ```
 .github/
-├── copilot-instructions.md          ← loaded by Copilot as system prompt
+├── copilot-instructions.md          ← always-on system prompt; hard rules; precedence chain
 ├── instructions/
 │   └── workflow.instructions.md     ← rules applied when editing .github/ files
-├── prompts/                         ← /slash-command definitions (one per command)
+├── prompts/                         ← invocation layer (canonical, one per command)
+│   ├── setup-workflow.prompt.md
+│   ├── diagnose.prompt.md
 │   ├── grill.prompt.md
+│   ├── legacy-explore.prompt.md
 │   ├── write-plan.prompt.md
+│   ├── context-packet.prompt.md
 │   ├── execute-plan.prompt.md
 │   ├── verify.prompt.md
 │   ├── review.prompt.md
-│   └── evaluate.prompt.md           ← NEW: terminal evaluation command
-├── agents/                          ← detailed agent instruction files
+│   ├── evaluate.prompt.md
+│   ├── evaluate-system.prompt.md
+│   ├── evaluate-fleet.prompt.md
+│   ├── quick-task.prompt.md
+│   └── upgrade-workflow.prompt.md
+├── agents/                          ← non-canonical advisory guidance only
 │   ├── grill.md
 │   ├── write-plan.md
-│   └── execute-plan.md
+│   ├── execute-plan.md
+│   ├── diagnose.agent.md
+│   └── ...
 ├── ai-workflow/
-│   ├── manifest.yaml                ← machine-readable registry (source of truth)
-│   ├── contracts/commands/          ← one contract per command (what it reads/writes)
+│   ├── manifest.yaml                ← machine-readable registry for CLI validators only
+│   ├── contracts/commands/          ← one contract per command (authority + required validators)
+│   │   ├── setup-workflow.v1.yaml
+│   │   ├── diagnose.v1.yaml
 │   │   ├── grill.v1.yaml
+│   │   ├── legacy-explore.v1.yaml
 │   │   ├── write-plan.v1.yaml
+│   │   ├── context-packet.v1.yaml
 │   │   ├── execute-plan.v1.yaml
 │   │   ├── verify.v1.yaml
 │   │   ├── review.v1.yaml
-│   │   └── evaluate.v1.yaml
+│   │   ├── evaluate.v1.yaml
+│   │   ├── evaluate-system.v1.yaml
+│   │   ├── evaluate-fleet.v1.yaml
+│   │   └── quick-task.v1.yaml
 │   ├── schemas/                     ← JSON Schema for every artifact type
+│   │   ├── diagnosis.schema.json
 │   │   ├── grill.schema.json
+│   │   ├── legacy-explore.schema.json
 │   │   ├── plan.schema.json
+│   │   ├── context-packet.schema.json
 │   │   ├── execution-checkpoint.schema.json
 │   │   ├── verification.schema.json
 │   │   ├── review.schema.json
 │   │   ├── task-manifest.schema.json
-│   │   └── evaluation.schema.json
-│   ├── policies/                    ← behavioral constraints per phase
+│   │   ├── evaluation.schema.json
+│   │   ├── system-evaluation.schema.json
+│   │   ├── fleet-evaluation.schema.json
+│   │   ├── raw-source-review.schema.json
+│   │   └── quick-task.schema.json
+│   ├── policies/                    ← behavioral constraints per domain
 │   │   ├── workflow-policy.v1.yaml
+│   │   ├── context-policy.v1.yaml
+│   │   ├── retrieval-policy.v1.yaml
 │   │   ├── verification-policy.v1.yaml
 │   │   ├── review-policy.v1.yaml
 │   │   ├── artifact-path-policy.v1.yaml
-│   │   └── evaluation-policy.v1.yaml
-│   ├── skills/                      ← skill definitions (authority + procedure)
+│   │   ├── evaluation-policy.v1.yaml
+│   │   ├── quick-task-policy.v1.yaml
+│   │   └── release-readiness-policy.v1.yaml
+│   ├── skills/                      ← procedure layer (canonical, one per phase)
+│   │   ├── setup-workflow/SKILL.md
 │   │   ├── planning/SKILL.md
+│   │   ├── context-packet/SKILL.md
 │   │   ├── execution/SKILL.md
 │   │   ├── verification/SKILL.md
 │   │   ├── review/SKILL.md
-│   │   └── evaluation/SKILL.md
-│   ├── protocols/                   ← decision protocols for edge cases
+│   │   ├── evaluation/SKILL.md
+│   │   ├── system-evaluation/SKILL.md
+│   │   ├── fleet-evaluation/SKILL.md
+│   │   └── quick-task/SKILL.md
+│   ├── protocols/                   ← layer 3: cross-cutting decision procedures
 │   │   ├── verification-gate.md
 │   │   ├── stage-review.md
 │   │   ├── phase-checkpoint.md
 │   │   └── retrieval-decision.md
-│   ├── validators/                  ← shell scripts, exit 0=pass exit 1=fail
+│   ├── validators/                  ← Python scripts, exit 0=pass exit 1=fail
 │   │   ├── bootstrap
 │   │   ├── validate-manifest
+│   │   ├── validate-config
+│   │   ├── validate-compatibility
 │   │   ├── validate-artifact
 │   │   ├── validate-artifact-path
 │   │   ├── validate-plan-scope
+│   │   ├── validate-context-packet
 │   │   ├── validate-review-gate
-│   │   ├── validate-criteria-coverage
-│   │   └── validate-evaluation-gate
-│   └── artifacts/                   ← test fixtures and validator regression cases ONLY
-│       └── examples/                ← not a runtime artifact location
+│   │   ├── validate-criteria-coverage    # invocation: <verification.json> <grill.json>
+│   │   ├── validate-evaluation-gate
+│   │   ├── validate-quick-task-preclassify
+│   │   └── validate-release-readiness
+│   └── artifacts/
+│       └── examples/                ← test fixtures and validator regression cases ONLY
 ├── CLAUDE.md                        ← Claude Code entrypoint (non-canonical for other runtimes)
-├── tasks/                           ← per-task runtime artifact files (TASK-NNN/) — ONLY runtime artifact location
+├── tasks/                           ← ONLY runtime artifact location
+│   ├── TASK-NNN/                    ← per-task artifacts
+│   ├── system-evaluations/SYS-EVAL-YYYYMMDD-HHMMSS/
+│   └── fleet-evaluations/FLEET-EVAL-YYYYMMDD-HHMMSS/
 └── docs/
     ├── ARCHITECTURE.md
     ├── USAGE.md
     ├── INSTALL.md
-    └── CHEAT-SHEET.md
+    ├── CHEAT-SHEET.md
+    └── MASTER_CONTEXT.md            ← this file
 ```
 
 ---
@@ -116,7 +158,7 @@ The contract is the **binding agreement** between the human and the AI. The AI c
 Every artifact the AI produces is validated against a JSON Schema. If the AI produces malformed output (missing fields, wrong types, violated constraints), the schema catches it.
 
 Key enforcement points:
-- `GrillRecord`: `success_criteria` are **structured objects** (`id`, `description`, `verification_type`, `verification_command`, `expected_signal`, `observable: true`) — free-text criteria are rejected by `grill.schema.v2`. `open_blockers` required when `decision: stop`; `task_type` always required; `triggered_by` required when `task_type: system_improvement`
+- `GrillRecord`: `success_criteria` are **structured objects** (`id`, `description`, `verification_type`, `verification_command`, `expected_signal`, `observable: true`) — free-text criteria are rejected by `grill.schema.v1`. `open_blockers` required when `decision: stop`; `task_type` always required; `triggered_by` required when `task_type: system_improvement`
 - `VerificationRecord`: `criteria_outcomes[]` required (1:1 with GrillRecord `success_criteria`)
 - `ReviewRecord` + `VerificationRecord`: structured `reason` required when human rejects
 - All artifacts: `created_at` ISO 8601 required (enables temporal ordering)
@@ -149,22 +191,30 @@ Shell scripts that run against artifacts. Exit 0 = valid. Exit 1 = violation. Va
 
 | Validator | What it checks |
 |-----------|---------------|
-| `bootstrap` | System prerequisites met |
-| `validate-manifest` | manifest.yaml is internally consistent AND filesystem consistent (every declared file exists; every governed file on disk is registered) |
-| `validate-artifact` | Artifact conforms to declared schema |
-| `validate-artifact-path` | Artifact is stored in its declared directory |
-| `validate-plan-scope` | Execution stayed within plan file scope |
-| `validate-review-gate` | Review has required human authorization |
-| `validate-criteria-coverage` | criteria_outcomes count == success_criteria count across VerificationRecord + GrillRecord |
-| `validate-evaluation-gate` | EvaluationRecord has valid status, confirmed_at when confirmed, override_reason when overridden |
+| `bootstrap` | System prerequisites met; all manifest-declared paths exist |
+| `validate-manifest` | manifest.yaml internally consistent AND filesystem consistent (every declared file exists; every governed file on disk is registered) |
+| `validate-config` | config.yaml has all required project and command fields |
+| `validate-compatibility` | Artifact `validated_under` tuple matches current manifest/contract/schema/config versions |
+| `validate-artifact` | Artifact conforms to declared schema (all types supported) |
+| `validate-artifact-path` | Artifact stored in canonical directory under `.github/tasks/TASK-NNN/` |
+| `validate-plan-scope` | Plan file list is exact (no wildcards); execution stayed within scope; quick-task policy limits enforced |
+| `validate-context-packet` | ContextPacketArtifact fields and coverage fields are valid |
+| `validate-review-gate` | Review `actual_changed_files` matches execution record; scope violations recorded correctly; human authorization present for PASS |
+| `validate-criteria-coverage` | `criteria_outcomes` descriptions match `success_criteria` descriptions 1:1 in declared order |
+| `validate-evaluation-gate` | EvaluationRecord status/reviewer/confirmed_at/override_reason consistent; outcome is valid 4-band value |
+| `validate-quick-task-preclassify` | Quick-task pre-edit gate: classification locked, policy_allowed=true, planned files declared |
+| `validate-release-readiness` | Full bundle gate: bootstrap + manifest + config + all schemas parse + all valid examples pass + negative safety tests fail correctly |
 
 Run all validators manually:
 ```bash
-bash .github/ai-workflow/validators/bootstrap
-bash .github/ai-workflow/validators/validate-manifest
-bash .github/ai-workflow/validators/validate-artifact <path-to-artifact>
-bash .github/ai-workflow/validators/validate-criteria-coverage <verification.json> <grill.json>
-bash .github/ai-workflow/validators/validate-evaluation-gate <evaluation.json>
+python3 .github/ai-workflow/validators/bootstrap
+python3 .github/ai-workflow/validators/validate-manifest
+python3 .github/ai-workflow/validators/validate-config .github/workflow/config.yaml
+python3 .github/ai-workflow/validators/validate-artifact <path-to-artifact>
+python3 .github/ai-workflow/validators/validate-artifact-path <path-to-artifact>
+python3 .github/ai-workflow/validators/validate-criteria-coverage <verification.json> <grill.json>
+python3 .github/ai-workflow/validators/validate-evaluation-gate <evaluation.json>
+python3 .github/ai-workflow/validators/validate-release-readiness
 ```
 
 ### Layer 6 — TaskManifest (lifecycle tracker)
@@ -175,7 +225,7 @@ Every task has one `TaskManifest` at `.github/tasks/TASK-{NNN}/task-manifest.jso
 - **Read first** by `/evaluate` to determine if a task is complete before scoring
 
 `status` values: `in_progress | completed | blocked | abandoned`
-`phase` values: `grill | plan | execution | verification | review | evaluated`
+`phase` values: `diagnosis | grill | legacy_exploration | plan | context_packet | execution | verification | review | evaluated`
 
 This solves the "incomplete chain" problem: evaluation never scores a task that was abandoned mid-workflow.
 
@@ -297,7 +347,7 @@ The rejection reason is now structured: `category + details`. This is the most v
 
 ### Version boundary rules
 
-1. **Never modify an existing schema field** that is already `required`. Adding new required fields requires a new schema version (e.g., `grill.schema.v2`).
+1. **Never modify an existing schema field** that is already `required` after v1 is released. Adding new required fields after release requires a new schema version (e.g., `grill.schema.v2`).
 2. **New optional fields** can be added to existing schema versions without a version bump.
 3. **Contracts are versioned** (`grill.v1.yaml`, `grill.v2.yaml`). Old tasks that reference `grill.v1` remain valid under v1. New tasks use v2.
 4. **Manifest `validated_under`** in every artifact records which schema version was active at creation time. A v1 artifact validated against v1 schema will always pass — even after v2 ships.
@@ -392,20 +442,20 @@ cat .github/tasks/TASK-{NNN}/evaluation.json
 
 ```bash
 # Validate any artifact against its schema
-bash .github/ai-workflow/validators/validate-artifact \
+python3 .github/ai-workflow/validators/validate-artifact \
   .github/tasks/TASK-{NNN}/verification.json
 
 # Validate criteria coverage (cross-artifact)
-bash .github/ai-workflow/validators/validate-criteria-coverage \
+python3 .github/ai-workflow/validators/validate-criteria-coverage \
   .github/tasks/TASK-{NNN}/verification.json \
   .github/tasks/TASK-{NNN}/grill.json
 
 # Validate evaluation artifact
-bash .github/ai-workflow/validators/validate-evaluation-gate \
+python3 .github/ai-workflow/validators/validate-evaluation-gate \
   .github/tasks/TASK-{NNN}/evaluation.json
 
 # Validate artifact is in correct directory
-bash .github/ai-workflow/validators/validate-artifact-path \
+python3 .github/ai-workflow/validators/validate-artifact-path \
   .github/tasks/TASK-{NNN}/evaluation.json
 ```
 

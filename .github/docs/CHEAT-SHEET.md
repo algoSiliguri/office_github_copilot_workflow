@@ -11,6 +11,9 @@ Run:
 - `/setup-workflow`
   Detects repo stack and writes `.github/workflow/config.yaml`.
 
+- `/diagnose`
+  For bugs/regressions only. Reproduce, rank hypotheses, record root cause and confidence. Run before `/grill` when cause is unclear.
+
 - `/grill`
   Clarifies goals, constraints, risks, decisions, and success criteria before planning.
 
@@ -61,10 +64,6 @@ Run:
   | 6 | Verification is trivial (syntax, linting, or manual visual check) |
   | 7 | No CLI handoff required |
   | 8 | No ambiguity about target files or intended change |
-
-## Not in v1
-
-- `/diagnose` — future v2 diagnostic command for health-checking workflow files. Not available in v1.
 
 ## Typical flows
 

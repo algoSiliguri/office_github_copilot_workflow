@@ -35,17 +35,19 @@ validate-plan-scope
 3. Run the preclassify validator before the first file edit.
 4. Classify the task against quick-task-policy.v1.
 5. List exact files before editing.
-6. If disallowed, create QuickTaskRecord with ESCALATED_TO_FULL_WORKFLOW.
-7. If allowed, make only declared edits.
-8. Run available verification.
-9. Create QuickTaskRecord.
-10. Run artifact and scope validation.
+6. Record `bypass_justification` explaining why retrieval, TDD, and full EvaluationRecord are safely bypassed.
+7. If any bypass cannot be justified concretely, create QuickTaskRecord with ESCALATED_TO_FULL_WORKFLOW.
+8. If allowed, make only declared edits.
+9. Run available verification.
+10. Create QuickTaskRecord.
+11. Run artifact and scope validation.
 
 ## Failure behavior
 Missing required dependency blocks.
 Forbidden change class escalates.
 Unplanned file change fails.
 Missing verification fails.
+Missing bypass justification escalates.
 
 ## Handoff/output format
 Return the QuickTaskRecord and concise result.

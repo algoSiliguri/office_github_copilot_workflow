@@ -10,9 +10,12 @@
     "primary_surface",
     "source_grill",
     "source_exploration",
+    "diagnosis_confidence_gate",
     "files_in_scope",
     "files_out_of_scope",
+    "retrieval_decision",
     "context_packet_required",
+    "tdd_decision",
     "steps",
     "verification_command",
     "constraints",
@@ -31,6 +34,19 @@
     },
     "source_grill": { "type": "string", "minLength": 1 },
     "source_exploration": { "type": ["string", "null"] },
+    "diagnosis_confidence_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applies", "source_diagnosis", "confidence", "planning_mode", "decision", "reason"],
+      "properties": {
+        "applies": { "type": "boolean" },
+        "source_diagnosis": { "type": ["string", "null"] },
+        "confidence": { "enum": ["low", "medium", "high", "not_applicable"] },
+        "planning_mode": { "enum": ["production_fix", "reproduction_test", "instrumentation", "test_surface_improvement", "not_applicable"] },
+        "decision": { "enum": ["allowed", "blocked"] },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
     "files_in_scope": {
       "type": "array",
       "minItems": 1,
@@ -48,8 +64,37 @@
       "type": "array",
       "items": { "type": "string", "minLength": 1 }
     },
+    "retrieval_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "reasons", "files_considered"],
+      "properties": {
+        "decision": { "enum": ["used", "skipped", "unavailable"] },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "files_considered": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "context_packet_required": { "type": "boolean" },
     "context_packet_path": { "type": ["string", "null"] },
+    "tdd_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "reason", "test_first_plan"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 1 },
+        "test_first_plan": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "steps": {
       "type": "array",
       "minItems": 1,

@@ -8,6 +8,7 @@
   "status": "completed",
   "phase": "evaluated",
   "artifact_refs": {
+    "diagnosis": null,
     "grill": ".github/ai-workflow/artifacts/examples/valid/TASK-001/grill.json",
     "legacy_exploration": null,
     "plan": ".github/ai-workflow/artifacts/examples/valid/TASK-001/plan.json",

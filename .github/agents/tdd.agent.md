@@ -1,3 +1,5 @@
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
+
 ---
 name: TDD
 description: Red-green-refactor loop grounded in the repo's test runner. Builds features test-first through vertical tracer-bullet slices.

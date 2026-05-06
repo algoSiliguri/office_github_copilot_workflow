@@ -1,3 +1,6 @@
+> **Layer 3 — Protocol.** Invoked by: `/write-plan` (planning skill). Governs when the AI reads prior artifacts or fetches retrieval context during planning. Key behavioral rules are also reflected in `copilot-instructions.md` as always-on behavior.
+
+
 # Retrieval Decision
 
 Use this protocol during `/write-plan`.

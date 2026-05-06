@@ -2,16 +2,20 @@
 
 Lightweight path for small, low-risk changes. Automatically escalates to `/grill` when scope, risk, or uncertainty grows.
 
-## Escalation check (run BEFORE making any changes)
+## Eligibility check (run BEFORE making any changes)
 
-Evaluate all four triggers. If ANY fires, escalate immediately:
+Evaluate ALL eight rules. If ANY fails, escalate immediately:
 
-| Trigger | Condition |
-|---|---|
-| Scope | Files to touch > 3 |
-| Risk | Change touches auth, infra, schema, config, or migrations |
-| Uncertainty | Task description contains "maybe", "not sure", "depends", "could be", or similar |
-| Unknown decisions | More than 1 decision point that requires architectural judgment |
+| Rule | Pass condition |
+|------|----------------|
+| File count | Files to touch ≤ 2 |
+| Protected files | No changes to schema, validator, policy, manifest, contract, prompt, skill, instruction, agent, VERSION, CHANGELOG, or CI files |
+| Architecture | No architectural or design decision required |
+| Clarity | Acceptance criteria are clear and unambiguous |
+| Module boundary | No cross-module behavior changes |
+| Risk | No security, data, migration, or release impact |
+| Verification | Can be verified with one simple command or direct inspection |
+| Acceptance | User has explicitly accepted quick-task mode |
 
 If escalation triggered:
 1. Do NOT make any changes.
@@ -24,7 +28,7 @@ REASON: <which trigger(s) fired>
 NEXT: /grill — run this instead
 ```
 
-Save a QuickTaskRecord with `escalation_triggered: true`, `status: ESCALATED_TO_FULL_WORKFLOW`, and the reason list populated.
+Save a QuickTaskRecord with `escalation_triggered: true`, `status: ESCALATED_TO_FULL_WORKFLOW`, the reason list populated, and `eligibility_check` with `all_passed: false` and the failed rule names in `failures`.
 
 ## Execution (no escalation)
 
@@ -53,6 +57,7 @@ Required fields:
 #file:.github/ai-workflow/protocols/verification-gate.md
 - `escalation_triggered: false`
 - `escalation_reason: []`
+- `eligibility_check` — `all_passed: true`, `failures: []`, all 8 rules listed in `rules_evaluated` with `passed: true`
 - `status: PASS_QUICK` (or `FAIL` if something went wrong)
 - `validated_under` — exact workflow/command/schema/config tuple
 

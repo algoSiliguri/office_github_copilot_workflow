@@ -122,10 +122,92 @@ def main() -> int:
         missing_validators = sorted(REQUIRED_VALIDATORS - set(validators))
         require(not missing_validators, f"validators missing required keys: {missing_validators}")
 
-        print("PASS")
-        return 0
     except ValueError as exc:
         return fail(str(exc))
+
+    # Phase 2: filesystem consistency
+    errors = []
+
+    commands = manifest["commands"]
+    schemas = manifest["schemas"]
+    policies = manifest["policies"]
+    validators = manifest["validators"]
+
+    # 2a: manifest-declared files must exist on disk
+    for alias, entry in commands.items():
+        p = Path(entry["file"])
+        if not p.exists():
+            errors.append(f"manifest declares {entry['file']} but file does not exist")
+
+    for key, path_str in schemas.items():
+        p = Path(path_str)
+        if not p.exists():
+            errors.append(f"manifest declares {path_str} but file does not exist")
+
+    for key, path_str in policies.items():
+        p = Path(path_str)
+        if not p.exists():
+            errors.append(f"manifest declares {path_str} but file does not exist")
+
+    for key, path_str in validators.items():
+        p = Path(path_str)
+        if not p.exists():
+            errors.append(f"manifest declares {path_str} but file does not exist")
+
+    # 2b: governed files on disk must be registered in manifest
+    registered_schema_paths = set(schemas.values())
+    for schema_file in Path(".github/ai-workflow/schemas").glob("*.json"):
+        path_str = str(schema_file)
+        if path_str not in registered_schema_paths:
+            try:
+                data = json.loads(schema_file.read_text())
+                if data.get("governed") is False:
+                    continue
+            except Exception:
+                pass
+            errors.append(f"{path_str} is not registered in manifest[schemas] and has no governed:false annotation")
+
+    registered_command_file_basenames = {Path(e["file"]).name for e in commands.values()}
+    for contract_file in Path(".github/ai-workflow/contracts/commands").glob("*.yaml"):
+        if contract_file.name not in registered_command_file_basenames:
+            errors.append(f"{contract_file} is not registered in manifest[commands]")
+
+    registered_validator_paths = set(validators.values())
+    for validator_file in Path(".github/ai-workflow/validators").iterdir():
+        if not validator_file.is_file():
+            continue
+        path_str = str(validator_file)
+        if path_str not in registered_validator_paths:
+            annotated = False
+            try:
+                lines = validator_file.read_text().splitlines()[:5]
+                annotated = any("governed: false" in line for line in lines)
+            except Exception:
+                pass
+            if not annotated:
+                errors.append(f"{path_str} is not registered in manifest[validators] and has no '# governed: false' annotation")
+
+    registered_policy_paths = set(policies.values())
+    for policy_file in Path(".github/ai-workflow/policies").glob("*.yaml"):
+        path_str = str(policy_file)
+        if path_str not in registered_policy_paths:
+            annotated = False
+            try:
+                policy_data = yaml.safe_load(policy_file.read_text())
+                if isinstance(policy_data, dict) and policy_data.get("governed") is False:
+                    annotated = True
+            except Exception:
+                pass
+            if not annotated:
+                errors.append(f"{path_str} is not registered in manifest[policies] and has no governed:false annotation")
+
+    if errors:
+        for e in errors:
+            fail(e)
+        return 1
+
+    print("PASS (internal + filesystem)")
+    return 0
 
 
 if __name__ == "__main__":

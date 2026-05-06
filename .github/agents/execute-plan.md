@@ -1,3 +1,5 @@
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
+
 ---
 name: ExecutePlan
 description: Executes the declared plan scope. Refuses out-of-scope file edits. Enforces CLI handoff protocol with human approval.

@@ -2,18 +2,36 @@
 
 ## What this system is
 
-This bundle is a plugin-first AI workflow for GitHub Copilot. It gives Copilot a bounded command system instead of leaving it to operate as a free-form assistant.
+This bundle is a **Copilot/JetBrains-native workflow bundle**. It gives Copilot a bounded command system instead of leaving it to operate as a free-form assistant. Other LLM runtimes (e.g. Claude Code) may use the same governance files but require their own entrypoint setup. `CLAUDE.md` at the repo root provides the Claude Code entrypoint.
+
+**Enforcement model (v1):** v1 is a *governed convention system with deterministic validators and human-enforced gates*. Hard enforcement via CLI wrappers, Git hooks, or CI gates is deferred to v2.
 
 ## Main layers
+
+Precedence chain: `copilot-instructions.md` > governance > protocols > prompts > skills > docs > agents (non-canonical)
 
 - `copilot-instructions.md`
   Top-level workflow rules, command order, CLI handoff rules, and hard constraints.
 
 - `prompts/`
-  Reusable user-invoked prompt files. They are helpers, not a guaranteed slash-command runtime.
+  **Invocation layer.** User-invoked slash commands. Each prompt declares intent and entry contract. They are the binding entry point, not a guaranteed slash-command runtime.
+
+- `ai-workflow/skills/`
+  **Procedure layer.** Executable step definitions invoked by prompts. Skills own the authority and procedure for each phase.
+
+- `ai-workflow/protocols/`
+  Decision protocols for edge cases that cut across phases. Sits between governance and prompts/skills. Every protocol must be referenced by at least one prompt or skill.
 
 - `agents/`
-  Optional custom agent profiles when files use the supported `.agent.md` model, plus command-specific guidance files used by this bundle.
+  **Non-canonical / advisory.** Optional custom agent profiles. Not authoritative for behavior — `prompts/` and `skills/` are.
+
+### Two-layer behavior spec
+
+| Layer | Location | Role | Canonical? |
+|-------|----------|------|------------|
+| Invocation | `prompts/` | Intent + entry contract + what artifact is produced | Yes |
+| Procedure | `ai-workflow/skills/` | Executable steps, authority limits, edge-case rules | Yes |
+| Advisory | `agents/` | Extended guidance, examples, heuristics | No (non-canonical) |
 
 - `ai-workflow/manifest.yaml`
   The authoritative workflow graph. It defines which commands exist, their allowed predecessors, required inputs, outputs, and handoffs.
@@ -59,9 +77,28 @@ This path is only for small, low-risk, tightly scoped work. If scope or risk gro
 For behavior, trust `.github/` over any external notes.
 
 - Human guidance: `copilot-instructions.md`, `docs/`
-- Command behavior: `prompts/`, `agents/`
+- Command behavior: `prompts/` (invocation layer), `ai-workflow/skills/` (procedure layer)
+- Advisory (non-canonical): `agents/`
 - Enforcement and machine authority: `manifest.yaml`, contracts, policies, schemas, validators
 
 ## Runtime artifacts
 
-Full-workflow runtime artifacts are canonical only under `.github/tasks/TASK-{NNN}/` and use strict JSON filenames such as `task-manifest.json`, `grill.json`, `plan.json`, `execution.json`, `verification.json`, `review.json`, and `evaluation.json`.
+Full-workflow runtime artifacts are canonical **only** under `.github/tasks/TASK-{NNN}/` — this is the single artifact root. Use strict JSON filenames: `task-manifest.json`, `grill.json`, `plan.json`, `execution.json`, `verification.json`, `review.json`, and `evaluation.json`.
+
+`ai-workflow/artifacts/examples/` is for test fixtures and validator regression cases only. Nothing runtime belongs there.
+
+## Architecture tree (key additions)
+
+```
+.github/
+├── CLAUDE.md                        ← Claude Code entrypoint
+├── copilot-instructions.md
+├── prompts/                         ← invocation layer (canonical)
+├── ai-workflow/
+│   ├── skills/                      ← procedure layer (canonical)
+│   ├── protocols/                   ← layer 3: decision protocols
+│   ├── artifacts/
+│   │   └── examples/                ← test fixtures only (NOT runtime)
+│   └── ...
+└── tasks/                           ← ONLY runtime artifact location (TASK-NNN/)
+```

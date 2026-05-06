@@ -21,7 +21,7 @@ Run:
   Creates the scope-locked implementation plan.
 
 - `/context-packet`
-  Builds bounded execution context when the plan requires it.
+  **Conditionally mandatory.** Controlled by `context_packet_required` in `PlanArtifact`. If `true`, `/execute-plan` preflight halts when `context-packet.json` is absent. Builds bounded execution context for the plan.
 
 - `/execute-plan`
   Implements only the files and steps declared in the plan.
@@ -33,10 +33,38 @@ Run:
   Checks scope match and verification status before merge. On PASS or PASS_WITH_DEGRADATION, automatically hands off to `/evaluate`.
 
 - `/evaluate`
-  Mandatory after every accepted full-workflow review. AI computes scores from all upstream artifacts and produces a draft EvaluationRecord. You confirm or override. Terminal artifact of every completed task.
+  Mandatory after every accepted full-workflow review. AI computes scores from all upstream artifacts, presents draft to human, then writes **once** on confirmation/override: `TaskManifest` (phase: evaluated, status: completed) and `EvaluationRecord`. Terminal artifact of every completed task.
+
+  **Outcome bands:**
+
+  | Band | Condition |
+  |------|-----------|
+  | `success` | rate == 1.0 |
+  | `partial_success_high` | rate >= 0.8 |
+  | `partial_success_low` | rate >= 0.5 |
+  | `failure` | rate < 0.5, or review FAIL/BLOCKED, or human rejected |
+
+  After confirmation, a completion block shows `improvement_signal`, unmet criteria IDs, and a pre-filled `/grill` suggestion. No automatic task creation.
 
 - `/quick-task`
-  Fast path for very small, low-risk work.
+  Fast path for very small, low-risk work. Always produces a `QuickTaskRecord` with `eligibility_check`. Escalation is a hard stop.
+
+  **Eligibility rules (all must pass):**
+
+  | # | Rule |
+  |---|------|
+  | 1 | Maximum 2 files touched |
+  | 2 | No protected file types (schemas, validators, contracts, manifest, policies) |
+  | 3 | No new file creation |
+  | 4 | Change is self-contained within declared files |
+  | 5 | No architectural decisions required |
+  | 6 | Verification is trivial (syntax, linting, or manual visual check) |
+  | 7 | No CLI handoff required |
+  | 8 | No ambiguity about target files or intended change |
+
+## Not in v1
+
+- `/diagnose` — future v2 diagnostic command for health-checking workflow files. Not available in v1.
 
 ## Typical flows
 

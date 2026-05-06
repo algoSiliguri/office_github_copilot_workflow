@@ -1,3 +1,5 @@
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
+
 ---
 name: GrillWithDocs
 description: Doc-grounded grill variant. Challenges a proposed task against existing local documentation. Degrades cleanly to normal /grill when no docs exist. Does not fabricate project context.

@@ -1,3 +1,5 @@
+<!-- v2 FEATURE: /diagnose is not a v1 governed command. This agent definition is non-canonical and non-invocable in v1. -->
+
 ---
 name: Diagnose
 description: Disciplined bug investigation loop. Reproduce → hypothesise → instrument → fix → post-mortem. Hands off the fix to /write-plan or /quick-task. No file edits.

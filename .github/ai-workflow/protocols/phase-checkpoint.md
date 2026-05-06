@@ -1,3 +1,6 @@
+> **Layer 3 — Protocol.** Invoked by: `/execute-plan` (execution skill). Governs checkpoint decisions during multi-step execution.
+
+
 # Phase Checkpoint
 
 Use this protocol when executing a phased or degraded plan.

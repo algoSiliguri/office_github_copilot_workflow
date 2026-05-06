@@ -1,3 +1,6 @@
+> **Layer 3 — Protocol.** Invoked by: `/review` (review skill). Governs stage-level review decision logic.
+
+
 # Stage Review
 
 Use this protocol during `/review`.

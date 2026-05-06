@@ -1,3 +1,6 @@
+> **Layer 3 — Protocol.** Invoked by: `/verify` (verification skill), `/quick-task`. Governs pass/fail gate logic for verification evidence.
+
+
 # Verification Gate
 
 Verification evidence is required before a quick-task may pass.

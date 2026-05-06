@@ -35,8 +35,8 @@ commands:
       - /grill
       - /quick-task
   /grill:
-    contract: grill.v1
-    file: .github/ai-workflow/contracts/commands/grill.v1.yaml
+    contract: grill.v2
+    file: .github/ai-workflow/contracts/commands/grill.v2.yaml
     allowed_predecessors:
       - /setup-workflow
     required_inputs: []
@@ -173,6 +173,7 @@ commands:
 
 schemas:
   grill: .github/ai-workflow/schemas/grill.schema.json
+  grill_v2: .github/ai-workflow/schemas/grill.schema.v2.json
   legacy_explore: .github/ai-workflow/schemas/legacy-explore.schema.json
   manifest: .github/ai-workflow/schemas/manifest.schema.json
   command_contract: .github/ai-workflow/schemas/command-contract.schema.json

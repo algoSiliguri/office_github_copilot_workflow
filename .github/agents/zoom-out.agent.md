@@ -1,3 +1,5 @@
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
+
 ---
 name: ZoomOut
 description: Lightweight codebase orientation. Answers "what is this doing?" for any file, module, package, service, or call flow. No prior artifact required. No artifact produced.

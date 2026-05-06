@@ -1,3 +1,5 @@
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
+
 ---
 name: UpgradeWorkflow
 description: Scans all task artifacts in .github/tasks/ for schema mismatches and reports compatible, migration_required, or regenerate status per artifact.

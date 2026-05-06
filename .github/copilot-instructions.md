@@ -11,7 +11,7 @@ Project-specific config: `.github/workflow/config.yaml` — written by `/setup-w
 | `/grill` | Problem exploration + decisions | Plugin |
 | `/legacy-explore` | Legacy/ambiguity gate (advanced) | Plugin |
 | `/write-plan` | Scope lock | Plugin |
-| `/context-packet` | Retrieval prep (optional) | Plugin |
+| `/context-packet` | Retrieval prep (conditionally mandatory) | Plugin |
 | `/execute-plan` | Implementation | Plugin + CLI |
 | `/verify` | Evidence-backed verification | CLI |
 | `/review` | Scope-check before merge | Plugin |
@@ -51,6 +51,31 @@ Triggers:
 3. Scope spans >5 files with non-trivial changes
 
 Always show CLI handoff block and wait for human approval before switching surfaces.
+
+## Enforcement model
+
+v1 is a governed convention system. Validators are deterministic gates but only run when invoked. No phase is complete unless required validators were run and output was shown in the completion block. Invalid artifacts are detectable, not impossible. Hard enforcement via CLI wrapper, Git hooks, or CI is a v2 feature.
+
+Every command completion block must include:
+- `VALIDATORS_REQUIRED:` list of required validators for this phase
+- `VALIDATORS_RUN:` list actually run, with pasted output
+- `ARTIFACTS_WRITTEN:` list of artifact paths written
+- `NEXT_ALLOWED:` next allowed command
+
+## Precedence chain
+
+When rules conflict, the higher layer wins:
+1. `.github/copilot-instructions.md` — always-on
+2. `manifest` / `contracts` / `schemas` / `policies` / `validators` — governance authority
+3. `protocols/` — reusable cross-cutting decision procedures (not governance authority)
+4. `prompts/` — command invocation layer
+5. `skills/` — phase procedure layer
+6. `docs/` — explanation only
+7. `agents/` — non-canonical / advisory
+
+## Runtime scope
+
+v1 primary runtime: GitHub Copilot Chat in JetBrains. `copilot-instructions.md` is the canonical always-on entrypoint. Governance files are runtime-neutral. Other LLM runtimes (Claude Code, etc.) require their own entrypoint setup — see `CLAUDE.md` at repo root.
 
 ## Hard rules
 

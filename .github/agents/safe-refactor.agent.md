@@ -1,3 +1,5 @@
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
+
 ---
 name: SafeRefactor
 description: Bounded refactor planning with blast-radius analysis and test surface check. Hands off to /quick-task (single-file, low-risk) or /write-plan (multi-file or untested). No edits without confirmed scope.

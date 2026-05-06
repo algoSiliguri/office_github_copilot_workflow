@@ -6,7 +6,7 @@ Paste this into a new chat session to give the AI full context about this reposi
 
 ## What This System Is
 
-This repository contains a **structured AI workflow system** living entirely inside `.github/`. It turns a raw AI assistant (GitHub Copilot, Claude, or any LLM) into a **bounded, auditable, self-evaluating agent** for software engineering tasks.
+This repository contains a **structured AI workflow system** living entirely inside `.github/`. It ships as a **Copilot/JetBrains-native workflow bundle** and turns a bounded AI assistant into an **auditable, self-evaluating agent** for software engineering tasks. Other LLM runtimes (e.g. Claude Code) may use the same governance files but require their own entrypoint setup. `CLAUDE.md` at the repo root provides the Claude Code entrypoint.
 
 Without this system, an AI operates as a free-form assistant: no scope enforcement, no artifact trail, no human checkpoints, no way to know if the AI did what it said it would do.
 
@@ -18,7 +18,9 @@ With this system, every task the AI performs is:
 - **Reviewed** (scope drift caught, human approval required)
 - **Evaluated** (scored against declared success criteria, human-confirmed)
 
-The system is implemented entirely in `.github/` as YAML schemas, JSON schemas, shell validators, markdown agents, and prompts. No external services. No CI required. Drop-in portable across repos.
+The system is implemented entirely in `.github/` as YAML schemas, JSON schemas, shell validators, markdown agents, and prompts. No external services. No CI required.
+
+**Enforcement model (v1):** v1 is a *governed convention system with deterministic validators and human-enforced gates*. There is no hard runtime enforcement in v1. CLI wrappers, Git hooks, and CI gates are deferred to v2. Compliance depends on: validators running clean, human approval gates being honoured, and governed files not being edited outside the workflow.
 
 ---
 
@@ -83,15 +85,10 @@ The system is implemented entirely in `.github/` as YAML schemas, JSON schemas, 
 │   │   ├── validate-review-gate
 │   │   ├── validate-criteria-coverage
 │   │   └── validate-evaluation-gate
-│   └── artifacts/                   ← declared storage dirs (enforced by policy)
-│       ├── grill/
-│       ├── plans/
-│       ├── execution/
-│       ├── verification/
-│       ├── review/
-│       ├── evaluation/
-│       └── task-manifest/
-├── tasks/                           ← per-task artifact files (TASK-NNN/)
+│   └── artifacts/                   ← test fixtures and validator regression cases ONLY
+│       └── examples/                ← not a runtime artifact location
+├── CLAUDE.md                        ← Claude Code entrypoint (non-canonical for other runtimes)
+├── tasks/                           ← per-task runtime artifact files (TASK-NNN/) — ONLY runtime artifact location
 └── docs/
     ├── ARCHITECTURE.md
     ├── USAGE.md
@@ -101,7 +98,7 @@ The system is implemented entirely in `.github/` as YAML schemas, JSON schemas, 
 
 ---
 
-## The Six Layers Explained
+## The Seven Layers Explained
 
 ### Layer 1 — Command Contracts (`contracts/commands/`)
 
@@ -119,13 +116,26 @@ The contract is the **binding agreement** between the human and the AI. The AI c
 Every artifact the AI produces is validated against a JSON Schema. If the AI produces malformed output (missing fields, wrong types, violated constraints), the schema catches it.
 
 Key enforcement points:
-- `GrillRecord`: `success_criteria` required when `decision: proceed`; `open_blockers` required when `decision: stop`; `task_type` always required; `triggered_by` required when `task_type: system_improvement`
+- `GrillRecord`: `success_criteria` are **structured objects** (`id`, `description`, `verification_type`, `verification_command`, `expected_signal`, `observable: true`) — free-text criteria are rejected by `grill.schema.v2`. `open_blockers` required when `decision: stop`; `task_type` always required; `triggered_by` required when `task_type: system_improvement`
 - `VerificationRecord`: `criteria_outcomes[]` required (1:1 with GrillRecord `success_criteria`)
 - `ReviewRecord` + `VerificationRecord`: structured `reason` required when human rejects
 - All artifacts: `created_at` ISO 8601 required (enables temporal ordering)
-- `EvaluationRecord`: `override_reason` required when `evaluation_status: overridden`
+- `EvaluationRecord`: `override_reason` required when `evaluation_status: overridden`; adds `criteria_count`, `criteria_met_count`, `criteria_unmet_count`, `outcome_band`
 
-### Layer 3 — Policies (`policies/`)
+### Layer 3 — Protocols (`protocols/`)
+
+Decision protocols for edge cases that cut across phases. Every protocol must be referenced by at least one prompt or skill. Protocols sit between governance and prompts/skills in the precedence chain:
+
+`copilot-instructions.md` > governance > **protocols** > prompts > skills > docs > agents (non-canonical)
+
+| Protocol | Purpose |
+|----------|---------|
+| `verification-gate.md` | When to block execution pending verification |
+| `stage-review.md` | How to stage multi-phase reviews |
+| `phase-checkpoint.md` | What to check before advancing phase |
+| `retrieval-decision.md` | When bounded retrieval is required |
+
+### Layer 4 — Policies (`policies/`)
 
 Policies are behavioral constraints that govern what the AI is allowed to produce. Examples:
 - `review-policy.v1.yaml`: AI cannot smooth over scope drift; must record violations; must require human authorization for PASS
@@ -133,14 +143,14 @@ Policies are behavioral constraints that govern what the AI is allowed to produc
 - `evaluation-policy.v1.yaml`: EvaluationRecord always starts as `draft`; human must confirm before authoritative; overrides require structured reason
 - `artifact-path-policy.v1.yaml`: each artifact type has a declared storage directory; misplaced artifacts are rejected
 
-### Layer 4 — Validators (`validators/`)
+### Layer 5 — Validators (`validators/`)
 
 Shell scripts that run against artifacts. Exit 0 = valid. Exit 1 = violation. Validators are called by the AI during the workflow and can be run manually by developers.
 
 | Validator | What it checks |
 |-----------|---------------|
 | `bootstrap` | System prerequisites met |
-| `validate-manifest` | manifest.yaml is self-consistent |
+| `validate-manifest` | manifest.yaml is internally consistent AND filesystem consistent (every declared file exists; every governed file on disk is registered) |
 | `validate-artifact` | Artifact conforms to declared schema |
 | `validate-artifact-path` | Artifact is stored in its declared directory |
 | `validate-plan-scope` | Execution stayed within plan file scope |
@@ -157,7 +167,7 @@ bash .github/ai-workflow/validators/validate-criteria-coverage <verification.jso
 bash .github/ai-workflow/validators/validate-evaluation-gate <evaluation.json>
 ```
 
-### Layer 5 — TaskManifest (lifecycle tracker)
+### Layer 6 — TaskManifest (lifecycle tracker)
 
 Every task has one `TaskManifest` at `.github/tasks/TASK-{NNN}/task-manifest.json`. It is:
 - **Created** at `/grill` time
@@ -169,7 +179,7 @@ Every task has one `TaskManifest` at `.github/tasks/TASK-{NNN}/task-manifest.jso
 
 This solves the "incomplete chain" problem: evaluation never scores a task that was abandoned mid-workflow.
 
-### Layer 6 — EvaluationRecord (scoring terminal)
+### Layer 7 — EvaluationRecord (scoring terminal)
 
 The terminal artifact of every completed task. Produced by `/evaluate` (auto-triggered after a passing `/review`). Contains:
 
@@ -179,7 +189,8 @@ The terminal artifact of every completed task. Produced by `/evaluate` (auto-tri
 - `scores.verification_status` — from VerificationRecord
 - `scores.review_status` — from ReviewRecord
 - `scores.human_approval_first_pass` — was the review approved on first pass?
-- `outcome` — `success | partial_success | failure`
+- `outcome_band` — `success | partial_success_high | partial_success_low | failure`
+- `criteria_count` / `criteria_met_count` / `criteria_unmet_count` — raw counts for direct inspection
 - `evaluation_status` — `draft | confirmed | overridden`
 
 ---
@@ -199,9 +210,10 @@ Developer: /write-plan
   AI produces PlanArtifact
   AI updates TaskManifest (phase: plan)
 
-Developer: /context-packet (optional)
+Developer: /context-packet (conditionally mandatory)
   AI reads PlanArtifact
-  AI builds ContextPacketArtifact only when the plan requires it
+  If context_packet_required: true — this step is REQUIRED; /execute-plan preflight halts if context-packet.json is absent
+  AI builds ContextPacketArtifact
   AI updates TaskManifest (phase: context_packet)
 
 Developer: /execute-plan
@@ -230,13 +242,13 @@ Developer: /review
 /evaluate (auto)
   AI reads TaskManifest — skips if status != completed
   AI computes scores from all 5 upstream artifacts
-  AI classifies outcome using declared rules
-  AI produces EvaluationRecord (evaluation_status: draft)
-  AI updates TaskManifest (phase: review, artifact_refs.evaluation populated)
-  AI presents confirmation block to human
+  AI classifies outcome using declared outcome-band rules
+  AI presents draft scoring block to human (NO write yet)
   Human: "confirm evaluation by <name>" or "override evaluation: <category> — <details>"
-  AI updates EvaluationRecord (confirmed/overridden)
-  AI updates TaskManifest (phase: evaluated)
+  AI writes TaskManifest ONCE: phase: evaluated, status: completed, evaluated_at, artifact_refs.evaluation
+  AI writes EvaluationRecord ONCE: evaluation_status confirmed/overridden, outcome_band, criteria_count, criteria_met_count, criteria_unmet_count
+  AI shows completion block: improvement_signal, unmet criteria IDs, suggested_next_action (pre-filled /grill invocation)
+  (No automatic task creation — human decides whether to act on the signal)
 ```
 
 ---
@@ -314,11 +326,12 @@ The rejection reason is now structured: `category + details`. This is the most v
 ### Signal 1 — EvaluationRecord outcome
 After every task, read the EvaluationRecord at `.github/tasks/TASK-{NNN}/evaluation.json`.
 
-| Outcome | Meaning |
-|---------|---------|
-| `success` | All criteria met, scope clean, human approved first pass |
-| `partial_success` | Something degraded — criteria rate 50–99%, degraded status, or revision needed |
-| `failure` | Criteria rate below 50%, review failed, or human rejected |
+| Outcome band | Rate condition | Meaning |
+|---------|---------|---------|
+| `success` | rate == 1.0 | All criteria met, scope clean, human approved first pass |
+| `partial_success_high` | rate >= 0.8 | Most criteria met; minor degradation or first-pass revision |
+| `partial_success_low` | rate >= 0.5 | Meaningful gaps; degraded states |
+| `failure` | rate < 0.5, or review FAIL/BLOCKED, or human rejected | Task did not meet minimum bar |
 
 ### Signal 2 — Human rejection category
 When a human rejects a VerificationRecord or ReviewRecord, the `reason.category` field identifies the root cause:
@@ -450,21 +463,27 @@ Was the review approved on the first human pass, or did it require revision? `re
 ### Outcome classification rules (applied in order)
 
 ```
-success:
+outcome_band = success:
   criteria_satisfaction_rate == 1.0
   AND scope_adherence == true
   AND review_status in [PASS, PASS_WITH_DEGRADATION]
   AND human_approval_first_pass == approved
 
-failure:
+outcome_band = failure:
   criteria_satisfaction_rate < 0.5
   OR review_status in [FAIL, BLOCKED]
   OR human_approval_first_pass == rejected
 
-partial_success:
-  everything else
-  (rate 0.5–0.99, degraded states, approved after revision)
+outcome_band = partial_success_high:
+  criteria_satisfaction_rate >= 0.8
+  (and not already classified as success or failure)
+
+outcome_band = partial_success_low:
+  criteria_satisfaction_rate >= 0.5
+  (and not already classified above)
 ```
+
+`EvaluationRecord` also carries `criteria_count`, `criteria_met_count`, `criteria_unmet_count` for direct inspection.
 
 ### Human override
 
@@ -483,23 +502,32 @@ The override is recorded with category + details. This is a high-value signal: i
 
 The system improves itself through the same workflow it governs.
 
+After `/evaluate` completes, the AI surfaces a **discoverable improvement signal** — not an automatic action:
+
 ```
-EvaluationRecord (outcome: failure, category: criteria_not_met)
-        ↓
-Human reads, identifies root cause: grill criteria are not verifiable
-        ↓
-/grill (task_type: system_improvement)
-  triggered_by:
-    source_type: evaluation_failure
-    evaluation_refs: [.github/tasks/TASK-042/evaluation.json]
-    failure_category: criteria_not_met
+/evaluate completion block (shown to human):
+  improvement_signal: prompt_gap | skill_gap | criteria_gap | protocol_missing | none
+  unmet_criteria_ids: [SC-003, SC-007]
+  suggested_next_action: |
+    /grill
+    task_type: system_improvement
+    triggered_by:
+      source_type: evaluation_failure
+      evaluation_refs: [.github/tasks/TASK-042/evaluation.json]
+      failure_category: criteria_not_met
+```
+
+Human decides whether to act on it:
+
+```
+Human runs suggested /grill (or modifies it, or discards it)
         ↓
 /write-plan → /execute-plan → /verify → /review → /evaluate
         ↓
 Updated grill.md agent or grill.prompt.md — versioned, verified, evaluated
 ```
 
-**Key constraint:** No automated writes to system files. Every improvement is a human-initiated task that runs through the full workflow. This prevents the AI from silently rewriting its own rules.
+**Key constraint:** No automated writes to system files. No automatic task creation. Every improvement is a human-initiated task that runs through the full workflow. This prevents the AI from silently rewriting its own rules.
 
 **Traceability:** The `triggered_by` field on the improvement GrillRecord links back to the EvaluationRecord(s) that caused it. Six months later, you can trace any system change back to the evidence that justified it.
 

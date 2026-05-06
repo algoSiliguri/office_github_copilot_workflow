@@ -72,9 +72,9 @@ If the file list is vague, the plan is weak.
 
 ### 5. `/context-packet`
 
-Use when execution needs bounded retrieval across more than a tiny surface area.
+**Conditionally mandatory.** The `context_packet_required` flag in the `PlanArtifact` determines whether this step is required. When `context_packet_required: true`, `/execute-plan` will stop at preflight if `context-packet.json` is absent.
 
-Skip it for straightforward changes in familiar code.
+Use when execution needs bounded retrieval across more than a tiny surface area. You may skip it for straightforward changes in familiar code only when the plan explicitly sets `context_packet_required: false`.
 
 ### 6. `/execute-plan`
 
@@ -110,11 +110,17 @@ A confirmed or overridden EvaluationRecord is the terminal artifact of every com
 
 ## Improvement loop
 
-When evaluation reveals a repeated failure pattern:
+After `/evaluate` completes, the completion block surfaces:
 
-1. Read the failing EvaluationRecords and identify root cause (wrong prompt, weak skill, missing protocol).
-2. Create a new `/grill` task with `task_type: system_improvement`.
-3. Populate `triggered_by` with references to the EvaluationRecord files and the `failure_category`.
+- `improvement_signal` — a categorised signal (e.g. prompt gap, skill gap, protocol missing)
+- unmet criteria IDs (e.g. SC-003, SC-007)
+- `suggested_next_action` — a pre-filled `/grill` invocation you can run or discard
+
+**No automatic task creation.** Humans drive the loop:
+
+1. Review the unmet criteria IDs and the suggested `/grill` invocation.
+2. Decide whether to run it, modify it, or discard it.
+3. If you proceed: populate `triggered_by` in the new grill with references to the EvaluationRecord files and the `failure_category`.
 4. Run the full workflow. The resulting change (updated prompt, skill, or schema) is versioned, verified, and reviewed like any other task.
 
 No automated writes to system files. Every improvement is an evaluatable task. Every task is traceable to the evidence that justified it.

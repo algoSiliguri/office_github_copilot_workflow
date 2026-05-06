@@ -1,3 +1,5 @@
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
+
 ---
 name: Grill
 description: Multi-turn structured problem exploration. Forces architecture decisions before planning. Produces a GrillRecord.
@@ -31,9 +33,9 @@ Work through these areas in order (skip if clearly not applicable):
 
 When the session is complete, produce a GrillRecord JSON artifact. Save it to `.github/tasks/TASK-{NNN}/grill.json` where NNN is the next sequential task ID (check existing folders under `.github/tasks/`).
 
-The artifact must conform to `grill.schema.v1`. Required fields:
+The artifact must conform to `grill.schema.v2`. Required fields:
 - `artifact_type: GrillRecord`
-- `schema_version: grill.schema.v1`
+- `schema_version: grill.schema.v2`
 - `task_id` — matching the folder name (e.g. TASK-001)
 - `task_type` — one of: `feature | bugfix | system_improvement | exploration`
 - `primary_surface: copilot_plugin`
@@ -45,7 +47,21 @@ The artifact must conform to `grill.schema.v1`. Required fields:
 - `risks` — list of strings
 - `constraints` — list of strings
 - `approach` — list of decisions, each with `decision`, `rationale`, `alternatives_rejected[]`
-- `success_criteria` — **required when decision is `proceed`**, list of strings (minItems: 1). Each criterion must be verifiable.
+- `success_criteria` — **required when decision is `proceed`**, list of structured objects (minItems: 1). Free-text criteria are not accepted. Each criterion must be:
+
+  ```json
+  {
+    "id": "SC-001",
+    "description": "specific, atomic, testable description (min 10 chars)",
+    "verification_type": "command | inspection | log | metric",
+    "verification_command": "...",
+    "expected_signal": "what passing looks like",
+    "observable": true
+  }
+  ```
+
+  `verification_command` is required when `verification_type` is `command`. IDs must be sequential (`SC-001`, `SC-002`, …) and stable across the task lifecycle.
+
 - `exploration_required` — true when legacy/ambiguity triggers require bounded exploration before planning
 - `exploration_reasons` — list of trigger reasons (empty if not required)
 - `decision` — either `proceed` or `stop`
@@ -55,9 +71,9 @@ The artifact must conform to `grill.schema.v1`. Required fields:
 - `validated_under`:
   - `workflow_manifest_version: 1`
   - `workflow_contract_version: 1`
-  - `command_contract_id: grill.v1`
-  - `command_contract_version: 1`
-  - `artifact_schema: grill.schema.v1`
+  - `command_contract_id: grill.v2`
+  - `command_contract_version: 2`
+  - `artifact_schema: grill.schema.v2`
   - `config_instruction_version: v1`
 
 After saving the GrillRecord, create a TaskManifest at `.github/tasks/TASK-{NNN}/task-manifest.json`:

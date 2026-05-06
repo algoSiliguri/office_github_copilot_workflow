@@ -1,3 +1,5 @@
+<!-- NON-CANONICAL: agents/ is advisory only in v1. Behavioral authority lives in prompts/ (invocation) and skills/ (procedure). This file is preserved for reference but is not the authoritative source for this command's behavior. -->
+
 ---
 name: WritePlan
 description: Produces a scope-locked PlanArtifact grounded in the GrillRecord. Refuses to plan files not declared in scope.

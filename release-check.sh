@@ -25,6 +25,12 @@ expect_fail "out-of-scope modification without approved deviation" \
   python3 .github/workflow/validators/check-execution .github/examples/negative/out-of-scope.execution.json
 expect_fail "degraded verification without acknowledgement" \
   python3 .github/workflow/validators/check-verification .github/examples/negative/degraded-verification.verification.json .github/examples/negative/degraded-verification.review.json
+expect_fail "missing created_at timestamp" \
+  python3 .github/workflow/validators/check-plan .github/examples/negative/missing-created-at.plan.json
+expect_fail "rejected verification without structured reason" \
+  python3 .github/workflow/validators/check-verification .github/examples/negative/rejected-verification-without-reason.verification.json .github/examples/negative/rejected-verification-without-reason.review.json
+expect_fail "rejected review without structured reason" \
+  python3 .github/workflow/validators/check-verification .github/examples/negative/rejected-review-without-reason.verification.json .github/examples/negative/rejected-review-without-reason.review.json
 
 python3 .github/hooks/scripts/log-event.py < .github/examples/hooks/log-event.json | python3 -m json.tool >/dev/null
 python3 .github/hooks/scripts/agent-stop.py < .github/examples/hooks/agent-stop.json | python3 -m json.tool >/dev/null

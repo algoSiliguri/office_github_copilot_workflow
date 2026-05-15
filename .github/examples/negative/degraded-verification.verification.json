@@ -1,6 +1,7 @@
 {
   "schema_version": "verification-record.schema.v1",
   "task_id": "TASK-NEG-005",
+  "created_at": "2026-05-15T00:00:00Z",
   "phase": "verify",
   "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
   "execution_ref": ".github/examples/tasks/TASK-001/execution.json",
@@ -13,5 +14,9 @@
     "used": true,
     "acknowledged_by": null,
     "reason": "Invalid fixture."
+  },
+  "human_acknowledgment": {
+    "status": "approved",
+    "reason": null
   }
 }

@@ -2,10 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "execution-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "task_id", "phase", "plan_ref", "approved_files", "modified_files", "status", "graph_refs", "command_refs", "checkpoints", "risky_tool_approvals", "deviations"],
+  "required": ["schema_version", "task_id", "created_at", "phase", "plan_ref", "approved_files", "modified_files", "status", "graph_refs", "command_refs", "checkpoints", "risky_tool_approvals", "deviations"],
   "properties": {
     "schema_version": { "const": "execution-record.schema.v1" },
     "task_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
     "phase": { "const": "execute" },
     "plan_ref": { "type": "string" },
     "approved_files": { "type": "array", "items": { "type": "string" } },

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 
@@ -14,6 +15,13 @@ def require(condition, message):
         fail(message)
 
 
+def require_iso8601(value, field):
+    try:
+        datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        fail(f"{field} must be ISO 8601")
+
+
 if len(sys.argv) != 2:
     fail("usage: check-plan PATH")
 
@@ -24,6 +32,7 @@ with path.open(encoding="utf-8") as handle:
 required = [
     "schema_version",
     "task_id",
+    "created_at",
     "phase",
     "status",
     "summary",
@@ -44,6 +53,7 @@ missing = [key for key in required if key not in record]
 if missing:
     fail(f"missing required fields: {', '.join(missing)}")
 require(record["schema_version"] == "plan-record.schema.v1", "wrong schema_version")
+require_iso8601(record["created_at"], "created_at")
 require(record["phase"] == "plan", "phase must be plan")
 require(record["status"] in {"EXECUTION_READY", "DIAGNOSIS_REQUIRED", "BLOCKED"}, "invalid status")
 require(isinstance(record["intended_files"], list) and bool(record["intended_files"]), "intended_files must be a non-empty list")

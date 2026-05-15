@@ -1,6 +1,6 @@
 {
   "schema_version": "verification-record.schema.v1",
-  "task_id": "TASK-001",
+  "task_id": "TASK-NEG-008",
   "created_at": "2026-05-15T00:00:00Z",
   "phase": "verify",
   "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
@@ -8,8 +8,8 @@
   "verification_command": "python3 .github/workflow/validators/check-setup",
   "command_refs": ["cmd:check-setup"],
   "result": "passed",
-  "evidence_summary": "Example fixture assumes setup validator passed.",
-  "graph_refs": ["graph-record:freshness:missing"],
+  "evidence_summary": "Invalid fixture pairs with rejected review.",
+  "graph_refs": ["graph:file:README.md"],
   "degraded_verification": {
     "used": false,
     "acknowledged_by": null,

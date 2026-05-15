@@ -1,3 +1,8 @@
+---
+name: bounded-execution
+description: Use when carrying out an approved PlanRecord and recording what actually changed.
+---
+
 # bounded-execution
 
 Use this skill for `/execute`.
@@ -16,6 +21,9 @@ Carry out only the approved PlanRecord and record what actually changed.
 - Read the approved PlanRecord first.
 - Edit only files listed in the approved intended file scope.
 - Follow the approved `graph_refs[]` from the plan as context pointers; do not broaden context without recording why.
+- Prefer targeted graph_refs over broad repository search when relevant refs exist.
+- When the plan includes test changes, write or update tests before or alongside implementation edits.
+- Record test outcomes and verification-relevant results in ExecutionRecord without pasting full output.
 - Record `created_at`, actual modified files, command refs, checkpoints, and deviations in ExecutionRecord.
 - Request approval for writes outside scope, destructive shell, network commands, dependency installation, graph regeneration, workflow governance edits, or secret access.
 - Record each risky tool approval or denial in ExecutionRecord.

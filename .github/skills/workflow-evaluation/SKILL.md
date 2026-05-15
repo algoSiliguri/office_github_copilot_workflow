@@ -1,3 +1,8 @@
+---
+name: workflow-evaluation
+description: Use only when a maintainer explicitly invokes /evaluate to assess completed workflow artifacts.
+---
+
 # workflow-evaluation
 
 Use this skill only for maintainer `/evaluate`.

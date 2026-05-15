@@ -2,14 +2,7 @@
 
 This repository maintains a repo-local GitHub Copilot CLI orchestration bundle. The product is the portable instruction, skill, agent, hook, validator, and artifact structure under `.github/`.
 
-## Authority
-
-- `AGENTS.md` and `.github/copilot-instructions.md` define always-on behavior.
-- `.github/skills/<skill>/SKILL.md` defines specialized behavior loaded only when relevant.
-- `.github/agents/workflow-orchestrator.agent.md` routes workflow intent and keeps context compact.
-- `.github/hooks/` guards and logs in Enhanced Local Mode only.
-- `.github/workflow/schemas/` and `.github/workflow/validators/` define and check artifact structure.
-- Docs explain decisions; they do not govern behavior.
+Runtime precedence and command behavior are defined in `.github/copilot-instructions.md`.
 
 ## V1 Constraints
 

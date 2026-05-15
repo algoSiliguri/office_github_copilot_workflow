@@ -26,11 +26,15 @@ Use read/search by default. Shell and writes require the active phase contract a
 
 ## Phase Routing
 
-- `/setup`: load `graph-context` only when graph metadata is being inspected or updated. Validate with `python3 .github/workflow/validators/check-setup`.
-- `/plan`: load `task-planning`; load `graph-context` only to select compact `graph_refs[]`.
-- `/execute`: load `bounded-execution` and follow only the approved PlanRecord.
-- `/verify`: load `verification-review` and require both VerificationRecord and ReviewRecord.
-- `/evaluate`: load `workflow-evaluation` only for maintainers and never as part of normal task closeout.
+| Intent | Skill | Notes |
+|---|---|---|
+| setup, bundle validation, graph record | `graph-context` | validate with `check-setup` |
+| planning, diagnosis, design, exploration | `task-planning` | load `graph-context` only to select `graph_refs[]` |
+| approved implementation, edits, test updates | `bounded-execution` | requires approved PlanRecord |
+| verification, review, task closeout | `verification-review` | requires both VerificationRecord and ReviewRecord |
+| workflow/system analysis, maintainer audit | `workflow-evaluation` | maintainer only; never on normal task path |
+
+Load exactly one skill per phase. Do not load multiple skills simultaneously unless transitioning between phases.
 
 ## Context Rule
 

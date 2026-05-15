@@ -57,6 +57,8 @@ for key in [
     "plan_ref",
     "execution_ref",
     "verification_command",
+    "command_executed_at",
+    "command_exit_code",
     "command_refs",
     "result",
     "evidence_summary",
@@ -68,9 +70,13 @@ for key in [
         fail(f"verification missing required field: {key}")
 require(verification["schema_version"] == "verification-record.schema.v1", "verification has wrong schema_version")
 require_iso8601(verification["created_at"], "verification.created_at")
+require_iso8601(verification["command_executed_at"], "verification.command_executed_at")
 require(verification["phase"] == "verify", "verification phase must be verify")
 require(verification["result"] in {"passed", "failed", "not_run"}, "invalid verification result")
 require(bool(verification["verification_command"]), "verification_command is required")
+require(isinstance(verification["command_exit_code"], int), "command_exit_code must be an integer")
+if verification["result"] == "passed":
+    require(verification["command_exit_code"] == 0, "passed result requires command_exit_code 0")
 require(isinstance(verification["command_refs"], list), "verification command_refs must be a list")
 require(bool(verification["evidence_summary"]), "evidence_summary is required")
 if verification["result"] == "not_run" or verification["degraded_verification"].get("used"):

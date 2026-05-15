@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "verification-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "task_id", "created_at", "phase", "plan_ref", "execution_ref", "verification_command", "command_refs", "result", "evidence_summary", "graph_refs", "degraded_verification", "human_acknowledgment"],
+  "required": ["schema_version", "task_id", "created_at", "phase", "plan_ref", "execution_ref", "verification_command", "command_executed_at", "command_exit_code", "command_refs", "result", "evidence_summary", "graph_refs", "degraded_verification", "human_acknowledgment"],
   "properties": {
     "schema_version": { "const": "verification-record.schema.v1" },
     "task_id": { "type": "string" },
@@ -11,6 +11,8 @@
     "plan_ref": { "type": "string" },
     "execution_ref": { "type": "string" },
     "verification_command": { "type": "string" },
+    "command_executed_at": { "type": "string", "format": "date-time" },
+    "command_exit_code": { "type": "integer" },
     "command_refs": { "type": "array", "items": { "type": "string" } },
     "result": { "enum": ["passed", "failed", "not_run"] },
     "evidence_summary": { "type": "string" },

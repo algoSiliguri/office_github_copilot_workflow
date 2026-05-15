@@ -18,7 +18,8 @@
     "normal_planning_requires_graph_freshness": "fresh",
     "degraded_planning_requires_human_approval": true,
     "quick_task_is_classification_only": true,
-    "diagnosis_required_blocks_execution": true
+    "diagnosis_required_blocks_execution": true,
+    "writes_active_task_to_state": true
   },
   "execute_contract": {
     "artifact": ".github/tasks/TASK-{NNN}/execution.json",
@@ -33,7 +34,8 @@
     ],
     "graph_data_is_not_correctness_evidence": true,
     "degraded_verification_requires_acknowledgement": true,
-    "remaining_assumptions_or_deviations_require_human_decision": true
+    "remaining_assumptions_or_deviations_require_human_decision": true,
+    "clears_active_task_on_closeout": true
   },
   "human_gates": [
     "approve_plan",

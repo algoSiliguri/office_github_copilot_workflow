@@ -1,3 +1,8 @@
+---
+name: task-planning
+description: Use when planning a task, diagnosing a bug, or classifying quick work before any edits.
+---
+
 # task-planning
 
 Use this skill for `/plan`.
@@ -19,6 +24,8 @@ Produce an execution-ready PlanRecord or explicitly stop at `DIAGNOSIS_REQUIRED`
 - Declare intended files, risk class, verification command, graph freshness mode, and selected `graph_refs[]`.
 - If the bug is unclear, set planning status to `DIAGNOSIS_REQUIRED`.
 - Do not produce an execution-ready plan until root cause, evidence, affected files, and verification strategy are explicit.
+- Before producing an execution-ready plan, verify key assumptions against official documentation when the task involves external APIs, CLIs, frameworks, or specifications.
+- Use graph_refs as the primary exploration boundary before broad repository search.
 - Represent quick tasks as `quick_task_classification` inside PlanRecord.
 - Quick tasks still require intended files, risk, verification command, graph freshness mode, and human approval before edits.
 - Record assumptions, deviations, planning notes, context refs, and diagnosis evidence inside PlanRecord.

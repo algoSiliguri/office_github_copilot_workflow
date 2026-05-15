@@ -122,6 +122,10 @@ The root `AGENTS.md` in the orchestration bundle repository. It guides maintenan
 
 A bounded block that `/setup` creates or updates in a target repository's root `AGENTS.md` without overwriting existing team instructions. It points to the repo-local Copilot instructions, skills, workflow orchestrator agent, config, and graph record, and lists only the v1 commands and human gates.
 
+### Workflow State File
+
+A lightweight mutable state file at `.github/workflow/state.json` that records the currently active task. `/plan` writes `active_task` to it when a task begins. `/verify` clears `active_task` to `null` on task closeout. Hook scripts read from it to determine which task log to append events to. It is distinct from policy files (`orchestration.json`, `config.json`), which are static. The active task lifecycle contract is declared in `orchestration.json` under `plan_contract.writes_active_task_to_state` and `verify_contract.clears_active_task_on_closeout`.
+
 ### Fresh V1 Layout
 
 The clean v1 repository structure that replaces the old command, agent, schema, manifest, policy, and validator sprawl. Because no users depend on the old structure, v1 optimizes for a fresh minimal layout rather than backward compatibility.

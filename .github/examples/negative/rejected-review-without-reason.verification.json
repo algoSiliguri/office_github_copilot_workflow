@@ -6,6 +6,8 @@
   "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
   "execution_ref": ".github/examples/tasks/TASK-001/execution.json",
   "verification_command": "python3 .github/workflow/validators/check-setup",
+  "command_executed_at": "2026-05-15T00:01:00Z",
+  "command_exit_code": 0,
   "command_refs": ["cmd:check-setup"],
   "result": "passed",
   "evidence_summary": "Invalid fixture pairs with rejected review.",

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Enhanced Local preToolUse guard.
+"""preToolUse risk guard for GitHub Copilot CLI Enhanced Local Mode.
 
-The guard is intentionally conservative. It returns JSON for Copilot hook
-integration or direct fixture tests; it does not mutate workflow state.
+Reads official Copilot hook stdin: {timestamp, cwd, toolName, toolArgs}.
+Outputs JSON guard decision. Exits non-zero for risky tools to signal block.
+Note: whether non-zero exit blocks execution depends on Copilot hook protocol.
+Validators and human gates remain authoritative regardless.
 """
 import json
 import sys
@@ -24,64 +26,81 @@ GOVERNANCE_PREFIXES = (
     ".github/workflow/",
     "AGENTS.md",
 )
+WRITE_TOOLS = {"write_file", "edit_file", "create_file", "delete_file", "str_replace_editor"}
 
 
 def read_payload():
     if sys.stdin.isatty():
         return {}
-    return json.load(sys.stdin)
+    try:
+        return json.load(sys.stdin)
+    except Exception:
+        return {}
 
 
-def text(payload):
+def parse_tool_args(raw):
+    if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {"raw": str(raw)}
+
+
+def build_haystack(payload, tool_args):
     parts = [
-        payload.get("summary"),
-        payload.get("command"),
-        payload.get("tool_name"),
-        " ".join(payload.get("file_paths", []) if isinstance(payload.get("file_paths"), list) else []),
+        payload.get("toolName", ""),
+        tool_args.get("command", ""),
+        tool_args.get("cmd", ""),
+        tool_args.get("file_path", ""),
+        " ".join(tool_args.get("file_paths", []) if isinstance(tool_args.get("file_paths"), list) else []),
     ]
-    return " ".join(str(part or "") for part in parts).lower()
+    return " ".join(str(p) for p in parts if p).lower()
 
 
-def planned_files(payload):
-    return set(str(path) for path in payload.get("approved_files", []) if path)
-
-
-def requested_files(payload):
-    return set(str(path) for path in payload.get("file_paths", []) if path)
+def extract_file_paths(tool_args):
+    paths = []
+    for key in ("file_path", "path"):
+        val = tool_args.get(key)
+        if val:
+            paths.append(str(val))
+    for val in (tool_args.get("file_paths") or []):
+        if val:
+            paths.append(str(val))
+    return paths
 
 
 payload = read_payload()
-haystack = text(payload)
-approval = payload.get("human_approval") or {}
-approved = approval.get("approved") is True
-categories = []
+tool_args = parse_tool_args(payload.get("toolArgs"))
+tool_name = payload.get("toolName", "")
+haystack = build_haystack(payload, tool_args)
+file_paths = extract_file_paths(tool_args)
 
+categories = []
 for category, patterns in RISK_PATTERNS.items():
-    if any(pattern in haystack for pattern in patterns):
+    if any(p in haystack for p in patterns):
         categories.append(category)
 
-for path in requested_files(payload):
-    if path.startswith(GOVERNANCE_PREFIXES):
-        categories.append("workflow_governance_edits")
-
-planned = planned_files(payload)
-requested = requested_files(payload)
-if planned and requested - planned and payload.get("operation") in {"write", "edit", "delete"}:
-    categories.append("unplanned_file_edit")
+if tool_name in WRITE_TOOLS:
+    for path in file_paths:
+        if any(path.startswith(prefix) for prefix in GOVERNANCE_PREFIXES):
+            categories.append("workflow_governance_edits")
+            break
 
 categories = sorted(set(categories))
-decision = "allow"
-reason = "no risky category detected"
-if categories and not approved:
-    decision = "deny"
-    reason = "human approval required"
-elif categories and approved:
-    decision = "allow"
-    reason = "explicit human approval recorded"
+risky = bool(categories)
+decision = "deny" if risky else "allow"
+reason = "human approval required for risky tool use" if risky else "no risky category detected"
 
 print(json.dumps({
     "decision": decision,
     "risk_categories": categories,
     "reason": reason,
-    "redacted": True
+    "tool": tool_name,
+    "redacted": True,
 }, sort_keys=True))
+
+if risky:
+    sys.exit(1)

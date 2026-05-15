@@ -1,105 +1,108 @@
 #!/usr/bin/env python3
-"""Write a redacted v1 event summary for Enhanced Local Mode.
+"""Write a redacted v1 event summary to the active task log.
 
-Input is a Copilot hook-like JSON object. Raw prompts, responses, tool
-transcripts, and full shell output are intentionally ignored.
+Reads official Copilot hook stdin: {timestamp, cwd, toolName, toolArgs}.
+COPILOT_HOOK_EVENT env var carries the hook event name set by workflow-hooks.json.
 """
 import json
+import os
 import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-ALLOWED_CATEGORIES = {
-    "session.started",
-    "session.ended",
-    "command.invoked",
-    "skill.selected",
-    "graph.context_used",
-    "plan.step_started",
-    "plan.step_completed",
-    "tool.requested",
-    "tool.approved",
-    "tool.denied",
-    "shell.command_run",
-    "file.modified",
-    "verification.command_run",
-    "verification.result",
-    "human.approval_requested",
-    "human.approval_recorded",
-    "assumption.recorded",
-    "deviation.recorded",
-    "review.finding",
-    "evaluation.finding",
-    "error.occurred",
+HOOK_EVENT_TO_CATEGORY = {
+    "sessionStart": "session.started",
+    "sessionEnd": "session.ended",
+    "userPromptSubmitted": "command.invoked",
+    "preToolUse": "tool.requested",
+    "postToolUse": "tool.approved",
+    "agentStop": "session.ended",
+    "errorOccurred": "error.occurred",
 }
-PHASES = {"setup", "plan", "execute", "verify", "evaluate"}
-SOURCES = {"hook", "command", "validator", "human"}
-SENSITIVITY = {"public", "internal", "sensitive"}
 
 
 def read_payload():
     if sys.stdin.isatty():
         return {}
-    return json.load(sys.stdin)
+    try:
+        return json.load(sys.stdin)
+    except Exception:
+        return {}
 
 
-def as_list(value):
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return [str(item) for item in value]
-    return [str(value)]
+def parse_tool_args(raw):
+    if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {}
 
 
-def compact_summary(payload):
-    summary = payload.get("summary") or payload.get("redacted_summary") or payload.get("event") or "redacted event"
-    summary = " ".join(str(summary).split())
-    return summary[:240]
-
-
-def event_from_payload(payload):
-    refs = payload.get("refs") if isinstance(payload.get("refs"), dict) else {}
-    category = payload.get("category", "command.invoked")
-    phase = payload.get("phase", "plan")
-    source = payload.get("source", "hook")
-    sensitivity = payload.get("sensitivity", "internal")
-    return {
-        "schema_version": "event.schema.v1",
-        "event_id": str(payload.get("event_id") or uuid.uuid4()),
-        "timestamp": str(payload.get("timestamp") or datetime.now(timezone.utc).isoformat()),
-        "task_id": payload.get("task_id"),
-        "session_id": payload.get("session_id"),
-        "category": category if category in ALLOWED_CATEGORIES else "command.invoked",
-        "phase": phase if phase in PHASES else "plan",
-        "source": source if source in SOURCES else "hook",
-        "summary": compact_summary(payload),
-        "refs": {
-            "artifact_paths": as_list(refs.get("artifact_paths")),
-            "file_paths": as_list(refs.get("file_paths")),
-            "graph_refs": as_list(refs.get("graph_refs")),
-            "command_refs": as_list(refs.get("command_refs")),
-        },
-        "sensitivity": sensitivity if sensitivity in SENSITIVITY else "internal",
-        "redaction": {
-            "applied": True,
-            "reason": str(payload.get("redaction_reason") or "raw prompt/response/tool content omitted"),
-        },
-    }
-
-
-def append_event(event):
-    task_id = event.get("task_id")
-    if not task_id:
+def read_active_task(cwd):
+    """Read active_task from explicit workflow state file."""
+    state_path = Path(cwd or ".") / ".github" / "workflow" / "state.json"
+    try:
+        with state_path.open(encoding="utf-8") as fh:
+            return json.load(fh).get("active_task")
+    except Exception:
         return None
-    log_path = Path(".github/tasks") / task_id / "logs" / "events.jsonl"
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(event, sort_keys=True) + "\n")
-    return str(log_path)
+
+
+def ts_to_iso(ts):
+    if not ts:
+        return datetime.now(timezone.utc).isoformat()
+    try:
+        return datetime.fromtimestamp(int(ts) / 1000, tz=timezone.utc).isoformat()
+    except Exception:
+        return datetime.now(timezone.utc).isoformat()
 
 
 payload = read_payload()
-event = event_from_payload(payload)
-written_path = append_event(event) if payload.get("write_log", True) else None
-print(json.dumps({"ok": True, "event": event, "written_path": written_path}, sort_keys=True))
+hook_event = os.environ.get("COPILOT_HOOK_EVENT", "userPromptSubmitted")
+tool_args = parse_tool_args(payload.get("toolArgs"))
+cwd = payload.get("cwd", ".")
+task_id = read_active_task(cwd)
+tool_name = payload.get("toolName", "")
+category = HOOK_EVENT_TO_CATEGORY.get(hook_event, "command.invoked")
+
+summary = f"{hook_event}: {tool_name}" if tool_name else hook_event
+
+file_refs = [str(tool_args["file_path"])] if tool_args.get("file_path") else []
+cmd_refs = [tool_args["command"]] if tool_args.get("command") else []
+
+event = {
+    "schema_version": "event.schema.v1",
+    "event_id": str(uuid.uuid4()),
+    "timestamp": ts_to_iso(payload.get("timestamp")),
+    "task_id": task_id,
+    "session_id": None,
+    "category": category,
+    "phase": None,
+    "source": "hook",
+    "summary": summary[:240],
+    "refs": {
+        "artifact_paths": [],
+        "file_paths": file_refs,
+        "graph_refs": [],
+        "command_refs": cmd_refs,
+    },
+    "sensitivity": "internal",
+    "redaction": {
+        "applied": True,
+        "reason": "raw prompt/response/tool content omitted",
+    },
+}
+
+written_path = None
+if task_id:
+    log_path = Path(cwd) / ".github" / "tasks" / task_id / "logs" / "events.jsonl"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(event, sort_keys=True) + "\n")
+    written_path = str(log_path)
+
+print(json.dumps({"ok": True, "event_id": event["event_id"], "written_path": written_path}, sort_keys=True))

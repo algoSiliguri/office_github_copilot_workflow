@@ -32,15 +32,3 @@ Do not expose `/quick-task`. Quick work is a classification inside `/plan`.
 - Hooks and validators guard and log; they do not secretly plan, execute, verify, evaluate, or regenerate graph data.
 - Human approval is required before execution, risky tool use, and final verification acceptance.
 
-## Setup Contract
-
-`/setup` must never replace a target repository's existing `AGENTS.md`. It may append or update only the block bounded by:
-
-```text
-<!-- BEGIN COPILOT WORKFLOW V1 -->
-<!-- END COPILOT WORKFLOW V1 -->
-```
-
-The managed block points to this bundle's Copilot instructions, five skills, one workflow orchestrator agent, workflow config, and GraphRecord. It lists only `/setup`, `/plan`, `/execute`, and `/verify` as user-facing commands, with `/evaluate` maintainer-only.
-
-`/setup` detects `graphify-out/` and updates `.github/workflow/graph-record.json` metadata when explicitly instructed. It must not silently regenerate graph output. If graph data is `missing`, `stale`, or `unknown`, `/plan` must ask for degraded-mode approval before normal planning.

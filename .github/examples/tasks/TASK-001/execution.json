@@ -1,6 +1,7 @@
 {
   "schema_version": "execution-record.schema.v1",
   "task_id": "TASK-001",
+  "created_at": "2026-05-15T00:00:00Z",
   "phase": "execute",
   "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
   "approved_files": ["README.md"],

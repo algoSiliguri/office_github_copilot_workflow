@@ -2,10 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "plan-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "task_id", "phase", "status", "summary", "intended_files", "risk", "verification_command", "graph_freshness_mode", "graph_refs", "context_refs", "assumptions", "deviations", "planning", "diagnosis", "quick_task_classification", "human_approval"],
+  "required": ["schema_version", "task_id", "created_at", "phase", "status", "summary", "intended_files", "risk", "verification_command", "graph_freshness_mode", "graph_refs", "context_refs", "assumptions", "deviations", "planning", "diagnosis", "quick_task_classification", "human_approval"],
   "properties": {
     "schema_version": { "const": "plan-record.schema.v1" },
     "task_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
     "phase": { "const": "plan" },
     "status": { "enum": ["EXECUTION_READY", "DIAGNOSIS_REQUIRED", "BLOCKED"] },
     "summary": { "type": "string" },

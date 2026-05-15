@@ -1,21 +1,21 @@
 {
   "schema_version": "review-record.schema.v1",
-  "task_id": "TASK-001",
+  "task_id": "TASK-NEG-008",
   "created_at": "2026-05-15T00:00:00Z",
   "phase": "review",
   "approved_files": ["README.md"],
   "actual_files": ["README.md"],
   "scope_drift": [],
-  "findings": [],
-  "assumptions": ["Example artifact only."],
+  "findings": ["Invalid fixture rejects review without reason."],
+  "assumptions": [],
   "deviations": [],
   "human_approval": {
-    "approved": true,
+    "approved": false,
     "approved_by": "example-human",
     "approved_at": "2026-05-15T00:00:00Z"
   },
   "human_authorization": {
-    "status": "approved",
+    "status": "rejected",
     "reason": null
   }
 }

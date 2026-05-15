@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 
@@ -14,6 +15,32 @@ def require(condition, message):
         fail(message)
 
 
+def require_iso8601(value, field):
+    try:
+        datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        fail(f"{field} must be ISO 8601")
+
+
+REJECTION_CATEGORIES = {
+    "scope_violation",
+    "incorrect_implementation",
+    "criteria_not_met",
+    "verification_incomplete",
+    "quality_issue",
+    "other",
+}
+
+
+def require_rejection_reason(decision, field):
+    require(decision.get("status") in {"approved", "rejected", "pending"}, f"{field}.status is invalid")
+    reason = decision.get("reason")
+    if decision.get("status") == "rejected":
+        require(isinstance(reason, dict), f"{field}.reason is required when status is rejected")
+        require(reason.get("category") in REJECTION_CATEGORIES, f"{field}.reason.category is invalid")
+        require(isinstance(reason.get("details"), str) and len(reason["details"]) >= 10, f"{field}.reason.details must be at least 10 characters")
+
+
 if len(sys.argv) != 3:
     fail("usage: check-verification VERIFICATION_PATH REVIEW_PATH")
 
@@ -25,6 +52,7 @@ with Path(sys.argv[2]).open(encoding="utf-8") as handle:
 for key in [
     "schema_version",
     "task_id",
+    "created_at",
     "phase",
     "plan_ref",
     "execution_ref",
@@ -34,10 +62,12 @@ for key in [
     "evidence_summary",
     "graph_refs",
     "degraded_verification",
+    "human_acknowledgment",
 ]:
     if key not in verification:
         fail(f"verification missing required field: {key}")
 require(verification["schema_version"] == "verification-record.schema.v1", "verification has wrong schema_version")
+require_iso8601(verification["created_at"], "verification.created_at")
 require(verification["phase"] == "verify", "verification phase must be verify")
 require(verification["result"] in {"passed", "failed", "not_run"}, "invalid verification result")
 require(bool(verification["verification_command"]), "verification_command is required")
@@ -45,10 +75,12 @@ require(isinstance(verification["command_refs"], list), "verification command_re
 require(bool(verification["evidence_summary"]), "evidence_summary is required")
 if verification["result"] == "not_run" or verification["degraded_verification"].get("used"):
     require(bool(verification["degraded_verification"].get("acknowledged_by")), "degraded verification requires acknowledgement")
+require_rejection_reason(verification["human_acknowledgment"], "human_acknowledgment")
 
 for key in [
     "schema_version",
     "task_id",
+    "created_at",
     "phase",
     "approved_files",
     "actual_files",
@@ -57,10 +89,12 @@ for key in [
     "assumptions",
     "deviations",
     "human_approval",
+    "human_authorization",
 ]:
     if key not in review:
         fail(f"review missing required field: {key}")
 require(review["schema_version"] == "review-record.schema.v1", "review has wrong schema_version")
+require_iso8601(review["created_at"], "review.created_at")
 require(review["phase"] == "review", "review phase must be review")
 require(isinstance(review["approved_files"], list), "review approved_files must be a list")
 require(isinstance(review["actual_files"], list), "review actual_files must be a list")
@@ -68,8 +102,12 @@ require(isinstance(review["assumptions"], list), "review assumptions must be a l
 require(isinstance(review["deviations"], list), "review deviations must be a list")
 if set(review["actual_files"]) - set(review["approved_files"]):
     require(review["scope_drift"], "scope drift must be recorded")
+require_rejection_reason(review["human_authorization"], "human_authorization")
 if review["assumptions"] or review["deviations"] or review["scope_drift"]:
-    require(review["human_approval"].get("approved"), "assumptions, deviations, or drift require human approval")
-require(review["human_approval"].get("approved"), "review requires human approval")
+    require(review["human_authorization"].get("status") in {"approved", "rejected"}, "assumptions, deviations, or drift require a human decision")
+if review["human_authorization"].get("status") == "approved":
+    require(review["human_approval"].get("approved"), "approved review requires human_approval.approved")
+if review["human_authorization"].get("status") == "rejected":
+    require(review["human_approval"].get("approved") is False, "rejected review must not mark human_approval.approved true")
 
 print("check-verification: ok")

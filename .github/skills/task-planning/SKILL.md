@@ -15,6 +15,7 @@ Produce an execution-ready PlanRecord or explicitly stop at `DIAGNOSIS_REQUIRED`
 ## Instructions
 
 - Create or update `.github/tasks/TASK-{NNN}/plan.json`.
+- Populate `created_at` with the artifact creation time in ISO 8601 format.
 - Declare intended files, risk class, verification command, graph freshness mode, and selected `graph_refs[]`.
 - If the bug is unclear, set planning status to `DIAGNOSIS_REQUIRED`.
 - Do not produce an execution-ready plan until root cause, evidence, affected files, and verification strategy are explicit.

@@ -1,13 +1,13 @@
 {
   "schema_version": "review-record.schema.v1",
-  "task_id": "TASK-001",
+  "task_id": "TASK-NEG-007",
   "created_at": "2026-05-15T00:00:00Z",
   "phase": "review",
   "approved_files": ["README.md"],
   "actual_files": ["README.md"],
   "scope_drift": [],
   "findings": [],
-  "assumptions": ["Example artifact only."],
+  "assumptions": [],
   "deviations": [],
   "human_approval": {
     "approved": true,

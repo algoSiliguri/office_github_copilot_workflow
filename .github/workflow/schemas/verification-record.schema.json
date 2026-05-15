@@ -2,10 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "verification-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "task_id", "phase", "plan_ref", "execution_ref", "verification_command", "command_refs", "result", "evidence_summary", "graph_refs", "degraded_verification"],
+  "required": ["schema_version", "task_id", "created_at", "phase", "plan_ref", "execution_ref", "verification_command", "command_refs", "result", "evidence_summary", "graph_refs", "degraded_verification", "human_acknowledgment"],
   "properties": {
     "schema_version": { "const": "verification-record.schema.v1" },
     "task_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
     "phase": { "const": "verify" },
     "plan_ref": { "type": "string" },
     "execution_ref": { "type": "string" },
@@ -14,6 +15,29 @@
     "result": { "enum": ["passed", "failed", "not_run"] },
     "evidence_summary": { "type": "string" },
     "graph_refs": { "type": "array", "items": { "type": "string" } },
-    "degraded_verification": { "type": "object" }
+    "degraded_verification": { "type": "object" },
+    "human_acknowledgment": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["approved", "rejected", "pending"] },
+        "reason": {
+          "type": ["object", "null"],
+          "properties": {
+            "category": {
+              "enum": [
+                "scope_violation",
+                "incorrect_implementation",
+                "criteria_not_met",
+                "verification_incomplete",
+                "quality_issue",
+                "other"
+              ]
+            },
+            "details": { "type": "string", "minLength": 10 }
+          }
+        }
+      }
+    }
   }
 }

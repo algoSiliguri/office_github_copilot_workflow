@@ -2,10 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "review-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "task_id", "phase", "approved_files", "actual_files", "scope_drift", "findings", "assumptions", "deviations", "human_approval"],
+  "required": ["schema_version", "task_id", "created_at", "phase", "approved_files", "actual_files", "scope_drift", "findings", "assumptions", "deviations", "human_approval", "human_authorization"],
   "properties": {
     "schema_version": { "const": "review-record.schema.v1" },
     "task_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
     "phase": { "const": "review" },
     "approved_files": { "type": "array", "items": { "type": "string" } },
     "actual_files": { "type": "array", "items": { "type": "string" } },
@@ -13,6 +14,29 @@
     "findings": { "type": "array" },
     "assumptions": { "type": "array", "items": { "type": "string" } },
     "deviations": { "type": "array" },
-    "human_approval": { "type": "object" }
+    "human_approval": { "type": "object" },
+    "human_authorization": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["approved", "rejected", "pending"] },
+        "reason": {
+          "type": ["object", "null"],
+          "properties": {
+            "category": {
+              "enum": [
+                "scope_violation",
+                "incorrect_implementation",
+                "criteria_not_met",
+                "verification_incomplete",
+                "quality_issue",
+                "other"
+              ]
+            },
+            "details": { "type": "string", "minLength": 10 }
+          }
+        }
+      }
+    }
   }
 }

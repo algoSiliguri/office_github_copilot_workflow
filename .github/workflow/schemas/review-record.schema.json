@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review-record.schema.v1",
+  "type": "object",
+  "required": ["schema_version", "task_id", "phase", "approved_files", "actual_files", "scope_drift", "findings", "assumptions", "deviations", "human_approval"],
+  "properties": {
+    "schema_version": { "const": "review-record.schema.v1" },
+    "task_id": { "type": "string" },
+    "phase": { "const": "review" },
+    "approved_files": { "type": "array", "items": { "type": "string" } },
+    "actual_files": { "type": "array", "items": { "type": "string" } },
+    "scope_drift": { "type": "array" },
+    "findings": { "type": "array" },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "deviations": { "type": "array" },
+    "human_approval": { "type": "object" }
+  }
+}

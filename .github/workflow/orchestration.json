@@ -1,0 +1,52 @@
+{
+  "schema_version": "orchestration.schema.v1",
+  "phase_order": ["setup", "plan", "execute", "verify"],
+  "setup_contract": {
+    "validate_bundle_layout": true,
+    "target_agents_managed_block_only": true,
+    "graph_record_required": true,
+    "graph_regeneration_requires_approval": true,
+    "graph_states": {
+      "missing": "No graphify-out/ output is present.",
+      "stale": "Graph metadata does not match the current branch, commit, or source hash.",
+      "unknown": "Graph output exists but metadata cannot prove freshness.",
+      "fresh": "Graph metadata matches the current branch and commit/source hash, or reuse was explicitly approved."
+    }
+  },
+  "plan_contract": {
+    "artifact": ".github/tasks/TASK-{NNN}/plan.json",
+    "normal_planning_requires_graph_freshness": "fresh",
+    "degraded_planning_requires_human_approval": true,
+    "quick_task_is_classification_only": true,
+    "diagnosis_required_blocks_execution": true
+  },
+  "execute_contract": {
+    "artifact": ".github/tasks/TASK-{NNN}/execution.json",
+    "requires_approved_plan": true,
+    "edits_limited_to_plan_intended_files": true,
+    "out_of_scope_changes_require_deviation_approval": true
+  },
+  "verify_contract": {
+    "artifacts": [
+      ".github/tasks/TASK-{NNN}/verification.json",
+      ".github/tasks/TASK-{NNN}/review.json"
+    ],
+    "graph_data_is_not_correctness_evidence": true,
+    "degraded_verification_requires_acknowledgement": true,
+    "remaining_assumptions_or_deviations_require_human_decision": true
+  },
+  "human_gates": [
+    "approve_plan",
+    "approve_risky_tool_use",
+    "approve_verification_review"
+  ],
+  "conditional_maintainer_gates": ["approve_workflow_improvement"],
+  "safe_default_mode": {
+    "requires_plugins": false,
+    "requires_mcp": false,
+    "requires_lsp": false,
+    "requires_hooks": false,
+    "requires_admin": false,
+    "requires_third_party_python": false
+  }
+}

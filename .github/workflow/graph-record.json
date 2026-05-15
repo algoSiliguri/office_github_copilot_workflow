@@ -1,0 +1,11 @@
+{
+  "schema_version": "graph-record.schema.v1",
+  "graph_output_path": "graphify-out/",
+  "freshness": "missing",
+  "branch": null,
+  "commit": null,
+  "source_hash": null,
+  "generated_at": null,
+  "degraded_mode_approval": null,
+  "notes": "Run graphify for each target repository before serious work. Missing, stale, or unknown freshness requires approval before normal planning."
+}

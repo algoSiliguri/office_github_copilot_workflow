@@ -8,3 +8,6 @@ __pycache__/
 .worktrees/
 github.zip
 office_github_copilot_workflow/
+graphify-out/
+.github/tasks/TASK-*/logs/
+.github/tasks/TASK-*/logs/events.jsonl

@@ -1,0 +1,30 @@
+{
+  "schema_version": "plan-record.schema.v1",
+  "task_id": "TASK-NEG-003",
+  "phase": "plan",
+  "status": "EXECUTION_READY",
+  "summary": "Invalid quick task without approval.",
+  "intended_files": ["README.md"],
+  "risk": "low",
+  "verification_command": "python3 .github/workflow/validators/check-setup",
+  "graph_freshness_mode": "fresh",
+  "graph_refs": ["graph:file:README.md"],
+  "context_refs": ["README.md"],
+  "quick_task_classification": {
+    "is_quick_task": true,
+    "reason": "Invalid because approval is missing."
+  },
+  "diagnosis": null,
+  "planning": {
+    "source": "/plan",
+    "decision": "Invalid fixture.",
+    "diagnosis_required": false
+  },
+  "assumptions": [],
+  "deviations": [],
+  "human_approval": {
+    "approved": false,
+    "approved_by": null,
+    "approved_at": null
+  }
+}

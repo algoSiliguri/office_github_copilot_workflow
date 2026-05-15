@@ -1,0 +1,63 @@
+{
+  "schema_version": "config.schema.v1",
+  "workflow_version": "v1",
+  "safe_default_required": true,
+  "commands": ["/setup", "/plan", "/execute", "/verify"],
+  "maintainer_commands": ["/evaluate"],
+  "managed_agents_block": {
+    "begin_marker": "<!-- BEGIN COPILOT WORKFLOW V1 -->",
+    "end_marker": "<!-- END COPILOT WORKFLOW V1 -->",
+    "target_file": "AGENTS.md",
+    "overwrite_existing_team_instructions": false,
+    "required_links": [
+      ".github/copilot-instructions.md",
+      ".github/skills/",
+      ".github/agents/workflow-orchestrator.agent.md",
+      ".github/workflow/config.json",
+      ".github/workflow/graph-record.json"
+    ]
+  },
+  "graph_policy": {
+    "output_path": "graphify-out/",
+    "record_path": ".github/workflow/graph-record.json",
+    "freshness_states": ["missing", "stale", "unknown", "fresh"],
+    "normal_planning_requires": "fresh",
+    "degraded_mode_requires_human_approval": true,
+    "regeneration_requires_human_approval": true,
+    "setup_may_silently_regenerate": false
+  },
+  "risk_policy": {
+    "approval_required_for": [
+      "writes_outside_approved_plan_scope",
+      "destructive_shell",
+      "network_commands",
+      "dependency_installation",
+      "graph_regeneration",
+      "workflow_governance_edits",
+      "secret_or_credential_access"
+    ],
+    "never_autonomous": [
+      "git_push",
+      "broad_deletion",
+      "package_install",
+      "network_fetch",
+      "workflow_self_modification",
+      "stale_graph_treated_as_fresh",
+      "silent_degraded_verification_acceptance"
+    ]
+  },
+  "skills": [
+    "graph-context",
+    "task-planning",
+    "bounded-execution",
+    "verification-review",
+    "workflow-evaluation"
+  ],
+  "agent": ".github/agents/workflow-orchestrator.agent.md",
+  "artifacts": {
+    "graph_record": ".github/workflow/graph-record.json",
+    "tasks_dir": ".github/tasks",
+    "examples_dir": ".github/examples/tasks",
+    "evaluation_dir": ".github/examples/evaluations"
+  }
+}

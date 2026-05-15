@@ -1,0 +1,17 @@
+{
+  "schema_version": "verification-record.schema.v1",
+  "task_id": "TASK-NEG-005",
+  "phase": "verify",
+  "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
+  "execution_ref": ".github/examples/tasks/TASK-001/execution.json",
+  "verification_command": "not run",
+  "command_refs": [],
+  "result": "not_run",
+  "evidence_summary": "Invalid degraded verification without acknowledgement.",
+  "graph_refs": ["graph:file:README.md"],
+  "degraded_verification": {
+    "used": true,
+    "acknowledged_by": null,
+    "reason": "Invalid fixture."
+  }
+}

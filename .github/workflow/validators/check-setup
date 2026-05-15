@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path.cwd()
+
+REQUIRED_PATHS = [
+    "AGENTS.md",
+    ".github/copilot-instructions.md",
+    ".github/instructions/workflow.instructions.md",
+    ".github/agents/workflow-orchestrator.agent.md",
+    ".github/workflow/config.json",
+    ".github/workflow/orchestration.json",
+    ".github/workflow/graph-record.json",
+    ".github/workflow/schemas/graph-record.schema.json",
+    ".github/workflow/schemas/plan-record.schema.json",
+    ".github/workflow/schemas/execution-record.schema.json",
+    ".github/workflow/schemas/verification-record.schema.json",
+    ".github/workflow/schemas/review-record.schema.json",
+    ".github/workflow/schemas/event.schema.json",
+    ".github/workflow/validators/check-setup",
+    ".github/workflow/validators/check-plan",
+    ".github/workflow/validators/check-execution",
+    ".github/workflow/validators/check-verification",
+    ".github/tasks/README.md",
+    ".github/tasks/.gitkeep",
+    ".github/examples/tasks/TASK-001/plan.json",
+    ".github/examples/tasks/TASK-001/execution.json",
+    ".github/examples/tasks/TASK-001/verification.json",
+    ".github/examples/tasks/TASK-001/review.json",
+]
+
+SKILLS = [
+    "graph-context",
+    "task-planning",
+    "bounded-execution",
+    "verification-review",
+    "workflow-evaluation",
+]
+
+
+def load_json(path):
+    with path.open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def fail(message):
+    print(f"check-setup: FAIL: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def require(condition, message):
+    if not condition:
+        fail(message)
+
+
+for rel in REQUIRED_PATHS:
+    if not (ROOT / rel).exists():
+        fail(f"missing required path: {rel}")
+
+for rel in REQUIRED_PATHS:
+    if rel.endswith(".json"):
+        try:
+            load_json(ROOT / rel)
+        except json.JSONDecodeError as exc:
+            fail(f"invalid JSON in {rel}: {exc}")
+
+for skill in SKILLS:
+    skill_path = ROOT / ".github" / "skills" / skill / "SKILL.md"
+    if not skill_path.exists():
+        fail(f"missing required skill: {skill}")
+
+config = load_json(ROOT / ".github/workflow/config.json")
+require(config.get("schema_version") == "config.schema.v1", "config.json has wrong schema_version")
+require(config.get("commands") == ["/setup", "/plan", "/execute", "/verify"], "config.json must expose exactly /setup, /plan, /execute, /verify")
+require(config.get("maintainer_commands") == ["/evaluate"], "config.json must keep /evaluate maintainer-only")
+require(config.get("skills") == SKILLS, "config.json must list exactly the five v1 skills")
+require(config.get("safe_default_required") is True, "config.json must require Safe Default Mode")
+
+managed = config.get("managed_agents_block", {})
+require(managed.get("begin_marker") == "<!-- BEGIN COPILOT WORKFLOW V1 -->", "managed AGENTS block begin marker is missing")
+require(managed.get("end_marker") == "<!-- END COPILOT WORKFLOW V1 -->", "managed AGENTS block end marker is missing")
+require(managed.get("overwrite_existing_team_instructions") is False, "setup must not overwrite existing team AGENTS instructions")
+
+graph_policy = config.get("graph_policy", {})
+require(graph_policy.get("degraded_mode_requires_human_approval") is True, "degraded graph mode must require human approval")
+require(graph_policy.get("regeneration_requires_human_approval") is True, "graph regeneration must require human approval")
+require(graph_policy.get("setup_may_silently_regenerate") is False, "setup must not silently regenerate graph output")
+
+hooks = load_json(ROOT / ".github/hooks/workflow-hooks.json")
+required_events = ["sessionStart", "userPromptSubmitted", "preToolUse", "postToolUse", "agentStop"]
+require(sorted(hooks.get("events", {}).keys()) == sorted(required_events), "workflow-hooks.json must define only the five v1 hook events")
+
+graph = load_json(ROOT / ".github/workflow/graph-record.json")
+require(graph.get("schema_version") == "graph-record.schema.v1", "graph-record.json has wrong schema_version")
+require(graph.get("freshness") in {"missing", "stale", "unknown", "fresh"}, "graph-record.json has invalid freshness")
+require(graph.get("graph_output_path") == "graphify-out/", "graph-record.json must point to graphify-out/")
+if graph.get("freshness") != "fresh":
+    approval = graph.get("degraded_mode_approval")
+    if approval is not None:
+        require(approval.get("approved") is True, "degraded graph approval must be explicit when present")
+        require(bool(approval.get("approved_by")), "degraded graph approval must record approved_by")
+
+yaml_files = list((ROOT / ".github").glob("**/*.yaml")) + list((ROOT / ".github").glob("**/*.yml"))
+if yaml_files:
+    fail("required v1 path must not contain YAML files")
+
+for validator in (ROOT / ".github/workflow/validators").iterdir():
+    if validator.is_file():
+        text = validator.read_text(encoding="utf-8")
+        forbidden_imports = [
+            ("import", "yaml"),
+            ("from", "yaml"),
+            ("import", "jsonschema"),
+            ("from", "jsonschema"),
+        ]
+        for left, right in forbidden_imports:
+            forbidden = f"{left} {right}"
+            require(forbidden not in text, f"validator {validator.name} uses forbidden dependency: {forbidden}")
+
+print("check-setup: ok")

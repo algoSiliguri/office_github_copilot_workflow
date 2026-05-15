@@ -1,0 +1,30 @@
+{
+  "schema_version": "plan-record.schema.v1",
+  "task_id": "TASK-001",
+  "phase": "plan",
+  "status": "EXECUTION_READY",
+  "summary": "Example low-risk documentation update.",
+  "intended_files": ["README.md"],
+  "risk": "low",
+  "verification_command": "python3 .github/workflow/validators/check-setup",
+  "graph_freshness_mode": "degraded-approved",
+  "graph_refs": ["graph-record:freshness:missing"],
+  "context_refs": ["README.md"],
+  "quick_task_classification": {
+    "is_quick_task": true,
+    "reason": "Single documentation file with low behavioral risk."
+  },
+  "diagnosis": null,
+  "planning": {
+    "source": "/plan",
+    "decision": "Execution-ready because the fixture is a bounded documentation example.",
+    "diagnosis_required": false
+  },
+  "assumptions": ["Example artifact only."],
+  "deviations": [],
+  "human_approval": {
+    "approved": true,
+    "approved_by": "example-human",
+    "approved_at": "2026-05-15T00:00:00Z"
+  }
+}

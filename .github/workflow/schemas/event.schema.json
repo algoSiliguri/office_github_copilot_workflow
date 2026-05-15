@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event.schema.v1",
+  "type": "object",
+  "required": ["schema_version", "event_id", "timestamp", "task_id", "session_id", "category", "phase", "source", "summary", "refs", "sensitivity", "redaction"],
+  "properties": {
+    "schema_version": { "const": "event.schema.v1" },
+    "event_id": { "type": "string" },
+    "timestamp": { "type": "string" },
+    "task_id": { "type": "string" },
+    "session_id": { "type": ["string", "null"] },
+    "category": {
+      "enum": [
+        "session.started",
+        "session.ended",
+        "command.invoked",
+        "skill.selected",
+        "graph.context_used",
+        "plan.step_started",
+        "plan.step_completed",
+        "tool.requested",
+        "tool.approved",
+        "tool.denied",
+        "shell.command_run",
+        "file.modified",
+        "verification.command_run",
+        "verification.result",
+        "human.approval_requested",
+        "human.approval_recorded",
+        "assumption.recorded",
+        "deviation.recorded",
+        "review.finding",
+        "evaluation.finding",
+        "error.occurred"
+      ]
+    },
+    "phase": { "enum": ["setup", "plan", "execute", "verify", "evaluate"] },
+    "source": { "enum": ["hook", "command", "validator", "human"] },
+    "summary": { "type": "string" },
+    "refs": {
+      "type": "object",
+      "required": ["artifact_paths", "file_paths", "graph_refs", "command_refs"],
+      "properties": {
+        "artifact_paths": { "type": "array", "items": { "type": "string" } },
+        "file_paths": { "type": "array", "items": { "type": "string" } },
+        "graph_refs": { "type": "array", "items": { "type": "string" } },
+        "command_refs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "sensitivity": { "enum": ["public", "internal", "sensitive"] },
+    "redaction": {
+      "type": "object",
+      "required": ["applied", "reason"],
+      "properties": {
+        "applied": { "type": "boolean" },
+        "reason": { "type": "string" }
+      }
+    }
+  }
+}

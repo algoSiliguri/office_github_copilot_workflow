@@ -1,0 +1,20 @@
+{
+  "schema_version": "config.schema.v1",
+  "workflow_version": "v1",
+  "safe_default_required": true,
+  "commands": ["/setup", "/plan", "/execute", "/verify"],
+  "maintainer_commands": ["/evaluate"],
+  "skills": [
+    "graph-context",
+    "task-planning",
+    "bounded-execution",
+    "verification-review",
+    "workflow-evaluation"
+  ],
+  "agent": ".github/agents/workflow-orchestrator.agent.md",
+  "artifacts": {
+    "graph_record": ".github/workflow/graph-record.json",
+    "tasks_dir": ".github/tasks",
+    "examples_dir": ".github/examples/tasks"
+  }
+}

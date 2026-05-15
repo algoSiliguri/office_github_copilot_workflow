@@ -1,0 +1,11 @@
+{
+  "schema_version": "hooks.schema.v1",
+  "mode": "enhanced-local-optional",
+  "events": {
+    "sessionStart": ".github/hooks/scripts/log-event.py",
+    "userPromptSubmitted": ".github/hooks/scripts/log-event.py",
+    "preToolUse": ".github/hooks/scripts/pre-tool-use.py",
+    "postToolUse": ".github/hooks/scripts/post-tool-use.py",
+    "agentStop": ".github/hooks/scripts/agent-stop.py"
+  }
+}

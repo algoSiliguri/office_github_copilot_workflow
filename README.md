@@ -1,55 +1,58 @@
-# GitHub Copilot Workflow Bundle
+# GitHub Copilot CLI Workflow Bundle
 
-Portable `.github` workflow bundle for GitHub Copilot Chat and Copilot CLI.
+Fresh v1 repo-local orchestration bundle for GitHub Copilot CLI.
 
-This repository is intentionally small: the canonical product is the `.github/` folder. Everything important for installation, workflow behavior, architecture, and daily usage lives there.
+The v1 foundation is not plugin-first. It is a portable `.github` layer that can be copied into normal repositories and used on managed office laptops without plugin installation, MCP, LSP, admin privileges, YAML parsers, or third-party validator dependencies.
 
-## Start Here
+## Core Path
 
-1. Copy this repository's `.github/` folder into a target repository.
-2. Read `.github/copilot-instructions.md`.
-3. Read `.github/docs/INSTALL.md`.
-4. Run `/setup-workflow` in Copilot Chat.
-
-## Core Workflow
-
-Full path:
-
-`/setup-workflow -> /grill -> [/legacy-explore] -> /write-plan -> [/context-packet] -> /execute-plan -> /verify -> /review`
-
-Fast path:
-
-`/setup-workflow -> /quick-task`
-
-## What Is Canonical
-
-- `.github/copilot-instructions.md` defines the top-level workflow rules Copilot should follow.
-- `.github/prompts/` exposes the slash-command surface.
-- `.github/agents/` contains the command behavior.
-- `.github/ai-workflow/manifest.yaml` is the machine-readable workflow graph.
-- `.github/ai-workflow/contracts/`, `schemas/`, `policies/`, and `validators/` enforce behavior.
-- `.github/docs/` contains the human docs you should actually read.
-
-## Essential Docs
-
-- `.github/docs/INSTALL.md` — install and upgrade the bundle
-- `.github/docs/USAGE.md` — practical developer usage
-- `.github/docs/ARCHITECTURE.md` — how the system is structured
-- `.github/docs/CHEAT-SHEET.md` — quick command and workflow reference
-
-## Validation
-
-Run from the target repository root:
-
-```bash
-python3 .github/ai-workflow/validators/bootstrap
-python3 .github/ai-workflow/validators/validate-manifest
-python3 .github/ai-workflow/validators/validate-config .github/workflow/config.yaml
+```text
+/setup -> /plan -> /execute -> /verify
 ```
 
-## Constraints
+`/evaluate` is maintainer-only for workflow improvement. `/quick-task` is not a user-facing command; it is a classification inside `/plan`.
 
-- Treat `.github/` as the only canonical workflow implementation.
-- Treat `manifest.yaml`, schemas, and validators as governance files.
-- Put repo-specific values only in `.github/workflow/config.yaml`.
-- Never claim work is verified without real command output.
+## What Is Authoritative
+
+- `AGENTS.md` and `.github/copilot-instructions.md`: always-on behavior
+- `.github/agents/workflow-orchestrator.agent.md`: routing, phase boundaries, context compaction
+- `.github/skills/<skill>/SKILL.md`: compact task-specific behavior
+- `.github/workflow/*.json`: required JSON config and graph metadata
+- `.github/workflow/schemas/*.json`: artifact contracts
+- `.github/workflow/validators/*`: standard-library-only validation
+- `.github/tasks/`: live task artifacts
+- `.github/examples/tasks/`: committed examples and fixtures
+
+Docs explain the system but do not govern it.
+
+## V1 Skills
+
+1. `graph-context`
+2. `task-planning`
+3. `bounded-execution`
+4. `verification-review`
+5. `workflow-evaluation`
+
+## Safe Default Validation
+
+Run from the repository root:
+
+```bash
+python3 .github/workflow/validators/check-setup
+python3 .github/workflow/validators/check-plan .github/examples/tasks/TASK-001/plan.json
+python3 .github/workflow/validators/check-execution .github/examples/tasks/TASK-001/execution.json
+python3 .github/workflow/validators/check-verification .github/examples/tasks/TASK-001/verification.json .github/examples/tasks/TASK-001/review.json
+```
+
+Or run:
+
+```bash
+bash release-check.sh
+```
+
+## Operating Modes
+
+- **Safe Default Mode:** repo-local files, Copilot CLI instructions, five skills, one orchestrator agent, JSON artifacts, graph metadata, stdlib validators, and human gates.
+- **Enhanced Local Mode:** Safe Default plus optional hooks and local scripts.
+- **Enterprise-Approved Mode:** post-v1 organization-approved plugin, MCP, LSP, or policy-managed installs.
+- **Future Plugin Mode:** post-v1 packaging of the same repo-local bundle after install/update/audit behavior is proven.

@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+
+def fail(message):
+    print(f"check-plan: FAIL: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+if len(sys.argv) != 2:
+    fail("usage: check-plan PATH")
+
+path = Path(sys.argv[1])
+with path.open(encoding="utf-8") as handle:
+    record = json.load(handle)
+
+required = [
+    "schema_version",
+    "task_id",
+    "phase",
+    "status",
+    "intended_files",
+    "risk",
+    "verification_command",
+    "graph_freshness_mode",
+    "graph_refs",
+    "human_approval",
+]
+missing = [key for key in required if key not in record]
+if missing:
+    fail(f"missing required fields: {', '.join(missing)}")
+if record["schema_version"] != "plan-record.schema.v1":
+    fail("wrong schema_version")
+if record["phase"] != "plan":
+    fail("phase must be plan")
+if record["status"] not in {"EXECUTION_READY", "DIAGNOSIS_REQUIRED", "BLOCKED"}:
+    fail("invalid status")
+if not isinstance(record["intended_files"], list) or not record["intended_files"]:
+    fail("intended_files must be a non-empty list")
+if record["risk"] not in {"low", "medium", "high"}:
+    fail("invalid risk")
+if not record["verification_command"]:
+    fail("verification_command is required")
+if record["graph_freshness_mode"] not in {"fresh", "degraded-approved"}:
+    fail("invalid graph_freshness_mode")
+if record["graph_freshness_mode"] == "degraded-approved" and not record.get("human_approval", {}).get("approved"):
+    fail("degraded graph mode requires human approval")
+quick = record.get("quick_task_classification")
+if quick and not record.get("human_approval", {}).get("approved"):
+    fail("quick task classification requires human approval")
+
+print("check-plan: ok")

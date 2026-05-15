@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "graph-record.schema.v1",
+  "type": "object",
+  "required": ["schema_version", "graph_output_path", "freshness"],
+  "properties": {
+    "schema_version": { "const": "graph-record.schema.v1" },
+    "graph_output_path": { "type": "string" },
+    "freshness": { "enum": ["missing", "stale", "unknown", "fresh"] },
+    "branch": { "type": ["string", "null"] },
+    "commit": { "type": ["string", "null"] },
+    "source_hash": { "type": ["string", "null"] },
+    "generated_at": { "type": ["string", "null"] },
+    "degraded_mode_approval": { "type": ["object", "null"] },
+    "notes": { "type": "string" }
+  }
+}

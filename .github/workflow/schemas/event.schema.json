@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event.schema.v1",
+  "type": "object",
+  "required": ["schema_version", "event_id", "timestamp", "task_id", "session_id", "category", "phase", "source", "summary", "refs", "sensitivity", "redaction"],
+  "properties": {
+    "schema_version": { "const": "event.schema.v1" },
+    "event_id": { "type": "string" },
+    "timestamp": { "type": "string" },
+    "task_id": { "type": "string" },
+    "session_id": { "type": ["string", "null"] },
+    "category": { "type": "string" },
+    "phase": { "enum": ["setup", "plan", "execute", "verify", "evaluate"] },
+    "source": { "enum": ["hook", "command", "validator", "human"] },
+    "summary": { "type": "string" },
+    "refs": { "type": "object" },
+    "sensitivity": { "enum": ["public", "internal", "sensitive"] },
+    "redaction": { "type": "object" }
+  }
+}

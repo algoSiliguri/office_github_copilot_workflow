@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+
+def fail(message):
+    print(f"check-verification: FAIL: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+if len(sys.argv) != 3:
+    fail("usage: check-verification VERIFICATION_PATH REVIEW_PATH")
+
+with Path(sys.argv[1]).open(encoding="utf-8") as handle:
+    verification = json.load(handle)
+with Path(sys.argv[2]).open(encoding="utf-8") as handle:
+    review = json.load(handle)
+
+for key in [
+    "schema_version",
+    "task_id",
+    "phase",
+    "plan_ref",
+    "execution_ref",
+    "verification_command",
+    "result",
+    "evidence_summary",
+    "degraded_verification",
+]:
+    if key not in verification:
+        fail(f"verification missing required field: {key}")
+if verification["schema_version"] != "verification-record.schema.v1":
+    fail("verification has wrong schema_version")
+if verification["phase"] != "verify":
+    fail("verification phase must be verify")
+if verification["result"] not in {"passed", "failed", "not_run"}:
+    fail("invalid verification result")
+if not verification["verification_command"]:
+    fail("verification_command is required")
+if verification["result"] == "not_run" and not verification["degraded_verification"].get("acknowledged_by"):
+    fail("degraded verification requires acknowledgement")
+
+for key in [
+    "schema_version",
+    "task_id",
+    "phase",
+    "approved_files",
+    "actual_files",
+    "scope_drift",
+    "findings",
+    "human_approval",
+]:
+    if key not in review:
+        fail(f"review missing required field: {key}")
+if review["schema_version"] != "review-record.schema.v1":
+    fail("review has wrong schema_version")
+if review["phase"] != "review":
+    fail("review phase must be review")
+if set(review["actual_files"]) - set(review["approved_files"]) and not review["scope_drift"]:
+    fail("scope drift must be recorded")
+if not review["human_approval"].get("approved"):
+    fail("review requires human approval")
+
+print("check-verification: ok")

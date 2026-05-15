@@ -1,0 +1,17 @@
+{
+  "schema_version": "execution-record.schema.v1",
+  "task_id": "TASK-001",
+  "phase": "execute",
+  "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
+  "approved_files": ["README.md"],
+  "modified_files": ["README.md"],
+  "status": "completed",
+  "command_refs": [],
+  "checkpoints": [
+    {
+      "step": "Updated README example text.",
+      "status": "completed"
+    }
+  ],
+  "deviations": []
+}

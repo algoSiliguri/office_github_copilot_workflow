@@ -1,0 +1,18 @@
+{
+  "schema_version": "orchestration.schema.v1",
+  "phase_order": ["setup", "plan", "execute", "verify"],
+  "human_gates": [
+    "approve_plan",
+    "approve_risky_tool_use",
+    "approve_verification_review"
+  ],
+  "conditional_maintainer_gates": ["approve_workflow_improvement"],
+  "safe_default_mode": {
+    "requires_plugins": false,
+    "requires_mcp": false,
+    "requires_lsp": false,
+    "requires_hooks": false,
+    "requires_admin": false,
+    "requires_third_party_python": false
+  }
+}

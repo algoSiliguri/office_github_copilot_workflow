@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path.cwd()
+
+REQUIRED_PATHS = [
+    "AGENTS.md",
+    ".github/copilot-instructions.md",
+    ".github/instructions/workflow.instructions.md",
+    ".github/agents/workflow-orchestrator.agent.md",
+    ".github/workflow/config.json",
+    ".github/workflow/orchestration.json",
+    ".github/workflow/graph-record.json",
+    ".github/workflow/schemas/graph-record.schema.json",
+    ".github/workflow/schemas/plan-record.schema.json",
+    ".github/workflow/schemas/execution-record.schema.json",
+    ".github/workflow/schemas/verification-record.schema.json",
+    ".github/workflow/schemas/review-record.schema.json",
+    ".github/workflow/schemas/event.schema.json",
+    ".github/workflow/validators/check-setup",
+    ".github/workflow/validators/check-plan",
+    ".github/workflow/validators/check-execution",
+    ".github/workflow/validators/check-verification",
+    ".github/tasks/README.md",
+    ".github/tasks/.gitkeep",
+    ".github/examples/tasks/TASK-001/plan.json",
+    ".github/examples/tasks/TASK-001/execution.json",
+    ".github/examples/tasks/TASK-001/verification.json",
+    ".github/examples/tasks/TASK-001/review.json",
+]
+
+SKILLS = [
+    "graph-context",
+    "task-planning",
+    "bounded-execution",
+    "verification-review",
+    "workflow-evaluation",
+]
+
+
+def load_json(path):
+    with path.open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def fail(message):
+    print(f"check-setup: FAIL: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+for rel in REQUIRED_PATHS:
+    if not (ROOT / rel).exists():
+        fail(f"missing required path: {rel}")
+
+for rel in REQUIRED_PATHS:
+    if rel.endswith(".json"):
+        try:
+            load_json(ROOT / rel)
+        except json.JSONDecodeError as exc:
+            fail(f"invalid JSON in {rel}: {exc}")
+
+for skill in SKILLS:
+    skill_path = ROOT / ".github" / "skills" / skill / "SKILL.md"
+    if not skill_path.exists():
+        fail(f"missing required skill: {skill}")
+
+config = load_json(ROOT / ".github/workflow/config.json")
+if config.get("schema_version") != "config.schema.v1":
+    fail("config.json has wrong schema_version")
+if config.get("commands") != ["/setup", "/plan", "/execute", "/verify"]:
+    fail("config.json must expose exactly /setup, /plan, /execute, /verify")
+if config.get("maintainer_commands") != ["/evaluate"]:
+    fail("config.json must keep /evaluate maintainer-only")
+if config.get("skills") != SKILLS:
+    fail("config.json must list exactly the five v1 skills")
+
+graph = load_json(ROOT / ".github/workflow/graph-record.json")
+if graph.get("schema_version") != "graph-record.schema.v1":
+    fail("graph-record.json has wrong schema_version")
+if graph.get("freshness") not in {"missing", "stale", "unknown", "fresh"}:
+    fail("graph-record.json has invalid freshness")
+
+yaml_files = list((ROOT / ".github").glob("**/*.yaml")) + list((ROOT / ".github").glob("**/*.yml"))
+if yaml_files:
+    fail("required v1 path must not contain YAML files")
+
+print("check-setup: ok")

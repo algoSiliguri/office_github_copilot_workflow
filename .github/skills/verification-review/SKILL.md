@@ -17,6 +17,7 @@ Prove task results with real checks and review before human acceptance.
 - Create VerificationRecord with command refs, result, and short safe evidence summaries.
 - Create ReviewRecord comparing approved files to actual changed files.
 - Record graph refs used, but do not use graph data as correctness evidence.
+- Treat tests, checks, diff scope, and human review as authoritative.
 - Require human approval for final result, scope drift, degraded verification, and remaining assumptions or deviations.
 
 ## Must Not

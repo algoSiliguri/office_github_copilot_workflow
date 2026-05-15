@@ -1,0 +1,27 @@
+{
+  "schema_version": "plan-record.schema.v1",
+  "task_id": "TASK-NEG-001",
+  "phase": "plan",
+  "status": "EXECUTION_READY",
+  "summary": "Invalid stale graph planning without approval.",
+  "intended_files": ["README.md"],
+  "risk": "low",
+  "verification_command": "python3 .github/workflow/validators/check-setup",
+  "graph_freshness_mode": "degraded-approved",
+  "graph_refs": ["graph-record:freshness:stale"],
+  "context_refs": ["README.md"],
+  "quick_task_classification": null,
+  "diagnosis": null,
+  "planning": {
+    "source": "/plan",
+    "decision": "Invalid fixture.",
+    "diagnosis_required": false
+  },
+  "assumptions": [],
+  "deviations": [],
+  "human_approval": {
+    "approved": false,
+    "approved_by": null,
+    "approved_at": null
+  }
+}

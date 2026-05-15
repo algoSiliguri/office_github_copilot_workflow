@@ -15,8 +15,10 @@ Carry out only the approved PlanRecord and record what actually changed.
 
 - Read the approved PlanRecord first.
 - Edit only files listed in the approved intended file scope.
+- Follow the approved `graph_refs[]` from the plan as context pointers; do not broaden context without recording why.
 - Record actual modified files, command refs, checkpoints, and deviations in ExecutionRecord.
-- Request approval for any write outside scope or any risky tool use.
+- Request approval for writes outside scope, destructive shell, network commands, dependency installation, graph regeneration, workflow governance edits, or secret access.
+- Record each risky tool approval or denial in ExecutionRecord.
 
 ## Must Not
 

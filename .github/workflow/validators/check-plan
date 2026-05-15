@@ -9,6 +9,11 @@ def fail(message):
     sys.exit(1)
 
 
+def require(condition, message):
+    if not condition:
+        fail(message)
+
+
 if len(sys.argv) != 2:
     fail("usage: check-plan PATH")
 
@@ -21,34 +26,54 @@ required = [
     "task_id",
     "phase",
     "status",
+    "summary",
     "intended_files",
     "risk",
     "verification_command",
     "graph_freshness_mode",
     "graph_refs",
+    "context_refs",
+    "assumptions",
+    "deviations",
+    "planning",
+    "diagnosis",
+    "quick_task_classification",
     "human_approval",
 ]
 missing = [key for key in required if key not in record]
 if missing:
     fail(f"missing required fields: {', '.join(missing)}")
-if record["schema_version"] != "plan-record.schema.v1":
-    fail("wrong schema_version")
-if record["phase"] != "plan":
-    fail("phase must be plan")
-if record["status"] not in {"EXECUTION_READY", "DIAGNOSIS_REQUIRED", "BLOCKED"}:
-    fail("invalid status")
-if not isinstance(record["intended_files"], list) or not record["intended_files"]:
-    fail("intended_files must be a non-empty list")
-if record["risk"] not in {"low", "medium", "high"}:
-    fail("invalid risk")
-if not record["verification_command"]:
-    fail("verification_command is required")
-if record["graph_freshness_mode"] not in {"fresh", "degraded-approved"}:
-    fail("invalid graph_freshness_mode")
+require(record["schema_version"] == "plan-record.schema.v1", "wrong schema_version")
+require(record["phase"] == "plan", "phase must be plan")
+require(record["status"] in {"EXECUTION_READY", "DIAGNOSIS_REQUIRED", "BLOCKED"}, "invalid status")
+require(isinstance(record["intended_files"], list) and bool(record["intended_files"]), "intended_files must be a non-empty list")
+require(record["risk"] in {"low", "medium", "high"}, "invalid risk")
+require(bool(record["verification_command"]), "verification_command is required")
+require(record["graph_freshness_mode"] in {"fresh", "degraded-approved"}, "invalid graph_freshness_mode")
+require(isinstance(record["graph_refs"], list), "graph_refs must be a list")
+require(isinstance(record["context_refs"], list), "context_refs must be a list")
+require(isinstance(record["assumptions"], list), "assumptions must be a list")
+require(isinstance(record["deviations"], list), "deviations must be a list")
 if record["graph_freshness_mode"] == "degraded-approved" and not record.get("human_approval", {}).get("approved"):
     fail("degraded graph mode requires human approval")
 quick = record.get("quick_task_classification")
-if quick and not record.get("human_approval", {}).get("approved"):
-    fail("quick task classification requires human approval")
+if quick:
+    require(quick.get("is_quick_task") in {True, False}, "quick_task_classification must declare is_quick_task")
+    require(record.get("human_approval", {}).get("approved"), "quick task classification requires human approval")
+
+if record["status"] == "DIAGNOSIS_REQUIRED":
+    diagnosis = record.get("diagnosis") or {}
+    for key in ["root_cause", "evidence", "affected_files", "verification_strategy"]:
+        require(key in diagnosis, f"DIAGNOSIS_REQUIRED missing diagnosis.{key}")
+    require(diagnosis.get("ready_for_execution") is False, "DIAGNOSIS_REQUIRED must not be execution-ready")
+
+if record["status"] == "EXECUTION_READY":
+    require(record.get("human_approval", {}).get("approved"), "execution-ready plan requires human approval")
+    diagnosis = record.get("diagnosis")
+    if diagnosis:
+        require(bool(diagnosis.get("root_cause")), "execution-ready diagnosis must include root_cause")
+        require(bool(diagnosis.get("evidence")), "execution-ready diagnosis must include evidence")
+        require(bool(diagnosis.get("affected_files")), "execution-ready diagnosis must include affected_files")
+        require(bool(diagnosis.get("verification_strategy")), "execution-ready diagnosis must include verification_strategy")
 
 print("check-plan: ok")

@@ -5,6 +5,7 @@
   "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
   "execution_ref": ".github/examples/tasks/TASK-001/execution.json",
   "verification_command": "python3 .github/workflow/validators/check-setup",
+  "command_refs": ["cmd:check-setup"],
   "result": "passed",
   "evidence_summary": "Example fixture assumes setup validator passed.",
   "graph_refs": ["graph-record:freshness:missing"],

@@ -14,8 +14,10 @@ Evaluate workflow failures and improvement candidates from structured artifacts 
 ## Instructions
 
 - Read GraphRecord, PlanRecord, ExecutionRecord, VerificationRecord, ReviewRecord, and redacted event summaries before raw session data.
-- Produce improvement candidates with evidence refs, proposed governance changes, risk, rollback, and required approval.
+- Produce evaluation reports outside the normal task artifact path.
+- Produce improvement candidates with evidence refs, proposed governance-file changes, risk, rollback, and required maintainer approval.
 - Keep evaluation outside the normal task path.
+- Require maintainer approval before changing instructions, skills, hooks, schemas, validators, policies, command definitions, or other governance files.
 
 ## Must Not
 

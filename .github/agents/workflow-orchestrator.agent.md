@@ -24,6 +24,14 @@ Thin repo custom agent for Copilot CLI workflow routing.
 
 Use read/search by default. Shell and writes require the active phase contract and human approval when risky. Package installation, network fetches, graph regeneration, broad deletion, git push, and workflow governance edits are never autonomous.
 
+## Phase Routing
+
+- `/setup`: load `graph-context` only when graph metadata is being inspected or updated. Validate with `python3 .github/workflow/validators/check-setup`.
+- `/plan`: load `task-planning`; load `graph-context` only to select compact `graph_refs[]`.
+- `/execute`: load `bounded-execution` and follow only the approved PlanRecord.
+- `/verify`: load `verification-review` and require both VerificationRecord and ReviewRecord.
+- `/evaluate`: load `workflow-evaluation` only for maintainers and never as part of normal task closeout.
+
 ## Context Rule
 
 When session context exceeds roughly 40 percent, stop expanding raw context and switch to compact artifacts: PlanRecord, selected `graph_refs[]`, ExecutionRecord, VerificationRecord, ReviewRecord, and redacted event summaries.

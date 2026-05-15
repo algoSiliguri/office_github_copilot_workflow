@@ -9,12 +9,19 @@
   "verification_command": "python3 .github/workflow/validators/check-setup",
   "graph_freshness_mode": "degraded-approved",
   "graph_refs": ["graph-record:freshness:missing"],
+  "context_refs": ["README.md"],
   "quick_task_classification": {
     "is_quick_task": true,
     "reason": "Single documentation file with low behavioral risk."
   },
   "diagnosis": null,
+  "planning": {
+    "source": "/plan",
+    "decision": "Execution-ready because the fixture is a bounded documentation example.",
+    "diagnosis_required": false
+  },
   "assumptions": ["Example artifact only."],
+  "deviations": [],
   "human_approval": {
     "approved": true,
     "approved_by": "example-human",

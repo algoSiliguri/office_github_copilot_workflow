@@ -1,16 +1,16 @@
 {
   "schema_version": "execution-record.schema.v1",
-  "task_id": "TASK-001",
+  "task_id": "TASK-NEG-004",
   "phase": "execute",
   "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
   "approved_files": ["README.md"],
-  "modified_files": ["README.md"],
+  "modified_files": ["README.md", ".github/workflow/config.json"],
   "status": "completed",
-  "graph_refs": ["graph-record:freshness:missing"],
-  "command_refs": ["cmd:check-setup"],
+  "graph_refs": ["graph:file:README.md"],
+  "command_refs": ["cmd:edit"],
   "checkpoints": [
     {
-      "step": "Updated README example text.",
+      "step": "Invalid out-of-scope edit.",
       "status": "completed"
     }
   ],

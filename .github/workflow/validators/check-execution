@@ -9,6 +9,11 @@ def fail(message):
     sys.exit(1)
 
 
+def require(condition, message):
+    if not condition:
+        fail(message)
+
+
 if len(sys.argv) != 2:
     fail("usage: check-execution PATH")
 
@@ -24,22 +29,39 @@ required = [
     "approved_files",
     "modified_files",
     "status",
+    "graph_refs",
+    "command_refs",
+    "checkpoints",
+    "risky_tool_approvals",
     "deviations",
 ]
 missing = [key for key in required if key not in record]
 if missing:
     fail(f"missing required fields: {', '.join(missing)}")
-if record["schema_version"] != "execution-record.schema.v1":
-    fail("wrong schema_version")
-if record["phase"] != "execute":
-    fail("phase must be execute")
-if record["status"] not in {"completed", "blocked", "failed"}:
-    fail("invalid status")
+require(record["schema_version"] == "execution-record.schema.v1", "wrong schema_version")
+require(record["phase"] == "execute", "phase must be execute")
+require(record["status"] in {"completed", "blocked", "failed"}, "invalid status")
+require(isinstance(record["approved_files"], list) and bool(record["approved_files"]), "approved_files must be a non-empty list")
+require(isinstance(record["modified_files"], list), "modified_files must be a list")
+require(isinstance(record["graph_refs"], list), "graph_refs must be a list")
+require(isinstance(record["command_refs"], list), "command_refs must be a list")
+require(isinstance(record["checkpoints"], list) and bool(record["checkpoints"]), "checkpoints must be a non-empty list")
+require(isinstance(record["risky_tool_approvals"], list), "risky_tool_approvals must be a list")
 
 approved = set(record["approved_files"])
 modified = set(record["modified_files"])
 out_of_scope = sorted(modified - approved)
-if out_of_scope and not record["deviations"]:
-    fail(f"out-of-scope modifications require deviations: {', '.join(out_of_scope)}")
+if out_of_scope:
+    deviations = record["deviations"]
+    require(deviations, f"out-of-scope modifications require deviations: {', '.join(out_of_scope)}")
+    approved_drift = [
+        item for item in deviations
+        if item.get("type") == "out_of_scope_file" and item.get("approved") is True
+    ]
+    require(approved_drift, "out-of-scope modifications require explicit approved deviation")
+
+for approval in record["risky_tool_approvals"]:
+    require(approval.get("decision") in {"approved", "denied"}, "risky tool approval must record approved or denied")
+    require(bool(approval.get("category")), "risky tool approval must include category")
 
 print("check-execution: ok")

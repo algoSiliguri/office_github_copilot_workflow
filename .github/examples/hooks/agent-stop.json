@@ -1,0 +1,9 @@
+{
+  "task_id": "TASK-HOOK",
+  "phase": "verify",
+  "artifact_status": "plan, execution, verification, and review present",
+  "verification_status": "passed",
+  "unresolved_assumptions": [],
+  "unresolved_deviations": [],
+  "next_human_decision": "approve_verification_review"
+}

@@ -17,9 +17,12 @@ Connect graphify output to workflow artifacts without loading the whole graph in
 - Treat `graphify-out/` as generated graph output.
 - Treat `.github/workflow/graph-record.json` as orchestration metadata.
 - Select only relevant `graph_refs[]` for a task.
+- Prefer graph refs that identify a bounded module, file, community, symbol, or relationship needed by the current plan.
+- Use compact refs such as `graph:file:src/app.py`, `graph:module:auth`, `graph:community:payment-flow`, or `graph:edge:controller->service`.
 - Store task-scoped refs in PlanRecord.
 - Record freshness as `missing`, `stale`, `unknown`, or `fresh`.
 - Require degraded-mode approval before normal planning when freshness is not `fresh`.
+- When files change, mark graph freshness as potentially stale; do not regenerate without approval.
 
 ## Must Not
 

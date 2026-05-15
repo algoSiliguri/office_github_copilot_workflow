@@ -19,6 +19,8 @@ Produce an execution-ready PlanRecord or explicitly stop at `DIAGNOSIS_REQUIRED`
 - If the bug is unclear, set planning status to `DIAGNOSIS_REQUIRED`.
 - Do not produce an execution-ready plan until root cause, evidence, affected files, and verification strategy are explicit.
 - Represent quick tasks as `quick_task_classification` inside PlanRecord.
+- Quick tasks still require intended files, risk, verification command, graph freshness mode, and human approval before edits.
+- Record assumptions, deviations, planning notes, context refs, and diagnosis evidence inside PlanRecord.
 - Require human approval before `/execute`.
 
 ## Must Not

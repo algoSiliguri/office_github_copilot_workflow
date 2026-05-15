@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "graph-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "graph_output_path", "freshness"],
+  "required": ["schema_version", "graph_output_path", "freshness", "branch", "commit", "source_hash", "generated_at", "degraded_mode_approval", "notes"],
   "properties": {
     "schema_version": { "const": "graph-record.schema.v1" },
     "graph_output_path": { "type": "string" },
@@ -11,7 +11,24 @@
     "commit": { "type": ["string", "null"] },
     "source_hash": { "type": ["string", "null"] },
     "generated_at": { "type": ["string", "null"] },
-    "degraded_mode_approval": { "type": ["object", "null"] },
+    "degraded_mode_approval": {
+      "type": ["object", "null"],
+      "properties": {
+        "approved": { "type": "boolean" },
+        "approved_by": { "type": ["string", "null"] },
+        "approved_at": { "type": ["string", "null"] },
+        "reason": { "type": "string" }
+      }
+    },
+    "freshness_evidence": {
+      "type": "object",
+      "properties": {
+        "graphify_output_present": { "type": "boolean" },
+        "metadata_matches_current_branch": { "type": ["boolean", "null"] },
+        "metadata_matches_current_commit": { "type": ["boolean", "null"] },
+        "metadata_matches_source_hash": { "type": ["boolean", "null"] }
+      }
+    },
     "notes": { "type": "string" }
   }
 }

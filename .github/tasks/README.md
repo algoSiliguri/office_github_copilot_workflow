@@ -11,3 +11,6 @@ Required task files:
 - `logs/events.jsonl` local-only and gitignored by default
 
 Committed examples live under `.github/examples/tasks/`.
+
+Do not commit real task logs. Commit only deliberate, redacted examples under
+`.github/examples/tasks/`.

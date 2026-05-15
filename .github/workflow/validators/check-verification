@@ -9,6 +9,11 @@ def fail(message):
     sys.exit(1)
 
 
+def require(condition, message):
+    if not condition:
+        fail(message)
+
+
 if len(sys.argv) != 3:
     fail("usage: check-verification VERIFICATION_PATH REVIEW_PATH")
 
@@ -24,22 +29,22 @@ for key in [
     "plan_ref",
     "execution_ref",
     "verification_command",
+    "command_refs",
     "result",
     "evidence_summary",
+    "graph_refs",
     "degraded_verification",
 ]:
     if key not in verification:
         fail(f"verification missing required field: {key}")
-if verification["schema_version"] != "verification-record.schema.v1":
-    fail("verification has wrong schema_version")
-if verification["phase"] != "verify":
-    fail("verification phase must be verify")
-if verification["result"] not in {"passed", "failed", "not_run"}:
-    fail("invalid verification result")
-if not verification["verification_command"]:
-    fail("verification_command is required")
-if verification["result"] == "not_run" and not verification["degraded_verification"].get("acknowledged_by"):
-    fail("degraded verification requires acknowledgement")
+require(verification["schema_version"] == "verification-record.schema.v1", "verification has wrong schema_version")
+require(verification["phase"] == "verify", "verification phase must be verify")
+require(verification["result"] in {"passed", "failed", "not_run"}, "invalid verification result")
+require(bool(verification["verification_command"]), "verification_command is required")
+require(isinstance(verification["command_refs"], list), "verification command_refs must be a list")
+require(bool(verification["evidence_summary"]), "evidence_summary is required")
+if verification["result"] == "not_run" or verification["degraded_verification"].get("used"):
+    require(bool(verification["degraded_verification"].get("acknowledged_by")), "degraded verification requires acknowledgement")
 
 for key in [
     "schema_version",
@@ -49,17 +54,22 @@ for key in [
     "actual_files",
     "scope_drift",
     "findings",
+    "assumptions",
+    "deviations",
     "human_approval",
 ]:
     if key not in review:
         fail(f"review missing required field: {key}")
-if review["schema_version"] != "review-record.schema.v1":
-    fail("review has wrong schema_version")
-if review["phase"] != "review":
-    fail("review phase must be review")
-if set(review["actual_files"]) - set(review["approved_files"]) and not review["scope_drift"]:
-    fail("scope drift must be recorded")
-if not review["human_approval"].get("approved"):
-    fail("review requires human approval")
+require(review["schema_version"] == "review-record.schema.v1", "review has wrong schema_version")
+require(review["phase"] == "review", "review phase must be review")
+require(isinstance(review["approved_files"], list), "review approved_files must be a list")
+require(isinstance(review["actual_files"], list), "review actual_files must be a list")
+require(isinstance(review["assumptions"], list), "review assumptions must be a list")
+require(isinstance(review["deviations"], list), "review deviations must be a list")
+if set(review["actual_files"]) - set(review["approved_files"]):
+    require(review["scope_drift"], "scope drift must be recorded")
+if review["assumptions"] or review["deviations"] or review["scope_drift"]:
+    require(review["human_approval"].get("approved"), "assumptions, deviations, or drift require human approval")
+require(review["human_approval"].get("approved"), "review requires human approval")
 
 print("check-verification: ok")

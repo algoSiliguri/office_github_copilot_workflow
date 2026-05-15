@@ -50,6 +50,9 @@ Or run:
 bash release-check.sh
 ```
 
+The release check validates positive examples, negative safety fixtures, and
+directly testable hook scripts using only Python standard-library modules.
+
 ## Operating Modes
 
 - **Safe Default Mode:** repo-local files, Copilot CLI instructions, five skills, one orchestrator agent, JSON artifacts, graph metadata, stdlib validators, and human gates.

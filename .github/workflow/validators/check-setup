@@ -3,28 +3,39 @@ import json
 import sys
 from pathlib import Path
 
+from validator_core import load_json as _load_json, make_validator
+
 ROOT = Path.cwd()
 
 REQUIRED_PATHS = [
     "AGENTS.md",
     ".github/copilot-instructions.md",
-    ".github/instructions/workflow.instructions.md",
     ".github/agents/workflow-orchestrator.agent.md",
     ".github/workflow/config.json",
     ".github/workflow/orchestration.json",
     ".github/workflow/graph-record.json",
     ".github/workflow/schemas/graph-record.schema.json",
+    ".github/workflow/schemas/approval-record.schema.json",
+    ".github/workflow/schemas/memory-candidate.schema.json",
     ".github/workflow/schemas/plan-record.schema.json",
     ".github/workflow/schemas/execution-record.schema.json",
     ".github/workflow/schemas/verification-record.schema.json",
     ".github/workflow/schemas/review-record.schema.json",
     ".github/workflow/schemas/event.schema.json",
+    ".github/workflow/schemas/eval-summary.schema.json",
+    ".github/workflow/schemas/task-metrics.schema.json",
+    ".github/workflow/evaluators/evaluate-tasks",
     ".github/workflow/validators/check-setup",
     ".github/workflow/validators/check-plan",
     ".github/workflow/validators/check-execution",
     ".github/workflow/validators/check-verification",
+    ".github/workflow/validators/check-state",
+    ".github/workflow/validators/check-graph",
+    ".github/workflow/validators/check-graphify-copilot",
+    ".github/workflow/validators/check-memory",
     ".github/tasks/README.md",
     ".github/tasks/.gitkeep",
+    ".github/evals/README.md",
     ".github/examples/tasks/TASK-001/plan.json",
     ".github/examples/tasks/TASK-001/execution.json",
     ".github/examples/tasks/TASK-001/verification.json",
@@ -40,19 +51,11 @@ SKILLS = [
 ]
 
 
+fail, require = make_validator("check-setup")
+
+
 def load_json(path):
-    with path.open(encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def fail(message):
-    print(f"check-setup: FAIL: {message}", file=sys.stderr)
-    sys.exit(1)
-
-
-def require(condition, message):
-    if not condition:
-        fail(message)
+    return _load_json(path, fail)
 
 
 for rel in REQUIRED_PATHS:
@@ -61,10 +64,7 @@ for rel in REQUIRED_PATHS:
 
 for rel in REQUIRED_PATHS:
     if rel.endswith(".json"):
-        try:
-            load_json(ROOT / rel)
-        except json.JSONDecodeError as exc:
-            fail(f"invalid JSON in {rel}: {exc}")
+        load_json(ROOT / rel)
 
 for skill in SKILLS:
     skill_path = ROOT / ".github" / "skills" / skill / "SKILL.md"
@@ -84,23 +84,64 @@ require(managed.get("end_marker") == "<!-- END COPILOT WORKFLOW V1 -->", "manage
 require(managed.get("overwrite_existing_team_instructions") is False, "setup must not overwrite existing team AGENTS instructions")
 
 graph_policy = config.get("graph_policy", {})
+require(graph_policy.get("required_outputs") == ["graphify-out/graph.json", "graphify-out/GRAPH_REPORT.md", "graphify-out/manifest.json"], "graph policy must list required Graphify outputs")
+require(graph_policy.get("copilot_install_command") == "graphify copilot install", "graph policy must tell setup users to run graphify copilot install")
+require(graph_policy.get("copilot_install_expected") is True, "graph policy must expect Graphify Copilot install")
 require(graph_policy.get("degraded_mode_requires_human_approval") is True, "degraded graph mode must require human approval")
 require(graph_policy.get("regeneration_requires_human_approval") is True, "graph regeneration must require human approval")
 require(graph_policy.get("setup_may_silently_regenerate") is False, "setup must not silently regenerate graph output")
 
 hooks = load_json(ROOT / ".github/hooks/workflow-hooks.json")
 required_events = ["sessionStart", "userPromptSubmitted", "preToolUse", "postToolUse", "agentStop"]
-require(sorted(hooks.get("events", {}).keys()) == sorted(required_events), "workflow-hooks.json must define only the five v1 hook events")
+require(hooks.get("version") == 1, "workflow-hooks.json must use hook config version 1")
+require(isinstance(hooks.get("hooks"), dict), "workflow-hooks.json must define top-level hooks")
+require(sorted(hooks.get("hooks", {}).keys()) == sorted(required_events), "workflow-hooks.json must define only the five v1 hook events")
+for event_name, commands in hooks["hooks"].items():
+    require(isinstance(commands, list) and commands, f"hook event {event_name} must define at least one command")
+    for idx, command in enumerate(commands):
+        require(command.get("type") == "command", f"hook event {event_name}[{idx}] must be a command hook")
+        require(bool(command.get("bash")), f"hook event {event_name}[{idx}] must define a bash command")
+        require(bool(command.get("powershell")), f"hook event {event_name}[{idx}] must define a powershell command")
 
 graph = load_json(ROOT / ".github/workflow/graph-record.json")
 require(graph.get("schema_version") == "graph-record.schema.v1", "graph-record.json has wrong schema_version")
-require(graph.get("freshness") in {"missing", "stale", "unknown", "fresh"}, "graph-record.json has invalid freshness")
-require(graph.get("graph_output_path") == "graphify-out/", "graph-record.json must point to graphify-out/")
-if graph.get("freshness") != "fresh":
-    approval = graph.get("degraded_mode_approval")
-    if approval is not None:
-        require(approval.get("approved") is True, "degraded graph approval must be explicit when present")
-        require(bool(approval.get("approved_by")), "degraded graph approval must record approved_by")
+require(graph.get("provider") == "graphify", "graph-record.json provider must be graphify")
+require(graph.get("graph_dir") == "graphify-out", "graph-record.json graph_dir must be graphify-out")
+require(graph.get("graph_json") == "graphify-out/graph.json", "graph-record.json graph_json must point to graphify-out/graph.json")
+require(graph.get("graph_report") == "graphify-out/GRAPH_REPORT.md", "graph-record.json graph_report must point to graphify-out/GRAPH_REPORT.md")
+require(graph.get("manifest") == "graphify-out/manifest.json", "graph-record.json manifest must point to graphify-out/manifest.json")
+require(graph.get("graphify_manifest_path") == "graphify-out/manifest.json", "graph-record.json must point to graphify-out/manifest.json")
+require(graph.get("copilot_install_expected") is True, "setup must tell the user to run: graphify copilot install")
+require(graph.get("graph_status") in {"fresh", "stale", "missing", "degraded-approved"}, "graph-record.json has invalid graph_status")
+require(graph.get("status") == graph.get("graph_status"), "graph-record.json status must match graph_status")
+require(isinstance(graph.get("last_checked_at"), str) and graph["last_checked_at"], "graph-record.json must record last_checked_at")
+require("graphify copilot install" in graph.get("notes", ""), "graph-record.json notes must tell the user to run: graphify copilot install")
+output_exists = graph.get("graph_output_exists", {})
+require(isinstance(output_exists, dict), "graph-record.json must record graph_output_exists")
+for key in ("graph_dir", "graph_json", "graph_report", "manifest"):
+    require(isinstance(output_exists.get(key), bool), f"graph-record.json graph_output_exists.{key} must be boolean")
+actual_output_exists = {
+    "graph_dir": (ROOT / graph["graph_dir"]).is_dir(),
+    "graph_json": (ROOT / graph["graph_json"]).is_file(),
+    "graph_report": (ROOT / graph["graph_report"]).is_file(),
+    "manifest": (ROOT / graph["manifest"]).is_file(),
+}
+require(output_exists == actual_output_exists, "graph-record.json graph_output_exists must match current graphify-out files")
+if graph["graph_status"] in {"fresh", "stale"}:
+    require(actual_output_exists["graph_json"], "graphify-out/graph.json is required; run graphify, then run graphify copilot install")
+    require(actual_output_exists["graph_report"], "graphify-out/GRAPH_REPORT.md is required; run graphify, then run graphify copilot install")
+    require(actual_output_exists["manifest"], "graphify-out/manifest.json is required; run graphify, then run graphify copilot install")
+if graph["graph_status"] in {"missing", "degraded-approved"}:
+    require(
+        graph["graph_status"] == "degraded-approved" or not actual_output_exists["graph_json"] or not actual_output_exists["graph_report"],
+        "graph-record.json says graph is missing, but Graphify output exists; update graph_status before setup passes",
+    )
+approval = graph.get("approval", {})
+require(approval is None or isinstance(approval, dict), "graph-record.json approval must be an approval object or null")
+if graph.get("graph_status") == "degraded-approved":
+    require(isinstance(approval, dict), "degraded graph-record.json requires approval object")
+    require(approval.get("kind") == "graph-degraded", "degraded graph-record.json approval must be kind graph-degraded")
+    require(approval.get("decision") == "approved", "degraded graph-record.json approval must be approved")
 
 yaml_files = list((ROOT / ".github").glob("**/*.yaml")) + list((ROOT / ".github").glob("**/*.yml"))
 if yaml_files:

@@ -1,25 +1,99 @@
 #!/usr/bin/env python3
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
 
-
-def fail(message):
-    print(f"check-plan: FAIL: {message}", file=sys.stderr)
-    sys.exit(1)
-
-
-def require(condition, message):
-    if not condition:
-        fail(message)
+from approval_model import require_approved, require_approved_kind, validate_approval
+from graph_policy import graph_refs_max, is_graph_light_quick_task
+from validator_core import load_json as _load_json, make_validator, require_iso8601
 
 
-def require_iso8601(value, field):
-    try:
-        datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except ValueError:
-        fail(f"{field} must be ISO 8601")
+fail, require = make_validator("check-plan")
+
+
+def load_json(path):
+    return _load_json(path, fail)
+
+
+_orchestration = load_json(Path(__file__).resolve().parent.parent / "orchestration.json")
+_GRAPH_REF_CAP = graph_refs_max(_orchestration)
+
+
+def validate_graph_usage(record):
+    usage = record["graph_usage"]
+    require(isinstance(usage, dict), "graph_usage must be an object")
+    for key in ["required", "status", "graph_report_read", "graph_queries_run", "graph_refs", "reason"]:
+        require(key in usage, f"graph_usage missing required field: {key}")
+    require(usage["required"] is True, "graph_usage.required must be true")
+    require(usage["status"] in {"used", "skipped-with-approval", "unavailable"}, "graph_usage.status is invalid")
+    require(isinstance(usage["graph_report_read"], bool), "graph_usage.graph_report_read must be boolean")
+    require(isinstance(usage["graph_queries_run"], list), "graph_usage.graph_queries_run must be a list")
+    require(isinstance(usage["graph_refs"], list), "graph_usage.graph_refs must be a list")
+    require(len(usage["graph_refs"]) <= _GRAPH_REF_CAP, "graph_usage.graph_refs must contain at most 5 entries")
+    require(isinstance(usage["reason"], str) and len(usage["reason"].strip()) >= 10, "graph_usage.reason must explain Graphify use or skip")
+    require(record["graph_refs"] == usage["graph_refs"], "top-level graph_refs must match graph_usage.graph_refs")
+
+    graph_light_quick = is_graph_light_quick_task(record)
+    if usage["status"] == "used":
+        require(usage["graph_report_read"] is True, "graph_usage.status=used requires graph_report_read=true")
+        if not graph_light_quick:
+            require(usage["graph_refs"], "graph_usage.status=used requires graph_refs for non-quick tasks")
+    elif usage["status"] == "skipped-with-approval":
+        require_approved(record["human_approval"], "plan", "human_approval", fail)
+        if not graph_light_quick:
+            require_approved_kind(record["approvals"], "graph-degraded", "skipped Graphify planning", fail)
+        require(not usage["graph_refs"], "skipped Graphify planning must not record graph_refs")
+    elif usage["status"] == "unavailable":
+        if not graph_light_quick:
+            require_approved_kind(record["approvals"], "graph-degraded", "unavailable Graphify planning", fail)
+        require(not usage["graph_refs"] or record["graph_freshness_mode"] == "degraded-approved", "unavailable Graphify planning cannot use graph_refs without degraded mode")
+
+
+def validate_graph_scope(record):
+    scope = record["graph_scope"]
+    require(isinstance(scope, dict), "graph_scope must be an object")
+    required_scope = [
+        "in_scope_modules",
+        "in_scope_files",
+        "nearby_but_out_of_scope",
+        "risk_notes",
+        "graph_to_plan_decision",
+    ]
+    for key in required_scope:
+        require(key in scope, f"graph_scope missing required field: {key}")
+    for key in ["in_scope_modules", "in_scope_files", "nearby_but_out_of_scope", "risk_notes"]:
+        require(isinstance(scope[key], list), f"graph_scope.{key} must be a list")
+
+    decision = scope["graph_to_plan_decision"]
+    require(isinstance(decision, str) and decision.strip(), "graph_scope.graph_to_plan_decision is required")
+    normalized = " ".join(decision.lower().split())
+    vague = {
+        "graphify was checked",
+        "graph was checked",
+        "graph checked",
+        "checked graphify",
+        "graphify checked",
+        "read graph report",
+        "graph report was read",
+        "used graphify",
+        "graph context was used",
+    }
+    require(normalized not in vague and len(normalized) >= 25, "graph_scope.graph_to_plan_decision must explain a concrete graph-to-plan decision")
+    require(
+        any(token in normalized for token in ["because", " so ", "therefore", "depends", "related", "nearby", "risk", "scope", "include", "exclude"]),
+        "graph_scope.graph_to_plan_decision must state how graph context affected scope",
+    )
+
+    intended = set(record["intended_files"])
+    in_scope_files = set(scope["in_scope_files"])
+    nearby = set(scope["nearby_but_out_of_scope"])
+    require(in_scope_files == intended, "graph_scope.in_scope_files must match intended_files")
+    require(not (nearby & intended), "graph_scope.nearby_but_out_of_scope must not overlap intended_files")
+    require(not (nearby & in_scope_files), "graph_scope.nearby_but_out_of_scope must not overlap in_scope_files")
+
+    if record["graph_usage"]["status"] == "used":
+        require(scope["in_scope_modules"], "graph_scope.in_scope_modules is required when Graphify is used")
+        require(scope["in_scope_files"], "graph_scope.in_scope_files is required when Graphify is used")
 
 
 if len(sys.argv) != 2:
@@ -40,6 +114,8 @@ required = [
     "risk",
     "verification_command",
     "graph_freshness_mode",
+    "graph_usage",
+    "graph_scope",
     "graph_refs",
     "context_refs",
     "assumptions",
@@ -48,12 +124,13 @@ required = [
     "diagnosis",
     "quick_task_classification",
     "human_approval",
+    "approvals",
 ]
 missing = [key for key in required if key not in record]
 if missing:
     fail(f"missing required fields: {', '.join(missing)}")
 require(record["schema_version"] == "plan-record.schema.v1", "wrong schema_version")
-require_iso8601(record["created_at"], "created_at")
+require_iso8601(record["created_at"], "created_at", fail)
 require(record["phase"] == "plan", "phase must be plan")
 require(record["status"] in {"EXECUTION_READY", "DIAGNOSIS_REQUIRED", "BLOCKED"}, "invalid status")
 require(isinstance(record["intended_files"], list) and bool(record["intended_files"]), "intended_files must be a non-empty list")
@@ -61,15 +138,23 @@ require(record["risk"] in {"low", "medium", "high"}, "invalid risk")
 require(bool(record["verification_command"]), "verification_command is required")
 require(record["graph_freshness_mode"] in {"fresh", "degraded-approved"}, "invalid graph_freshness_mode")
 require(isinstance(record["graph_refs"], list), "graph_refs must be a list")
+require(len(record["graph_refs"]) <= _GRAPH_REF_CAP, "graph_refs must contain at most 5 entries")
 require(isinstance(record["context_refs"], list), "context_refs must be a list")
 require(isinstance(record["assumptions"], list), "assumptions must be a list")
 require(isinstance(record["deviations"], list), "deviations must be a list")
-if record["graph_freshness_mode"] == "degraded-approved" and not record.get("human_approval", {}).get("approved"):
-    fail("degraded graph mode requires human approval")
+require(isinstance(record["approvals"], list), "approvals must be a list")
+for index, approval in enumerate(record["approvals"]):
+    validate_approval(approval, None, f"approvals[{index}]", fail)
+if record["graph_freshness_mode"] == "degraded-approved":
+    require_approved_kind(record["approvals"], "graph-degraded", "degraded graph mode", fail)
 quick = record.get("quick_task_classification")
 if quick:
     require(quick.get("is_quick_task") in {True, False}, "quick_task_classification must declare is_quick_task")
-    require(record.get("human_approval", {}).get("approved"), "quick task classification requires human approval")
+    if quick.get("is_quick_task") is True:
+        require("graph_light_planning_allowed" in quick, "quick_task_classification must declare graph_light_planning_allowed")
+    require_approved(record["human_approval"], "plan", "human_approval", fail)
+validate_graph_usage(record)
+validate_graph_scope(record)
 
 if record["status"] == "DIAGNOSIS_REQUIRED":
     diagnosis = record.get("diagnosis") or {}
@@ -78,7 +163,7 @@ if record["status"] == "DIAGNOSIS_REQUIRED":
     require(diagnosis.get("ready_for_execution") is False, "DIAGNOSIS_REQUIRED must not be execution-ready")
 
 if record["status"] == "EXECUTION_READY":
-    require(record.get("human_approval", {}).get("approved"), "execution-ready plan requires human approval")
+    require_approved(record["human_approval"], "plan", "human_approval", fail)
     diagnosis = record.get("diagnosis")
     if diagnosis:
         require(bool(diagnosis.get("root_cause")), "execution-ready diagnosis must include root_cause")

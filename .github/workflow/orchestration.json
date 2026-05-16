@@ -5,18 +5,41 @@
     "validate_bundle_layout": true,
     "target_agents_managed_block_only": true,
     "graph_record_required": true,
+    "graph_provider": "graphify",
+    "required_graph_outputs": [
+      "graphify-out/graph.json",
+      "graphify-out/GRAPH_REPORT.md",
+      "graphify-out/manifest.json"
+    ],
+    "copilot_install_command": "graphify copilot install",
+    "copilot_install_expected_not_guaranteed": true,
     "graph_regeneration_requires_approval": true,
     "graph_states": {
       "missing": "No graphify-out/ output is present.",
       "stale": "Graph metadata does not match the current branch, commit, or source hash.",
-      "unknown": "Graph output exists but metadata cannot prove freshness.",
-      "fresh": "Graph metadata matches the current branch and commit/source hash, or reuse was explicitly approved."
+      "degraded-approved": "Graph output is missing or stale, and human approval permits degraded planning for this task.",
+      "fresh": "Graph metadata matches the current branch and commit/source hash."
     }
   },
+  "approval_kinds": ["plan", "graph-degraded", "scope-drift", "memory-write", "governance-edit"],
   "plan_contract": {
     "artifact": ".github/tasks/TASK-{NNN}/plan.json",
     "normal_planning_requires_graph_freshness": "fresh",
     "degraded_planning_requires_human_approval": true,
+    "graph_usage_declaration_required": true,
+    "graph_usage_statuses": ["used", "skipped-with-approval", "unavailable"],
+    "graph_refs_max": 5,
+    "graph_scope_required": true,
+    "graph_scope_questions": [
+      "Which graph/module area is relevant?",
+      "Which files are directly in scope?",
+      "Which nearby files are related but intentionally out of scope?",
+      "Which high-risk/high-reach files were identified?",
+      "Did Graphify reveal test, documentation, or configuration files that should be considered?"
+    ],
+    "graph_light_quick_tasks_require_explicit_policy": true,
+    "approval_artifact_kind": "plan",
+    "degraded_graph_approval_artifact_kind": "graph-degraded",
     "quick_task_is_classification_only": true,
     "diagnosis_required_blocks_execution": true,
     "writes_active_task_to_state": true
@@ -25,7 +48,23 @@
     "artifact": ".github/tasks/TASK-{NNN}/execution.json",
     "requires_approved_plan": true,
     "edits_limited_to_plan_intended_files": true,
-    "out_of_scope_changes_require_deviation_approval": true
+    "out_of_scope_changes_require_deviation_approval": true,
+    "scope_drift_approval_artifact_kind": "scope-drift",
+    "memory_write_approval_artifact_kind": "memory-write",
+    "governance_edit_approval_artifact_kind": "governance-edit",
+    "governance_prefixes": [
+      "AGENTS.md",
+      ".github/copilot-instructions.md",
+      ".github/instructions/",
+      ".github/agents/",
+      ".github/hooks/",
+      ".github/skills/",
+      ".github/workflow/"
+    ],
+    "memory_prefixes": [
+      ".github/local-memory/",
+      ".codex/memories/"
+    ]
   },
   "verify_contract": {
     "artifacts": [
@@ -34,8 +73,28 @@
     ],
     "graph_data_is_not_correctness_evidence": true,
     "degraded_verification_requires_acknowledgement": true,
+    "failed_verification_requires_rejection_reason": true,
     "remaining_assumptions_or_deviations_require_human_decision": true,
     "clears_active_task_on_closeout": true
+  },
+  "local_memory_contract": {
+    "path": ".github/local-memory/",
+    "directories": ["inbox", "accepted", "rejected"],
+    "candidate_schema": ".github/workflow/schemas/memory-candidate.schema.json",
+    "validator": ".github/workflow/validators/check-memory",
+    "writes_require_approval_kind": "memory-write",
+    "normal_hooks_write_memory": false,
+    "accepted_candidates_require_evidence": true,
+    "rejected_candidates_are_audit_only": true
+  },
+  "evaluation_contract": {
+    "command": "/evaluate",
+    "maintainer_only": true,
+    "evaluator": ".github/workflow/evaluators/evaluate-tasks",
+    "output_pattern": ".github/evals/runs/EVAL-YYYYMMDD-HHMM/",
+    "outputs": ["summary.json", "task-metrics.json", "findings.md"],
+    "raw_prompts_included_by_default": false,
+    "requires_network": false
   },
   "human_gates": [
     "approve_plan",

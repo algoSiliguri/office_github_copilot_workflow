@@ -32,7 +32,15 @@ A planning state for unclear bugs or regressions. `task-planning` must not produ
 
 ### GraphRecord
 
-A repository-local orchestration metadata artifact at `.github/workflow/graph-record.json` that records the state, location, and freshness of graphify output for the current target repository or branch.
+A repository-local orchestration metadata artifact at `.github/workflow/graph-record.json` that records the Graphify provider contract, required graph output locations, observed output presence, freshness state, and degraded approval state for the current target repository or branch.
+
+### Graphify Copilot Install Intent
+
+A setup-time instruction to run `graphify copilot install`. It records that the repository expects Copilot-facing Graphify setup, but it is not proof that Copilot will load or use a Graphify skill in a future session.
+
+### Graphify Copilot Health Check
+
+A non-mutating setup doctor check that verifies the local `graphify` command is discoverable, required `graphify-out/` files exist, and the Copilot Graphify skill is present at a discoverable user-home path. It reports fix commands instead of installing or modifying user files.
 
 ### Graph References
 
@@ -42,9 +50,49 @@ Task-scoped references to relevant graph nodes, communities, paths, or reports s
 
 A human-approved planning mode used when graphify output is missing, stale, or freshness cannot be proven. The plan must record the graph freshness problem and the user's approval to continue.
 
+### Graph Usage
+
+A required PlanRecord declaration that states whether Graphify was `used`, `skipped-with-approval`, or `unavailable`, whether the graph report was read, which graph queries ran, which graph references were selected, and why. It keeps Graphify from becoming an implicit assumption during planning.
+
+### Graph Scope
+
+A required PlanRecord explanation of how graph context affected planning scope. It records relevant modules, directly intended files, nearby files intentionally excluded, graph-discovered risk notes, and a concrete graph-to-plan decision.
+
+### Graph Verification Boundary
+
+The rule that Graphify is planning and review context, not verification proof. Verification proof must come from real commands, checks, tests, diff scope, command exit codes, and human review.
+
+### Graph Scope Review
+
+A ReviewRecord classification that compares actual changed files to the approved graph scope. It separates graph-near drift from graph-unrelated drift so review can catch when an agent wandered outside the planned area.
+
+### Structural Scope Error
+
+A scope gap discovered during `/execute` where Graphify context reveals that the plan's `intended_files` was fundamentally incomplete — files the plan should have included were never listed. A structural scope error requires halting execution, amending the plan via `/plan`, and re-obtaining human approval. It is distinct from opportunistic scope drift, where a small adjacent file is added inline with scope-drift approval.
+
+### Graph-Light Planning
+
+A quick-task-only planning mode where Graphify is unavailable or intentionally skipped. It must be explicitly allowed in the quick-task classification and still requires human approval before execution.
+
 ### Diagnostic Event Log
 
 A local-only JSONL diagnostic trail at `.github/tasks/TASK-{NNN}/logs/events.jsonl`. It records compact redacted event summaries, references, human decisions, assumptions, deviations, and verification outcomes. It is not a chat transcript or full Copilot session copy.
+
+### ApprovalRecord
+
+A first-class human-in-the-loop decision artifact embedded in task and graph records. It records the approval kind, requester, human decision maker, timestamp, decision, reason, and expiry. ApprovalRecord replaces bare approval booleans for plan approval, degraded graph use, scope drift, memory writes, and governance edits.
+
+### Local Memory Notebook
+
+A gitignored repository-local notebook at `.github/local-memory/` for human-approved knowledge worth carrying forward. It stores proposed, accepted, and rejected MemoryCandidate records. It is not a diagnostic log, chat transcript, global AI memory, context retrieval system, dashboard, or dreaming loop.
+
+### MemoryCandidate
+
+A proposed durable memory item with a claim, source task, type, evidence references, reason it matters, expiry, status, and optional memory-write ApprovalRecord. A MemoryCandidate must stay proposed until human approval moves it to accepted, and rejected candidates remain audit evidence rather than reusable context.
+
+### Evaluation Run
+
+A maintainer-only analysis run that reads completed task artifacts, redacted event logs, and local memory notebook records, then writes dashboard-ready metrics and findings. It is not a dashboard UI, not dreaming, and not raw prompt export.
 
 ### Native Copilot Session History
 
@@ -125,6 +173,10 @@ A bounded block that `/setup` creates or updates in a target repository's root `
 ### Workflow State File
 
 A lightweight mutable state file at `.github/workflow/state.json` that records the currently active task. `/plan` writes `active_task` to it when a task begins. `/verify` clears `active_task` to `null` on task closeout. Hook scripts read from it to determine which task log to append events to. It is distinct from policy files (`orchestration.json`, `config.json`), which are static. The active task lifecycle contract is declared in `orchestration.json` under `plan_contract.writes_active_task_to_state` and `verify_contract.clears_active_task_on_closeout`.
+
+### Open Task
+
+A task whose lifecycle has started but has not reached terminal verification and review disposition. V1 permits at most one open task at a time so hook logs, state, and task artifacts have a single coordination target.
 
 ### Fresh V1 Layout
 

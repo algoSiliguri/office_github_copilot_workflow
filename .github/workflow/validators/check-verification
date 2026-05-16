@@ -1,25 +1,17 @@
 #!/usr/bin/env python3
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
 
+from approval_model import require_approved_kind, validate_approval
+from evidence_policy import uses_graph_as_proof
+from validator_core import load_json as _load_json, make_validator, require_iso8601
 
-def fail(message):
-    print(f"check-verification: FAIL: {message}", file=sys.stderr)
-    sys.exit(1)
-
-
-def require(condition, message):
-    if not condition:
-        fail(message)
+fail, require = make_validator("check-verification")
 
 
-def require_iso8601(value, field):
-    try:
-        datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except ValueError:
-        fail(f"{field} must be ISO 8601")
+def load_json(path):
+    return _load_json(path, fail)
 
 
 REJECTION_CATEGORIES = {
@@ -41,6 +33,60 @@ def require_rejection_reason(decision, field):
         require(isinstance(reason.get("details"), str) and len(reason["details"]) >= 10, f"{field}.reason.details must be at least 10 characters")
 
 
+def load_ref_json(ref, field):
+    path = Path(str(ref))
+    require(path.exists(), f"{field} must reference an existing JSON file: {ref}")
+    return load_json(path)
+
+
+def deviation_files(items):
+    files = set()
+    for item in items:
+        if isinstance(item, dict) and item.get("type") == "out_of_scope_file" and item.get("file"):
+            files.add(item["file"])
+    return files
+
+
+def validate_graph_scope_review(review, plan, execution):
+    scope_review = review["graph_scope_review"]
+    require(isinstance(scope_review, dict), "graph_scope_review must be an object")
+    for key in ["actual_files_inside_graph_scope", "actual_files_outside_graph_scope", "requires_scope_drift_approval", "notes"]:
+        require(key in scope_review, f"graph_scope_review missing required field: {key}")
+    require(isinstance(scope_review["actual_files_inside_graph_scope"], list), "graph_scope_review.actual_files_inside_graph_scope must be a list")
+    require(isinstance(scope_review["actual_files_outside_graph_scope"], list), "graph_scope_review.actual_files_outside_graph_scope must be a list")
+    require(scope_review["requires_scope_drift_approval"] in {True, False}, "graph_scope_review.requires_scope_drift_approval must be boolean")
+    require(isinstance(scope_review["notes"], str), "graph_scope_review.notes must be a string")
+
+    actual_files = set(review["actual_files"])
+    approved_files = set(review["approved_files"])
+    plan_scope = (plan.get("graph_scope") or {}) if isinstance(plan, dict) else {}
+    graph_in_scope = set(plan_scope.get("in_scope_files") or [])
+    graph_near = set(plan_scope.get("nearby_but_out_of_scope") or [])
+    require(set(review["actual_files"]) == set(execution.get("modified_files", [])), "review actual_files must match execution modified_files")
+    approved_deviation_files = deviation_files(review["deviations"]) | deviation_files(execution.get("deviations", []))
+    allowed_files = approved_files | graph_in_scope | approved_deviation_files
+
+    expected_inside = sorted(actual_files & graph_in_scope)
+    expected_outside = sorted(actual_files - graph_in_scope)
+    require(sorted(scope_review["actual_files_inside_graph_scope"]) == expected_inside, "graph_scope_review.actual_files_inside_graph_scope must match actual files inside approved graph scope")
+    require(sorted(scope_review["actual_files_outside_graph_scope"]) == expected_outside, "graph_scope_review.actual_files_outside_graph_scope must match actual files outside approved graph scope")
+
+    unapproved_outside = sorted(actual_files - allowed_files)
+    require(scope_review["requires_scope_drift_approval"] == bool(unapproved_outside), "graph_scope_review.requires_scope_drift_approval must match unapproved files outside plan, graph scope, and deviations")
+    if unapproved_outside:
+        require(review["scope_drift"], f"scope drift must be recorded for files outside approved plan, graph scope, and deviations: {', '.join(unapproved_outside)}")
+        require_approved_kind(review["approvals"], "scope-drift", "review graph scope drift", fail)
+
+    outside_graph_scope = actual_files - graph_in_scope
+    graph_near_actual = sorted(outside_graph_scope & graph_near)
+    graph_unrelated_actual = sorted(outside_graph_scope - graph_near)
+    if graph_near_actual:
+        require("graph-near" in scope_review["notes"].lower(), "graph-near drift must be noted in graph_scope_review.notes")
+    if graph_unrelated_actual:
+        notes = scope_review["notes"].lower()
+        require("graph-unrelated" in notes and "higher risk" in notes, "graph-unrelated drift must be noted as higher risk in graph_scope_review.notes")
+
+
 if len(sys.argv) != 3:
     fail("usage: check-verification VERIFICATION_PATH REVIEW_PATH")
 
@@ -48,6 +94,8 @@ with Path(sys.argv[1]).open(encoding="utf-8") as handle:
     verification = json.load(handle)
 with Path(sys.argv[2]).open(encoding="utf-8") as handle:
     review = json.load(handle)
+plan = load_ref_json(verification.get("plan_ref"), "verification.plan_ref")
+execution = load_ref_json(verification.get("execution_ref"), "verification.execution_ref")
 
 for key in [
     "schema_version",
@@ -62,6 +110,7 @@ for key in [
     "command_refs",
     "result",
     "evidence_summary",
+    "graph_context_used",
     "graph_refs",
     "degraded_verification",
     "human_acknowledgment",
@@ -69,16 +118,24 @@ for key in [
     if key not in verification:
         fail(f"verification missing required field: {key}")
 require(verification["schema_version"] == "verification-record.schema.v1", "verification has wrong schema_version")
-require_iso8601(verification["created_at"], "verification.created_at")
-require_iso8601(verification["command_executed_at"], "verification.command_executed_at")
+require_iso8601(verification["created_at"], "verification.created_at", fail)
+require_iso8601(verification["command_executed_at"], "verification.command_executed_at", fail)
 require(verification["phase"] == "verify", "verification phase must be verify")
 require(verification["result"] in {"passed", "failed", "not_run"}, "invalid verification result")
 require(bool(verification["verification_command"]), "verification_command is required")
 require(isinstance(verification["command_exit_code"], int), "command_exit_code must be an integer")
 if verification["result"] == "passed":
     require(verification["command_exit_code"] == 0, "passed result requires command_exit_code 0")
+else:
+    require(verification["human_acknowledgment"].get("status") == "rejected", "failed or not_run verification requires rejected human_acknowledgment with reason")
 require(isinstance(verification["command_refs"], list), "verification command_refs must be a list")
+require(bool(verification["command_refs"]), "verification command_refs must include command output or log reference")
 require(bool(verification["evidence_summary"]), "evidence_summary is required")
+require(verification["graph_context_used"] in {True, False}, "graph_context_used must be boolean")
+require(isinstance(verification["graph_refs"], list), "verification graph_refs must be a list")
+if verification["graph_context_used"]:
+    require(verification["graph_refs"], "graph_context_used=true requires graph_refs")
+require(not uses_graph_as_proof(verification["evidence_summary"]), "Graphify may be mentioned as context but not used as verification proof")
 if verification["result"] == "not_run" or verification["degraded_verification"].get("used"):
     require(bool(verification["degraded_verification"].get("acknowledged_by")), "degraded verification requires acknowledgement")
 require_rejection_reason(verification["human_acknowledgment"], "human_acknowledgment")
@@ -96,24 +153,29 @@ for key in [
     "deviations",
     "human_approval",
     "human_authorization",
+    "approvals",
+    "graph_scope_review",
 ]:
     if key not in review:
         fail(f"review missing required field: {key}")
 require(review["schema_version"] == "review-record.schema.v1", "review has wrong schema_version")
-require_iso8601(review["created_at"], "review.created_at")
+require_iso8601(review["created_at"], "review.created_at", fail)
 require(review["phase"] == "review", "review phase must be review")
 require(isinstance(review["approved_files"], list), "review approved_files must be a list")
 require(isinstance(review["actual_files"], list), "review actual_files must be a list")
 require(isinstance(review["assumptions"], list), "review assumptions must be a list")
 require(isinstance(review["deviations"], list), "review deviations must be a list")
-if set(review["actual_files"]) - set(review["approved_files"]):
-    require(review["scope_drift"], "scope drift must be recorded")
+require(isinstance(review["approvals"], list), "review approvals must be a list")
+validate_approval(review["human_approval"], None, "review human_approval", fail)
+for index, approval in enumerate(review["approvals"]):
+    validate_approval(approval, None, f"review approvals[{index}]", fail)
+validate_graph_scope_review(review, plan, execution)
 require_rejection_reason(review["human_authorization"], "human_authorization")
 if review["assumptions"] or review["deviations"] or review["scope_drift"]:
     require(review["human_authorization"].get("status") in {"approved", "rejected"}, "assumptions, deviations, or drift require a human decision")
 if review["human_authorization"].get("status") == "approved":
-    require(review["human_approval"].get("approved"), "approved review requires human_approval.approved")
+    require(review["human_approval"].get("decision") == "approved", "approved review requires approved human_approval")
 if review["human_authorization"].get("status") == "rejected":
-    require(review["human_approval"].get("approved") is False, "rejected review must not mark human_approval.approved true")
+    require(review["human_approval"].get("decision") == "rejected", "rejected review requires rejected human_approval")
 
 print("check-verification: ok")

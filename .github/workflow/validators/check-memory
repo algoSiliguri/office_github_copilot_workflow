@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+from approval_model import validate_approval
+from validator_core import load_json as _load_json, make_validator, require_iso8601
+
+TYPES = {
+    "domain-term",
+    "repo-fact",
+    "failure-pattern",
+    "successful-strategy",
+    "command-gotcha",
+    "architecture-decision",
+}
+STATUSES = {"proposed", "accepted", "rejected", "superseded"}
+SECRET_HINTS = ("secret", "token", "password", "credential", "api_key", "apikey", "authorization")
+
+
+fail, require = make_validator("check-memory")
+
+
+def load_json(path):
+    return _load_json(path, fail)
+
+
+def has_secret_hint(value):
+    text = str(value).lower()
+    return any(hint in text for hint in SECRET_HINTS)
+
+
+def validate_candidate(path, expected_status):
+    record = load_json(path)
+    required = [
+        "candidate_id",
+        "source_task",
+        "type",
+        "claim",
+        "evidence_refs",
+        "why_it_matters",
+        "expiry",
+        "status",
+        "human_approval",
+    ]
+    missing = [key for key in required if key not in record]
+    if missing:
+        fail(f"{path}: missing required fields: {', '.join(missing)}")
+    require(isinstance(record["candidate_id"], str) and record["candidate_id"].startswith("MEM-CAND-"), f"{path}: candidate_id must start with MEM-CAND-")
+    require(isinstance(record["source_task"], str) and record["source_task"].startswith("TASK-"), f"{path}: source_task must start with TASK-")
+    require(record["type"] in TYPES, f"{path}: invalid type")
+    require(isinstance(record["claim"], str) and len(record["claim"].strip()) >= 10, f"{path}: claim must be at least 10 characters")
+    require(isinstance(record["why_it_matters"], str) and len(record["why_it_matters"].strip()) >= 10, f"{path}: why_it_matters must be at least 10 characters")
+    require(isinstance(record["evidence_refs"], list) and bool(record["evidence_refs"]), f"{path}: evidence_refs must be a non-empty list")
+    for index, ref in enumerate(record["evidence_refs"]):
+        require(isinstance(ref, str) and ref.strip(), f"{path}: evidence_refs[{index}] must be a non-empty string")
+        require(not has_secret_hint(ref), f"{path}: evidence_refs[{index}] looks secret-related")
+    require(isinstance(record["expiry"], str) and record["expiry"].strip(), f"{path}: expiry must be a non-empty string")
+    expiry = record["expiry"].strip()
+    if expiry != "none" and not expiry.startswith("condition:"):
+        require_iso8601(expiry, f"{path}: expiry", fail)
+    require(record["status"] in STATUSES, f"{path}: invalid status")
+    if expected_status:
+        require(record["status"] == expected_status, f"{path}: status must be {expected_status} in {expected_status}/")
+    for field in ("claim", "why_it_matters"):
+        require(not has_secret_hint(record[field]), f"{path}: {field} looks secret-related")
+
+    approval = record["human_approval"]
+    if record["status"] == "proposed":
+        require(approval is None, f"{path}: proposed memory must not carry human_approval")
+    elif record["status"] == "accepted":
+        validate_approval(approval, "memory-write", f"{path}: human_approval", fail)
+        require(approval["decision"] == "approved", f"{path}: accepted memory requires approved human_approval")
+    elif record["status"] == "rejected":
+        validate_approval(approval, "memory-write", f"{path}: human_approval", fail)
+        require(approval["decision"] == "rejected", f"{path}: rejected memory requires rejected human_approval")
+    elif record["status"] == "superseded":
+        validate_approval(approval, "memory-write", f"{path}: human_approval", fail)
+    return record
+
+
+def read_audit(path):
+    events = []
+    if not path.exists():
+        return events
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as exc:
+            fail(f"{path}:{line_number}: invalid JSONL: {exc}")
+        require(isinstance(event, dict), f"{path}:{line_number}: audit event must be object")
+        require("candidate_id" in event, f"{path}:{line_number}: audit event missing candidate_id")
+        require("timestamp" in event, f"{path}:{line_number}: audit event missing timestamp")
+        require("decision" in event or "status" in event, f"{path}:{line_number}: audit event missing decision/status")
+        require_iso8601(event["timestamp"], f"{path}:{line_number}: timestamp", fail)
+        events.append(event)
+    return events
+
+
+if len(sys.argv) > 2:
+    fail("usage: check-memory [NOTEBOOK_DIR]")
+
+root = Path(sys.argv[1]) if len(sys.argv) == 2 else Path(".github/local-memory")
+if not root.exists():
+    print("check-memory: ok")
+    sys.exit(0)
+
+require(root.is_dir(), "notebook path must be a directory")
+for dirname in ("inbox", "accepted", "rejected"):
+    require((root / dirname).is_dir(), f"missing directory: {dirname}")
+require((root / "index.json").is_file(), "missing index.json")
+require((root / "audit.jsonl").is_file(), "missing audit.jsonl")
+
+index = load_json(root / "index.json")
+require(index.get("schema_version") == "local-memory-index.schema.v1", "index.json has wrong schema_version")
+for key in ("accepted", "rejected", "superseded"):
+    require(isinstance(index.get(key), list), f"index.json {key} must be a list")
+
+records = {}
+folder_status = {
+    "inbox": "proposed",
+    "accepted": "accepted",
+    "rejected": "rejected",
+}
+for folder, expected_status in folder_status.items():
+    for path in sorted((root / folder).glob("*.json")):
+        record = validate_candidate(path, expected_status)
+        candidate_id = record["candidate_id"]
+        require(candidate_id not in records, f"duplicate candidate_id: {candidate_id}")
+        records[candidate_id] = record
+
+audit_events = read_audit(root / "audit.jsonl")
+audit_by_candidate = {}
+for event in audit_events:
+    audit_by_candidate.setdefault(event["candidate_id"], []).append(event)
+
+accepted_ids = set(index["accepted"])
+rejected_ids = set(index["rejected"])
+superseded_ids = set(index["superseded"])
+require(not (accepted_ids & rejected_ids), "index.json cannot list the same candidate as accepted and rejected")
+require(not (accepted_ids & superseded_ids), "index.json cannot list the same candidate as accepted and superseded")
+require(not (rejected_ids & superseded_ids), "index.json cannot list the same candidate as rejected and superseded")
+
+for candidate_id, record in records.items():
+    if record["status"] == "accepted":
+        require(candidate_id in accepted_ids, f"accepted candidate missing from index: {candidate_id}")
+    if record["status"] == "rejected":
+        require(candidate_id in rejected_ids, f"rejected candidate missing from index: {candidate_id}")
+        events = audit_by_candidate.get(candidate_id, [])
+        require(any(event.get("decision") == "rejected" or event.get("status") == "rejected" for event in events), f"rejected candidate missing audit event: {candidate_id}")
+    if record["status"] == "proposed":
+        require(candidate_id not in accepted_ids and candidate_id not in rejected_ids, f"proposed candidate must not be accepted or rejected in index: {candidate_id}")
+
+for candidate_id in accepted_ids | rejected_ids | superseded_ids:
+    require(candidate_id in records or candidate_id in audit_by_candidate, f"index references unknown candidate without audit: {candidate_id}")
+
+print("check-memory: ok")

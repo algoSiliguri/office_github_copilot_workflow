@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+from approval_model import require_approved, validate_approval
+from graph_policy import graph_refs_max, is_graph_light_quick_task
+from validator_core import load_json as _load_json, make_validator, require_iso8601
+
+ROOT = Path.cwd()
+STATUSES = {"fresh", "stale", "missing", "degraded-approved"}
+USAGE_STATUSES = {"used", "skipped-with-approval", "unavailable"}
+
+
+fail, require = make_validator("check-graph")
+
+
+def load_json(path):
+    return _load_json(path, fail)
+
+
+def require_iso8601_or_null(value, field):
+    if value is None:
+        return
+    require_iso8601(value, field, fail)
+
+
+_orchestration = load_json(Path(__file__).resolve().parent.parent / "orchestration.json")
+_GRAPH_REF_CAP = graph_refs_max(_orchestration)
+
+
+def allowed_quick_task(plan):
+    return (
+        is_graph_light_quick_task(plan)
+        and plan.get("human_approval", {}).get("decision") == "approved"
+    )
+
+
+def validate_graph_record(record):
+    required = [
+        "schema_version",
+        "provider",
+        "graph_dir",
+        "graph_json",
+        "graph_report",
+        "manifest",
+        "copilot_install_expected",
+        "graph_status",
+        "last_checked_at",
+        "status",
+        "generated_at",
+        "repo_root",
+        "git_commit",
+        "branch",
+        "graphify_manifest_path",
+        "graph_output_exists",
+        "approval",
+        "notes",
+    ]
+    missing = [key for key in required if key not in record]
+    require(not missing, f"graph record missing required fields: {', '.join(missing)}")
+    require(record["schema_version"] == "graph-record.schema.v1", "graph record has wrong schema_version")
+    require(record["provider"] == "graphify", "graph record provider must be graphify")
+    require(record["graph_dir"] == "graphify-out", "graph_dir must be graphify-out")
+    require(record["graph_json"] == "graphify-out/graph.json", "graph_json must be graphify-out/graph.json")
+    require(record["graph_report"] == "graphify-out/GRAPH_REPORT.md", "graph_report must be graphify-out/GRAPH_REPORT.md")
+    require(record["manifest"] == "graphify-out/manifest.json", "manifest must be graphify-out/manifest.json")
+    require(record["graphify_manifest_path"] == record["manifest"], "graphify_manifest_path must match manifest")
+    require(record["copilot_install_expected"] is True, "copilot_install_expected must be true")
+    require(record["graph_status"] in STATUSES, "graph record has invalid graph_status")
+    require(record["status"] in STATUSES, "graph record has invalid status")
+    require(record["status"] == record["graph_status"], "status must match graph_status")
+    require_iso8601_or_null(record["last_checked_at"], "last_checked_at")
+    require_iso8601_or_null(record["generated_at"], "generated_at")
+    require(isinstance(record["repo_root"], str) and bool(record["repo_root"]), "repo_root is required")
+    require(record["git_commit"] is None or isinstance(record["git_commit"], str), "git_commit must be string or null")
+    require(record["branch"] is None or isinstance(record["branch"], str), "branch must be string or null")
+    require(isinstance(record["notes"], str) and "Graphify is required for planning" in record["notes"], "notes must state the Graphify planning contract")
+    require("graphify copilot install" in record["notes"], "notes must tell setup users to run graphify copilot install")
+    output_exists = record["graph_output_exists"]
+    require(isinstance(output_exists, dict), "graph_output_exists must be an object")
+    for key in ("graph_dir", "graph_json", "graph_report", "manifest"):
+        require(isinstance(output_exists.get(key), bool), f"graph_output_exists.{key} must be boolean")
+    require(record["approval"] is None or isinstance(record["approval"], dict), "approval must be an approval object or null")
+    if record["approval"] is not None:
+        validate_approval(record["approval"], "graph-degraded", "approval", fail)
+
+    graph_path = ROOT / record["graph_json"]
+    report_path = ROOT / record["graph_report"]
+    manifest_path = ROOT / record["manifest"]
+    if record["status"] in {"fresh", "stale"}:
+        require(all(output_exists.values()), f"{record['status']} graph must record all graphify outputs as present")
+        require(graph_path.exists(), f"graphify graph JSON is required for {record['status']} graph: {record['graph_json']}")
+        require(report_path.exists(), f"graphify report is required for {record['status']} graph: {record['graph_report']}")
+        require(manifest_path.exists(), f"graphify manifest is required for {record['status']} graph: {record['manifest']}")
+        require(record["generated_at"] is not None, "generated_at is required when graph output exists")
+        require(record["git_commit"] is not None, "git_commit is required when graph output exists")
+        require(record["branch"] is not None, "branch is required when graph output exists")
+    if record["status"] == "fresh":
+        require(record["approval"] is None, "fresh graph must not carry degraded approval")
+    if record["status"] == "stale":
+        require(record["approval"] is None or record["approval"].get("decision") == "rejected", "stale graph must not be treated as approved")
+    if record["status"] == "missing":
+        require(not any(output_exists.values()), "missing graph must record graphify outputs as absent")
+        require(record["approval"] is None or record["approval"].get("decision") == "rejected", "missing graph must not be marked approved")
+    if record["status"] == "degraded-approved":
+        require(record["approval"] is not None, "degraded-approved graph requires approval")
+        require_approved(record["approval"], "graph-degraded", "approval", fail)
+
+
+def validate_plan_against_graph(record, plan):
+    require("graph_usage" in plan, "plan must record graph_usage")
+    usage_object = plan["graph_usage"]
+    require(isinstance(usage_object, dict), "plan graph_usage must be an object")
+    require(usage_object.get("required") is True, "plan graph_usage.required must be true")
+    require(usage_object.get("status") in USAGE_STATUSES, "plan graph_usage.status is invalid")
+    require(isinstance(usage_object.get("graph_refs"), list), "plan graph_usage.graph_refs must be a list")
+    require(isinstance(plan.get("graph_refs"), list), "plan graph_refs must be a list")
+    require(len(plan["graph_refs"]) <= _GRAPH_REF_CAP, f"plan graph_refs exceeds cap of {_GRAPH_REF_CAP}")
+    require(plan["graph_refs"] == usage_object["graph_refs"], "plan graph_refs must match graph_usage.graph_refs")
+
+    status = record["status"]
+    usage = usage_object["status"]
+    mode = plan.get("graph_freshness_mode")
+    quick = allowed_quick_task(plan)
+
+    if status == "fresh":
+        require(mode == "fresh", "fresh graph requires plan graph_freshness_mode=fresh")
+        require(usage == "used", "fresh graph requires plan graph_usage.status=used")
+        require(plan["graph_refs"], "fresh graph planning must record graph_refs")
+    elif status == "stale":
+        fail("stale graph cannot be used for planning without degraded approval")
+    elif status == "missing":
+        require(quick, "missing graph is allowed only for approved low-risk quick tasks")
+        require(mode == "degraded-approved", "missing graph quick task must record degraded-approved mode")
+        require(usage == "unavailable", "missing graph quick task must record graph_usage.status=unavailable")
+        require(plan["graph_refs"] == [], "missing graph quick task must not record graph_refs")
+    elif status == "degraded-approved":
+        require(mode == "degraded-approved", "degraded-approved graph requires plan graph_freshness_mode=degraded-approved")
+        require(usage in {"unavailable", "skipped-with-approval"}, "degraded-approved graph requires unavailable or skipped-with-approval graph usage")
+
+
+if len(sys.argv) not in {2, 3}:
+    fail("usage: check-graph GRAPH_RECORD [PLAN_RECORD]")
+
+graph = load_json(Path(sys.argv[1]))
+validate_graph_record(graph)
+
+if len(sys.argv) == 3:
+    plan = load_json(Path(sys.argv[2]))
+    validate_plan_against_graph(graph, plan)
+
+print("check-graph: ok")

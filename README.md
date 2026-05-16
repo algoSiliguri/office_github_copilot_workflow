@@ -17,11 +17,14 @@ The v1 foundation is not plugin-first. It is a portable `.github` layer that can
 - `AGENTS.md` and `.github/copilot-instructions.md`: always-on behavior
 - `.github/agents/workflow-orchestrator.agent.md`: routing, phase boundaries, context compaction
 - `.github/skills/<skill>/SKILL.md`: compact task-specific behavior
+- `.github/workflow/orchestration.json`: phase contracts and policy values (approval kinds, governance paths, graph ref cap)
 - `.github/workflow/*.json`: required JSON config and graph metadata
 - `.github/workflow/schemas/*.json`: artifact contracts
 - `.github/workflow/validators/*`: standard-library-only validation
+- `.github/workflow/lib/`: shared Python modules usable by both validators and hooks
 - `.github/tasks/`: live task artifacts
 - `.github/examples/tasks/`: committed examples and fixtures
+- `docs/adr/`: architectural decisions
 
 Docs explain the system but do not govern it.
 

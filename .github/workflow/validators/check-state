@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+from validator_core import load_json as _load_json, make_validator
+
+ROOT = Path.cwd()
+
+fail, require = make_validator("check-state")
+
+
+def load_json(path):
+    return _load_json(path, fail)
+
+
+def task_dirs(tasks_root):
+    if not tasks_root.exists():
+        return []
+    return sorted(path for path in tasks_root.iterdir() if path.is_dir() and path.name.startswith("TASK-"))
+
+
+def required_task_id(record, expected, path):
+    require(record.get("task_id") == expected, f"{path} task_id must match folder name {expected}")
+
+
+def plan_is_approved(plan):
+    return plan.get("status") == "EXECUTION_READY" and plan.get("human_approval", {}).get("decision") == "approved"
+
+
+def verification_is_terminal(verification):
+    acknowledgment = verification.get("human_acknowledgment", {})
+    return verification.get("result") in {"passed", "failed"} and acknowledgment.get("status") in {"approved", "rejected"}
+
+
+def review_is_terminal(review):
+    authorization = review.get("human_authorization", {})
+    if authorization.get("status") == "approved":
+        return review.get("human_approval", {}).get("decision") == "approved"
+    if authorization.get("status") == "rejected":
+        return review.get("human_approval", {}).get("decision") == "rejected"
+    return False
+
+
+def task_is_closed(task_dir):
+    verification_path = task_dir / "verification.json"
+    review_path = task_dir / "review.json"
+    if not verification_path.exists() or not review_path.exists():
+        return False
+    return verification_is_terminal(load_json(verification_path)) and review_is_terminal(load_json(review_path))
+
+
+def validate_task_folder(task_dir):
+    task_id = task_dir.name
+    plan_path = task_dir / "plan.json"
+    execution_path = task_dir / "execution.json"
+    verification_path = task_dir / "verification.json"
+    review_path = task_dir / "review.json"
+
+    require(plan_path.exists(), f"{task_id} missing plan.json")
+    plan = load_json(plan_path)
+    required_task_id(plan, task_id, plan_path)
+
+    if execution_path.exists():
+        execution = load_json(execution_path)
+        required_task_id(execution, task_id, execution_path)
+        require(plan_is_approved(plan), f"{task_id} cannot execute without an approved execution-ready plan")
+        require(execution.get("plan_ref"), f"{task_id} execution must reference plan")
+
+    if verification_path.exists() or review_path.exists():
+        require(execution_path.exists(), f"{task_id} cannot close without execution.json")
+        require(verification_path.exists(), f"{task_id} cannot close without verification.json")
+        require(review_path.exists(), f"{task_id} cannot close without review.json")
+        verification = load_json(verification_path)
+        review = load_json(review_path)
+        required_task_id(verification, task_id, verification_path)
+        required_task_id(review, task_id, review_path)
+        require(verification_is_terminal(verification), f"{task_id} verification must be acknowledged before closeout")
+        require(review_is_terminal(review), f"{task_id} review must be approved or rejected before closeout")
+
+    return task_is_closed(task_dir)
+
+
+if len(sys.argv) not in {1, 3}:
+    fail("usage: check-state [STATE_PATH TASKS_ROOT]")
+
+if len(sys.argv) == 3:
+    state_path = Path(sys.argv[1])
+    tasks_root = Path(sys.argv[2])
+else:
+    state_path = ROOT / ".github/workflow/state.json"
+    tasks_root = ROOT / ".github/tasks"
+
+state = load_json(state_path)
+require(state.get("schema_version") == "state.schema.v1", "state.json has wrong schema_version")
+require("active_task" in state, "state.json missing active_task")
+active_task = state.get("active_task")
+require(active_task is None or isinstance(active_task, str), "active_task must be null or a task id")
+
+dirs = task_dirs(tasks_root)
+task_names = {path.name for path in dirs}
+if active_task is not None:
+    require(active_task in task_names, f"active_task points to missing task folder: {active_task}")
+
+open_tasks = []
+for task_dir in dirs:
+    closed = validate_task_folder(task_dir)
+    if not closed:
+        open_tasks.append(task_dir.name)
+
+require(len(open_tasks) <= 1, f"only one active task is allowed, found: {', '.join(open_tasks)}")
+if open_tasks:
+    require(active_task == open_tasks[0], f"active_task must match open task folder: {open_tasks[0]}")
+else:
+    require(active_task is None, "active_task must be null when no task is open")
+
+print("check-state: ok")

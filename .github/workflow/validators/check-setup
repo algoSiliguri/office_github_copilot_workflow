@@ -92,16 +92,19 @@ require(graph_policy.get("regeneration_requires_human_approval") is True, "graph
 require(graph_policy.get("setup_may_silently_regenerate") is False, "setup must not silently regenerate graph output")
 
 hooks = load_json(ROOT / ".github/hooks/workflow-hooks.json")
-required_events = ["sessionStart", "userPromptSubmitted", "preToolUse", "postToolUse", "agentStop"]
+required_events = ["sessionStart", "userPromptSubmitted", "preToolUse", "postToolUse", "agentStop", "sessionEnd"]
 require(hooks.get("version") == 1, "workflow-hooks.json must use hook config version 1")
 require(isinstance(hooks.get("hooks"), dict), "workflow-hooks.json must define top-level hooks")
-require(sorted(hooks.get("hooks", {}).keys()) == sorted(required_events), "workflow-hooks.json must define only the five v1 hook events")
+require(sorted(hooks.get("hooks", {}).keys()) == sorted(required_events), "workflow-hooks.json must define only the six v1 hook events")
 for event_name, commands in hooks["hooks"].items():
     require(isinstance(commands, list) and commands, f"hook event {event_name} must define at least one command")
     for idx, command in enumerate(commands):
         require(command.get("type") == "command", f"hook event {event_name}[{idx}] must be a command hook")
         require(bool(command.get("bash")), f"hook event {event_name}[{idx}] must define a bash command")
         require(bool(command.get("powershell")), f"hook event {event_name}[{idx}] must define a powershell command")
+        timeout = command.get("timeoutSec")
+        if timeout is not None:
+            require(isinstance(timeout, int) and 1 <= timeout <= 60, f"hook event {event_name}[{idx}] timeoutSec must be between 1 and 60 if present")
 
 graph = load_json(ROOT / ".github/workflow/graph-record.json")
 require(graph.get("schema_version") == "graph-record.schema.v1", "graph-record.json has wrong schema_version")

@@ -120,12 +120,18 @@ expect_fail "missing graph for normal task" \
   python3 .github/workflow/validators/check-graph .github/examples/graph/missing.graph-record.json .github/examples/graph/missing-normal.plan.json
 expect_fail "graph refs above cap" \
   python3 .github/workflow/validators/check-plan .github/examples/graph/too-many-refs.plan.json
+if git rev-parse HEAD >/dev/null 2>&1; then
+  expect_fail "stale git commit in fresh graph record" \
+    python3 .github/workflow/validators/check-graph .github/examples/graph/stale-commit.graph-record.json
+fi
 
 python3 -c 'from pathlib import Path; [path.unlink() for path in Path(".github/examples/hooks").glob("*/.github/tasks/*/logs/events.jsonl")]'
 python3 .github/hooks/scripts/log-event.py < .github/examples/hooks/log-event.json | python3 -m json.tool >/dev/null
 python3 .github/hooks/scripts/log-event.py < .github/examples/hooks/log-event-secret.json | python3 -m json.tool >/dev/null
 python3 .github/hooks/scripts/agent-stop.py < .github/examples/hooks/agent-stop.json | python3 -m json.tool >/dev/null
 python3 .github/hooks/scripts/post-tool-use.py < .github/examples/hooks/post-tool-use.json | python3 -m json.tool >/dev/null
+session_end_out="$(COPILOT_HOOK_EVENT=sessionEnd python3 .github/hooks/scripts/log-event.py < .github/examples/hooks/session-end.json)"
+python3 -c 'import json,sys; data=json.loads(sys.argv[1]); sys.exit(0 if data.get("ok") is True else 1)' "$session_end_out"
 
 forbidden_decision="$(python3 .github/hooks/scripts/pre-tool-use.py < .github/examples/hooks/pre-tool-use-forbidden.json)"
 approved_decision="$(python3 .github/hooks/scripts/pre-tool-use.py < .github/examples/hooks/pre-tool-use-approved.json)"

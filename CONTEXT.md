@@ -104,7 +104,7 @@ A compact structured log event that omits sensitive prompt, response, file, and 
 
 ### V1 Hook Layer
 
-Repository-level Copilot CLI hooks for `sessionStart`, `userPromptSubmitted`, `preToolUse`, `postToolUse`, and `agentStop`. Hooks guard and log workflow behavior; they do not secretly plan, execute, verify, evaluate, or regenerate graph data.
+Repository-level Copilot CLI hooks for `sessionStart`, `userPromptSubmitted`, `preToolUse`, `postToolUse`, `agentStop`, and `sessionEnd`. `agentStop` fires when the agent finishes a response turn. `sessionEnd` fires when the CLI session terminates. Hooks guard and log workflow behavior; they do not secretly plan, execute, verify, evaluate, or regenerate graph data.
 
 ### Approve Plan Gate
 
@@ -185,3 +185,7 @@ The clean v1 repository structure that replaces the old command, agent, schema, 
 ### Authority Rule
 
 `AGENTS.md` and `.github/copilot-instructions.md` define always-on behavior. Skills define specialized behavior. Hooks guard and log. Artifacts carry phase state. Validators prove structure. Docs explain but do not govern.
+
+**Authoritative in phase 1:** validators, approved artifacts, human approval records, verification command output and exit code, graph-record status for the planning gate.
+
+**Not authoritative in phase 1:** raw hook event logs, Graphify report as verification proof, local memory notebook contents, evaluation findings, skills text without validator support.

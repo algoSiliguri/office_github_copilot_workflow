@@ -37,6 +37,15 @@
         "bash": "python3 .github/hooks/scripts/agent-stop.py",
         "powershell": "python3 .github/hooks/scripts/agent-stop.py"
       }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "python3 .github/hooks/scripts/log-event.py",
+        "powershell": "python3 .github/hooks/scripts/log-event.py",
+        "env": {"COPILOT_HOOK_EVENT": "sessionEnd"},
+        "timeoutSec": 10
+      }
     ]
   }
 }

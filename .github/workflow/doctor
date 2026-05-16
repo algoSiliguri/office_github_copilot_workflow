@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Deterministic health check for the repo-local Copilot workflow bundle.
+# Runs release-check.sh and reports READY or NOT_READY.
+# Exit 0 = READY. Exit 1 = NOT_READY.
+#
+# Hook configuration changes require a Copilot CLI restart to take effect.
+# Repository hooks are auto-discovered from .github/hooks/*.json.
+set -euo pipefail
+
+if bash "$(dirname "$0")/../../release-check.sh" 2>&1; then
+  echo "doctor: READY"
+  exit 0
+else
+  echo "doctor: NOT_READY — run bash release-check.sh for details" >&2
+  exit 1
+fi

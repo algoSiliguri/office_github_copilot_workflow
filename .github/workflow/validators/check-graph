@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -140,11 +141,42 @@ def validate_plan_against_graph(record, plan):
         require(usage in {"unavailable", "skipped-with-approval"}, "degraded-approved graph requires unavailable or skipped-with-approval graph usage")
 
 
+def _is_plausible_sha(value):
+    return bool(value) and len(value) >= 40 and all(c in "0123456789abcdef" for c in value.lower())
+
+
+def check_git_freshness(record):
+    """Compare graph-record git_commit to HEAD. Soft-skip if git is unavailable or git_commit is a fixture placeholder."""
+    recorded = record.get("git_commit")
+    if not recorded or record.get("status") != "fresh":
+        return
+    if not _is_plausible_sha(recorded):
+        return  # fixture placeholder — skip git check
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0:
+            print("check-graph: warning: git rev-parse HEAD failed; skipping freshness cross-check", file=sys.stderr)
+            return
+        head = result.stdout.strip()
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        print("check-graph: warning: git not available; skipping freshness cross-check", file=sys.stderr)
+        return
+    require(
+        head == recorded,
+        f"git HEAD ({head[:12]}) does not match graph-record git_commit ({recorded[:12]}); "
+        "graph may be stale — run `graphify update .` or obtain degraded-mode approval",
+    )
+
+
 if len(sys.argv) not in {2, 3}:
     fail("usage: check-graph GRAPH_RECORD [PLAN_RECORD]")
 
 graph = load_json(Path(sys.argv[1]))
 validate_graph_record(graph)
+check_git_freshness(graph)
 
 if len(sys.argv) == 3:
     plan = load_json(Path(sys.argv[2]))

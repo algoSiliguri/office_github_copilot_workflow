@@ -40,6 +40,7 @@ event = event_record(
 )
 event["metadata"] = {
     "hook_event": normalized["hook_event"],
+    # Advisory signal only — does not update graph-record.json. check-graph derives freshness from git commit comparison.
     "mark_graph_stale": bool(target_files),
     "regenerated_graph": False,
 }

@@ -1,0 +1,10 @@
+{
+  "timestamp": 1778932800,
+  "cwd": ".github/examples/hooks/active-workspace",
+  "sessionId": "example-session",
+  "toolName": "edit",
+  "toolArgs": {
+    "file_path": "README.md"
+  },
+  "phase": "execute"
+}

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "review-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "task_id", "created_at", "phase", "approved_files", "actual_files", "scope_drift", "findings", "assumptions", "deviations", "human_approval", "human_authorization"],
+  "required": ["schema_version", "task_id", "created_at", "phase", "approved_files", "actual_files", "scope_drift", "findings", "assumptions", "deviations", "human_approval", "human_authorization", "approvals", "graph_scope_review"],
   "properties": {
     "schema_version": { "const": "review-record.schema.v1" },
     "task_id": { "type": "string" },
@@ -14,7 +14,18 @@
     "findings": { "type": "array" },
     "assumptions": { "type": "array", "items": { "type": "string" } },
     "deviations": { "type": "array" },
-    "human_approval": { "type": "object" },
+    "human_approval": { "$ref": "approval-record.schema.v1" },
+    "approvals": { "type": "array", "items": { "$ref": "approval-record.schema.v1" } },
+    "graph_scope_review": {
+      "type": "object",
+      "required": ["actual_files_inside_graph_scope", "actual_files_outside_graph_scope", "requires_scope_drift_approval", "notes"],
+      "properties": {
+        "actual_files_inside_graph_scope": { "type": "array", "items": { "type": "string" } },
+        "actual_files_outside_graph_scope": { "type": "array", "items": { "type": "string" } },
+        "requires_scope_drift_approval": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
     "human_authorization": {
       "type": "object",
       "required": ["status"],

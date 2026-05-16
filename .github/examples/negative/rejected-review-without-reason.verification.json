@@ -8,10 +8,14 @@
   "verification_command": "python3 .github/workflow/validators/check-setup",
   "command_executed_at": "2026-05-15T00:01:00Z",
   "command_exit_code": 0,
-  "command_refs": ["cmd:check-setup"],
+  "command_refs": [
+    "cmd:check-setup"
+  ],
   "result": "passed",
   "evidence_summary": "Invalid fixture pairs with rejected review.",
-  "graph_refs": ["graph:file:README.md"],
+  "graph_refs": [
+    "graph:file:README.md"
+  ],
   "degraded_verification": {
     "used": false,
     "acknowledged_by": null,
@@ -20,5 +24,6 @@
   "human_acknowledgment": {
     "status": "approved",
     "reason": null
-  }
+  },
+  "graph_context_used": true
 }

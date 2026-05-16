@@ -1,0 +1,11 @@
+{
+  "candidate_id": "MEM-CAND-010",
+  "source_task": "TASK-010",
+  "type": "repo-fact",
+  "claim": "This unsupported claim has no evidence references.",
+  "evidence_refs": [],
+  "why_it_matters": "The validator must reject memory without evidence.",
+  "expiry": "none",
+  "status": "proposed",
+  "human_approval": null
+}

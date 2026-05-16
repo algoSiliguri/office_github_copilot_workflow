@@ -1,13 +1,8 @@
 {
-  "task_id": "TASK-HOOK",
-  "operation": "write",
-  "command": "graphify update .",
-  "file_paths": ["graphify-out/graph.json"],
-  "approved_files": ["graphify-out/graph.json"],
-  "summary": "Approved graph regeneration.",
-  "human_approval": {
-    "approved": true,
-    "approved_by": "example-human",
-    "approved_at": "2026-05-15T00:00:00Z"
+  "timestamp": 1778932800,
+  "cwd": ".github/examples/hooks/active-workspace",
+  "toolName": "bash",
+  "toolArgs": {
+    "command": "python3 .github/workflow/validators/check-plan .github/examples/tasks/TASK-001/plan.json"
   }
 }

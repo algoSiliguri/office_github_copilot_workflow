@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-metrics.schema.v1",
+  "type": "object",
+  "required": ["schema_version", "run_id", "tasks"],
+  "properties": {
+    "schema_version": { "const": "task-metrics.schema.v1" },
+    "run_id": { "type": "string" },
+    "tasks": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  }
+}

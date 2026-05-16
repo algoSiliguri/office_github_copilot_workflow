@@ -1,0 +1,52 @@
+{
+  "schema_version": "plan-record.schema.v1",
+  "task_id": "TASK-NEG-MISSING-GRAPH-SCOPE",
+  "created_at": "2026-05-16T00:00:00Z",
+  "phase": "plan",
+  "status": "EXECUTION_READY",
+  "summary": "Negative fixture missing graph scope.",
+  "intended_files": [
+    "README.md"
+  ],
+  "risk": "medium",
+  "verification_command": "bash release-check.sh",
+  "graph_freshness_mode": "fresh",
+  "graph_usage": {
+    "required": true,
+    "status": "used",
+    "graph_report_read": true,
+    "graph_queries_run": [
+      "graph-report:related-files"
+    ],
+    "graph_refs": [
+      "graph:file:README.md"
+    ],
+    "reason": "Used Graphify to identify related modules before selecting intended_files."
+  },
+  "graph_refs": [
+    "graph:file:README.md"
+  ],
+  "context_refs": [
+    "README.md"
+  ],
+  "quick_task_classification": null,
+  "diagnosis": null,
+  "planning": {
+    "source": "/plan",
+    "decision": "This fixture must fail because graph_scope is missing.",
+    "diagnosis_required": false
+  },
+  "assumptions": [],
+  "deviations": [],
+  "human_approval": {
+    "approval_id": "APP-905",
+    "kind": "plan",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T00:00:00Z",
+    "decision": "approved",
+    "reason": "Fixture plan approval for negative test.",
+    "expires_at": null
+  },
+  "approvals": []
+}

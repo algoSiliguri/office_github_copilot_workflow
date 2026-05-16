@@ -1,31 +1,10 @@
 #!/usr/bin/env python3
-"""Summarize postToolUse results without storing raw output.
-
-Reads official Copilot hook stdin: {timestamp, cwd, toolName, toolArgs}.
-"""
+"""Summarize postToolUse results without storing raw output."""
 import json
 import subprocess
 import sys
 
-
-def read_payload():
-    if sys.stdin.isatty():
-        return {}
-    try:
-        return json.load(sys.stdin)
-    except Exception:
-        return {}
-
-
-def parse_tool_args(raw):
-    if not raw:
-        return {}
-    if isinstance(raw, dict):
-        return raw
-    try:
-        return json.loads(raw)
-    except Exception:
-        return {}
+from hooklib import event_record, normalize_payload, read_active_task, read_payload, write_event
 
 
 def changed_files_from_git(cwd):
@@ -36,25 +15,53 @@ def changed_files_from_git(cwd):
         return []
 
 
-payload = read_payload()
-tool_args = parse_tool_args(payload.get("toolArgs"))
-cwd = payload.get("cwd")
-tool_name = payload.get("toolName", "")
+payload = read_payload(sys.stdin)
+normalized = normalize_payload(payload, "postToolUse")
+task_id = read_active_task(normalized["cwd"])
+target_files = normalized["target_files"] or changed_files_from_git(normalized["cwd"])
+tool_name = normalized["tool_name"]
 
-written_file = tool_args.get("file_path") or tool_args.get("path")
-if written_file:
-    modified_files = [str(written_file)]
-else:
-    modified_files = changed_files_from_git(cwd)
+event_type = "tool.allowed"
+if target_files:
+    event_type = "file.edit_attempt"
+if normalized["command"]:
+    event_type = "command.execution_attempt"
+if "check-verification" in normalized["command"]:
+    event_type = "verification.command_execution"
 
-graph_should_be_marked_stale = bool(modified_files)
-summary = f"tool completed: {tool_name}" if tool_name else "tool result summarized; raw output omitted"
+event = event_record(
+    normalized,
+    task_id=task_id,
+    event_type=event_type,
+    decision="observe",
+    reason="post-tool result summarized; raw output omitted",
+    risk="low",
+    target_files=target_files,
+)
+event["metadata"] = {
+    "hook_event": normalized["hook_event"],
+    "mark_graph_stale": bool(target_files),
+    "regenerated_graph": False,
+}
+
+written_path = None
+ok = True
+error = None
+try:
+    written_path = write_event(normalized["cwd"], event)
+except Exception as exc:
+    ok = False
+    error = str(exc)[:240]
 
 print(json.dumps({
-    "ok": True,
+    "ok": ok,
+    "event_id": event["event_id"],
+    "written_path": written_path,
+    "orphan": task_id is None,
     "redacted": True,
-    "summary": summary[:240],
-    "modified_files": modified_files,
-    "mark_graph_stale": graph_should_be_marked_stale,
+    "summary": f"tool completed: {tool_name}"[:240] if tool_name else "tool result summarized",
+    "modified_files": target_files,
+    "mark_graph_stale": bool(target_files),
     "regenerated_graph": False,
+    "error": error,
 }, sort_keys=True))

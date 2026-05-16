@@ -1,0 +1,67 @@
+{
+  "schema_version": "plan-record.schema.v1",
+  "task_id": "TASK-EVAL-GOOD",
+  "created_at": "2026-05-16T00:00:00Z",
+  "phase": "plan",
+  "status": "EXECUTION_READY",
+  "summary": "Good evaluation fixture.",
+  "intended_files": [
+    "README.md"
+  ],
+  "risk": "low",
+  "verification_command": "python3 .github/workflow/validators/check-setup",
+  "graph_freshness_mode": "fresh",
+  "graph_usage": {
+    "required": true,
+    "status": "used",
+    "graph_report_read": true,
+    "graph_queries_run": [
+      "graph-report:related-files"
+    ],
+    "graph_refs": [
+      "node:readme"
+    ],
+    "reason": "Used Graphify to identify related modules before selecting intended_files."
+  },
+  "graph_refs": [
+    "node:readme"
+  ],
+  "context_refs": [
+    "README.md"
+  ],
+  "quick_task_classification": null,
+  "diagnosis": null,
+  "planning": {
+    "source": "/plan",
+    "decision": "Bounded fixture plan.",
+    "diagnosis_required": false
+  },
+  "assumptions": [],
+  "deviations": [],
+  "human_approval": {
+    "approval_id": "APP-EVAL-001",
+    "kind": "plan",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T00:00:00Z",
+    "decision": "approved",
+    "reason": "Human approved the good evaluation fixture plan.",
+    "expires_at": null
+  },
+  "approvals": [],
+  "graph_scope": {
+    "in_scope_modules": [
+      "node:readme"
+    ],
+    "in_scope_files": [
+      "README.md"
+    ],
+    "nearby_but_out_of_scope": [
+      "CONTEXT.md"
+    ],
+    "risk_notes": [
+      "Graph references were capped to task-relevant nodes before selecting intended files."
+    ],
+    "graph_to_plan_decision": "Graph showed related workflow nodes, so intended files were limited to the files needed for this plan and nearby files were excluded."
+  }
+}

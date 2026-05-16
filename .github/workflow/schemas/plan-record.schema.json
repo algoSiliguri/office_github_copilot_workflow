@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "plan-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "task_id", "created_at", "phase", "status", "summary", "intended_files", "risk", "verification_command", "graph_freshness_mode", "graph_refs", "context_refs", "assumptions", "deviations", "planning", "diagnosis", "quick_task_classification", "human_approval"],
+  "required": ["schema_version", "task_id", "created_at", "phase", "status", "summary", "intended_files", "risk", "verification_command", "graph_freshness_mode", "graph_usage", "graph_scope", "graph_refs", "context_refs", "assumptions", "deviations", "planning", "diagnosis", "quick_task_classification", "human_approval", "approvals"],
   "properties": {
     "schema_version": { "const": "plan-record.schema.v1" },
     "task_id": { "type": "string" },
@@ -14,6 +14,29 @@
     "risk": { "enum": ["low", "medium", "high"] },
     "verification_command": { "type": "string" },
     "graph_freshness_mode": { "enum": ["fresh", "degraded-approved"] },
+    "graph_usage": {
+      "type": "object",
+      "required": ["required", "status", "graph_report_read", "graph_queries_run", "graph_refs", "reason"],
+      "properties": {
+        "required": { "const": true },
+        "status": { "enum": ["used", "skipped-with-approval", "unavailable"] },
+        "graph_report_read": { "type": "boolean" },
+        "graph_queries_run": { "type": "array", "items": { "type": "string" } },
+        "graph_refs": { "type": "array", "items": { "type": "string" } },
+        "reason": { "type": "string" }
+      }
+    },
+    "graph_scope": {
+      "type": "object",
+      "required": ["in_scope_modules", "in_scope_files", "nearby_but_out_of_scope", "risk_notes", "graph_to_plan_decision"],
+      "properties": {
+        "in_scope_modules": { "type": "array", "items": { "type": "string" } },
+        "in_scope_files": { "type": "array", "items": { "type": "string" } },
+        "nearby_but_out_of_scope": { "type": "array", "items": { "type": "string" } },
+        "risk_notes": { "type": "array", "items": { "type": "string" } },
+        "graph_to_plan_decision": { "type": "string" }
+      }
+    },
     "graph_refs": { "type": "array", "items": { "type": "string" } },
     "context_refs": { "type": "array", "items": { "type": "string" } },
     "quick_task_classification": { "type": ["object", "null"] },
@@ -21,6 +44,7 @@
     "planning": { "type": "object" },
     "assumptions": { "type": "array", "items": { "type": "string" } },
     "deviations": { "type": "array" },
-    "human_approval": { "type": "object" }
+    "human_approval": { "$ref": "approval-record.schema.v1" },
+    "approvals": { "type": "array", "items": { "$ref": "approval-record.schema.v1" } }
   }
 }

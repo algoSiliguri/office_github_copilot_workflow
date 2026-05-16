@@ -1,0 +1,22 @@
+{
+  "candidate_id": "MEM-CAND-002",
+  "source_task": "TASK-001",
+  "type": "failure-pattern",
+  "claim": "Every task summary should be saved as long-term memory.",
+  "evidence_refs": [
+    ".github/tasks/TASK-001/review.json"
+  ],
+  "why_it_matters": "Rejected examples prove low-value summaries are audited but not reused.",
+  "expiry": "none",
+  "status": "rejected",
+  "human_approval": {
+    "approval_id": "APP-MEM-002",
+    "kind": "memory-write",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T00:00:00Z",
+    "decision": "rejected",
+    "reason": "Human rejected this because random task summaries are not durable memory.",
+    "expires_at": null
+  }
+}

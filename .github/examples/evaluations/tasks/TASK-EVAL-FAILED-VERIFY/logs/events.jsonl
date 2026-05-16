@@ -1,0 +1,1 @@
+{"schema_version":"event.schema.v1","event_id":"eval-failed-001","task_id":"TASK-EVAL-FAILED-VERIFY","phase":"verify","timestamp":"2026-05-16T03:02:00Z","event_type":"verification.command_execution","tool_name":"bash","target_files":[],"decision":"allow","reason":"fixture verification command","risk":"low","redacted":true}

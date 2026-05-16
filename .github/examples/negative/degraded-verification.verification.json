@@ -11,7 +11,9 @@
   "command_refs": [],
   "result": "not_run",
   "evidence_summary": "Invalid degraded verification without acknowledgement.",
-  "graph_refs": ["graph:file:README.md"],
+  "graph_refs": [
+    "graph:file:README.md"
+  ],
   "degraded_verification": {
     "used": true,
     "acknowledged_by": null,
@@ -20,5 +22,6 @@
   "human_acknowledgment": {
     "status": "approved",
     "reason": null
-  }
+  },
+  "graph_context_used": true
 }

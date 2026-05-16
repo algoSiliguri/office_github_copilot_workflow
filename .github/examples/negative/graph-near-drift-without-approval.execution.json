@@ -1,0 +1,30 @@
+{
+  "schema_version": "execution-record.schema.v1",
+  "task_id": "TASK-NEG-GRAPH-NEAR-DRIFT",
+  "created_at": "2026-05-16T00:00:00Z",
+  "phase": "execute",
+  "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
+  "approved_files": [
+    "README.md"
+  ],
+  "modified_files": [
+    "README.md",
+    "CONTEXT.md"
+  ],
+  "status": "completed",
+  "graph_refs": [
+    "graph-record:freshness:missing"
+  ],
+  "command_refs": [
+    "cmd:edit"
+  ],
+  "checkpoints": [
+    {
+      "step": "Invalid graph-near drift without approval.",
+      "status": "completed"
+    }
+  ],
+  "risky_tool_approvals": [],
+  "deviations": [],
+  "approvals": []
+}

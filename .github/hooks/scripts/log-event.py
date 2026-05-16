@@ -1,108 +1,52 @@
 #!/usr/bin/env python3
-"""Write a redacted v1 event summary to the active task log.
-
-Reads official Copilot hook stdin: {timestamp, cwd, toolName, toolArgs}.
-COPILOT_HOOK_EVENT env var carries the hook event name set by workflow-hooks.json.
-"""
+"""Write redacted high-value hook events to the active task or orphan log."""
 import json
 import os
 import sys
-import uuid
-from datetime import datetime, timezone
-from pathlib import Path
 
-HOOK_EVENT_TO_CATEGORY = {
+from hooklib import event_record, normalize_payload, read_active_task, read_payload, redact_dict, write_event
+
+HOOK_EVENT_TYPES = {
     "sessionStart": "session.started",
+    "userPromptSubmitted": "prompt.submitted",
     "sessionEnd": "session.ended",
-    "userPromptSubmitted": "command.invoked",
-    "preToolUse": "tool.requested",
-    "postToolUse": "tool.approved",
-    "agentStop": "session.ended",
-    "errorOccurred": "error.occurred",
 }
 
 
-def read_payload():
-    if sys.stdin.isatty():
-        return {}
-    try:
-        return json.load(sys.stdin)
-    except Exception:
-        return {}
+payload = read_payload(sys.stdin)
+normalized = normalize_payload(payload, os.environ.get("COPILOT_HOOK_EVENT"))
+task_id = read_active_task(normalized["cwd"])
+event_type = HOOK_EVENT_TYPES.get(normalized["hook_event"], "prompt.submitted")
 
-
-def parse_tool_args(raw):
-    if not raw:
-        return {}
-    if isinstance(raw, dict):
-        return raw
-    try:
-        return json.loads(raw)
-    except Exception:
-        return {}
-
-
-def read_active_task(cwd):
-    """Read active_task from explicit workflow state file."""
-    state_path = Path(cwd or ".") / ".github" / "workflow" / "state.json"
-    try:
-        with state_path.open(encoding="utf-8") as fh:
-            return json.load(fh).get("active_task")
-    except Exception:
-        return None
-
-
-def ts_to_iso(ts):
-    if not ts:
-        return datetime.now(timezone.utc).isoformat()
-    try:
-        return datetime.fromtimestamp(int(ts) / 1000, tz=timezone.utc).isoformat()
-    except Exception:
-        return datetime.now(timezone.utc).isoformat()
-
-
-payload = read_payload()
-hook_event = os.environ.get("COPILOT_HOOK_EVENT", "userPromptSubmitted")
-tool_args = parse_tool_args(payload.get("toolArgs"))
-cwd = payload.get("cwd", ".")
-task_id = read_active_task(cwd)
-tool_name = payload.get("toolName", "")
-category = HOOK_EVENT_TO_CATEGORY.get(hook_event, "command.invoked")
-
-summary = f"{hook_event}: {tool_name}" if tool_name else hook_event
-
-file_refs = [str(tool_args["file_path"])] if tool_args.get("file_path") else []
-cmd_refs = [tool_args["command"]] if tool_args.get("command") else []
-
-event = {
-    "schema_version": "event.schema.v1",
-    "event_id": str(uuid.uuid4()),
-    "timestamp": ts_to_iso(payload.get("timestamp")),
-    "task_id": task_id,
-    "session_id": None,
-    "category": category,
-    "phase": None,
-    "source": "hook",
-    "summary": summary[:240],
-    "refs": {
-        "artifact_paths": [],
-        "file_paths": file_refs,
-        "graph_refs": [],
-        "command_refs": cmd_refs,
-    },
-    "sensitivity": "internal",
-    "redaction": {
-        "applied": True,
-        "reason": "raw prompt/response/tool content omitted",
-    },
+event = event_record(
+    normalized,
+    task_id=task_id,
+    event_type=event_type,
+    decision="observe",
+    reason="hook event captured; raw payload omitted",
+    risk="low",
+)
+event["metadata"] = {
+    "hook_event": normalized["hook_event"],
+    "payload": redact_dict({
+        "prompt": normalized.get("prompt"),
+        "toolName": normalized.get("tool_name"),
+    }),
 }
 
 written_path = None
-if task_id:
-    log_path = Path(cwd) / ".github" / "tasks" / task_id / "logs" / "events.jsonl"
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(event, sort_keys=True) + "\n")
-    written_path = str(log_path)
+ok = True
+error = None
+try:
+    written_path = write_event(normalized["cwd"], event)
+except Exception as exc:
+    ok = False
+    error = str(exc)[:240]
 
-print(json.dumps({"ok": True, "event_id": event["event_id"], "written_path": written_path}, sort_keys=True))
+print(json.dumps({
+    "ok": ok,
+    "event_id": event["event_id"],
+    "written_path": written_path,
+    "orphan": task_id is None,
+    "error": error,
+}, sort_keys=True))

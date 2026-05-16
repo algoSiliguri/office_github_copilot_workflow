@@ -1,0 +1,34 @@
+{
+  "schema_version": "graph-record.schema.v1",
+  "provider": "graphify",
+  "graph_dir": "graphify-out",
+  "graph_json": "graphify-out/graph.json",
+  "graph_report": "graphify-out/GRAPH_REPORT.md",
+  "manifest": "graphify-out/manifest.json",
+  "copilot_install_expected": true,
+  "graph_status": "degraded-approved",
+  "last_checked_at": "2026-05-16T00:00:00Z",
+  "status": "degraded-approved",
+  "generated_at": "2026-05-15T00:00:00Z",
+  "repo_root": ".",
+  "git_commit": "example-old-commit",
+  "branch": "main",
+  "graphify_manifest_path": "graphify-out/manifest.json",
+  "graph_output_exists": {
+    "graph_dir": true,
+    "graph_json": true,
+    "graph_report": true,
+    "manifest": true
+  },
+  "approval": {
+    "approval_id": "APP-006",
+    "kind": "graph-degraded",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-15T00:00:00Z",
+    "decision": "approved",
+    "reason": "Fixture approval to continue with degraded graph output.",
+    "expires_at": null
+  },
+  "notes": "Graphify is required for planning, advisory for execution, not verification evidence. Run graphify copilot install during setup; this records installation intent but does not guarantee future Copilot skill behavior."
+}

@@ -1,0 +1,23 @@
+{
+  "candidate_id": "MEM-CAND-001",
+  "source_task": "TASK-001",
+  "type": "repo-fact",
+  "claim": "Graphify must be checked before normal planning in this repository.",
+  "evidence_refs": [
+    ".github/tasks/TASK-001/plan.json",
+    ".github/workflow/graph-record.json"
+  ],
+  "why_it_matters": "Planning should not silently proceed with missing or stale graph context.",
+  "expiry": "none",
+  "status": "accepted",
+  "human_approval": {
+    "approval_id": "APP-MEM-001",
+    "kind": "memory-write",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T00:00:00Z",
+    "decision": "approved",
+    "reason": "Human approved this durable memory claim from task evidence.",
+    "expires_at": null
+  }
+}

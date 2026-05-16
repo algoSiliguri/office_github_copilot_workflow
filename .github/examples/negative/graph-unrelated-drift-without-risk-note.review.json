@@ -1,0 +1,64 @@
+{
+  "schema_version": "review-record.schema.v1",
+  "task_id": "TASK-NEG-GRAPH-UNRELATED-DRIFT",
+  "created_at": "2026-05-16T00:02:00Z",
+  "phase": "review",
+  "approved_files": [
+    "README.md"
+  ],
+  "actual_files": [
+    "README.md",
+    "docs/unrelated.md"
+  ],
+  "scope_drift": [
+    {
+      "file": "docs/unrelated.md",
+      "reason": "Fixture approved drift."
+    }
+  ],
+  "findings": [],
+  "assumptions": [],
+  "deviations": [
+    {
+      "type": "out_of_scope_file",
+      "file": "docs/unrelated.md",
+      "reason": "Fixture approved drift."
+    }
+  ],
+  "human_approval": {
+    "approval_id": "APP-911",
+    "kind": "plan",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T00:02:00Z",
+    "decision": "approved",
+    "reason": "Fixture review approval for negative graph-unrelated drift note test.",
+    "expires_at": null
+  },
+  "human_authorization": {
+    "status": "approved",
+    "reason": null
+  },
+  "approvals": [
+    {
+      "approval_id": "APP-912",
+      "kind": "scope-drift",
+      "requested_by": "agent",
+      "approved_by": "example-human",
+      "approved_at": "2026-05-16T00:02:00Z",
+      "decision": "approved",
+      "reason": "Fixture review approval for graph-unrelated drift.",
+      "expires_at": null
+    }
+  ],
+  "graph_scope_review": {
+    "actual_files_inside_graph_scope": [
+      "README.md"
+    ],
+    "actual_files_outside_graph_scope": [
+      "docs/unrelated.md"
+    ],
+    "requires_scope_drift_approval": false,
+    "notes": "Graph-near drift was recorded for review."
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "verification-record.schema.v1",
+  "task_id": "TASK-NEG-GRAPH-UNRELATED-DRIFT",
+  "created_at": "2026-05-16T00:01:00Z",
+  "phase": "verify",
+  "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
+  "execution_ref": ".github/examples/negative/graph-unrelated-drift-without-risk-note.execution.json",
+  "verification_command": "bash release-check.sh",
+  "command_executed_at": "2026-05-16T00:01:00Z",
+  "command_exit_code": 0,
+  "command_refs": [
+    "cmd:release-check"
+  ],
+  "result": "passed",
+  "evidence_summary": "Fixture command exited 0.",
+  "graph_context_used": true,
+  "graph_refs": [
+    "graph-record:freshness:missing"
+  ],
+  "degraded_verification": {
+    "used": false,
+    "acknowledged_by": null,
+    "reason": null
+  },
+  "human_acknowledgment": {
+    "status": "approved",
+    "reason": null
+  }
+}

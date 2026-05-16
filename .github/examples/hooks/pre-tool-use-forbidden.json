@@ -1,8 +1,8 @@
 {
-  "task_id": "TASK-HOOK",
-  "operation": "write",
-  "command": "python3 .github/workflow/validators/check-plan .github/tasks/TASK-001/plan.json",
-  "file_paths": [".github/workflow/validators/check-plan"],
-  "approved_files": ["README.md"],
-  "summary": "Attempt to edit workflow governance file without approval."
+  "timestamp": 1778932800,
+  "cwd": ".github/examples/hooks/active-workspace",
+  "toolName": "bash",
+  "toolArgs": {
+    "command": "rm -rf .github/workflow"
+  }
 }

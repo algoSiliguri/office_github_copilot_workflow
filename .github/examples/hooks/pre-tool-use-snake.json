@@ -1,0 +1,10 @@
+{
+  "timestamp": 1778932800,
+  "cwd": ".github/examples/hooks/orphan-workspace",
+  "tool_name": "edit",
+  "tool_args": {
+    "file_path": ".github/workflow/config.json"
+  },
+  "phase": "execute",
+  "hook_event_name": "PreToolUse"
+}

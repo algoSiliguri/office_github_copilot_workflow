@@ -1,0 +1,31 @@
+{
+  "schema_version": "verification-record.schema.v1",
+  "task_id": "TASK-EVAL-FAILED-VERIFY",
+  "created_at": "2026-05-16T03:02:00Z",
+  "phase": "verify",
+  "plan_ref": ".github/examples/evaluations/tasks/TASK-EVAL-FAILED-VERIFY/plan.json",
+  "execution_ref": ".github/examples/evaluations/tasks/TASK-EVAL-FAILED-VERIFY/execution.json",
+  "verification_command": "bash release-check.sh",
+  "command_executed_at": "2026-05-16T03:02:00Z",
+  "command_exit_code": 1,
+  "command_refs": [
+    "cmd:release-check"
+  ],
+  "result": "failed",
+  "evidence_summary": "Fixture command exited nonzero.",
+  "graph_refs": [],
+  "degraded_verification": {
+    "used": false,
+    "acknowledged_by": null,
+    "reason": null
+  },
+  "human_acknowledgment": {
+    "status": "rejected",
+    "reason": {
+      "category": "verification_failed",
+      "details": "Fixture records nonzero verification exit.",
+      "next_action": "Fix the failing check before approval."
+    }
+  },
+  "graph_context_used": false
+}

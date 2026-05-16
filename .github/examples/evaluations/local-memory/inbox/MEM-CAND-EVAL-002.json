@@ -1,0 +1,11 @@
+{
+  "candidate_id": "MEM-CAND-EVAL-002",
+  "source_task": "TASK-EVAL-MEMORY-SPAM",
+  "type": "repo-fact",
+  "claim": "Memory spam fixture proposal two should remain proposed.",
+  "evidence_refs": [".github/examples/evaluations/tasks/TASK-EVAL-MEMORY-SPAM/review.json"],
+  "why_it_matters": "This fixture helps evaluator count proposed memory candidates.",
+  "expiry": "none",
+  "status": "proposed",
+  "human_approval": null
+}

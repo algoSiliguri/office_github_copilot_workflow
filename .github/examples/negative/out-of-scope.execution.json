@@ -4,11 +4,20 @@
   "created_at": "2026-05-15T00:00:00Z",
   "phase": "execute",
   "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
-  "approved_files": ["README.md"],
-  "modified_files": ["README.md", ".github/workflow/config.json"],
+  "approved_files": [
+    "README.md"
+  ],
+  "modified_files": [
+    "README.md",
+    ".github/workflow/config.json"
+  ],
   "status": "completed",
-  "graph_refs": ["graph:file:README.md"],
-  "command_refs": ["cmd:edit"],
+  "graph_refs": [
+    "graph:file:README.md"
+  ],
+  "command_refs": [
+    "cmd:edit"
+  ],
   "checkpoints": [
     {
       "step": "Invalid out-of-scope edit.",
@@ -16,5 +25,6 @@
     }
   ],
   "risky_tool_approvals": [],
-  "deviations": []
+  "deviations": [],
+  "approvals": []
 }

@@ -1,0 +1,21 @@
+{
+  "schema_version": "execution-record.schema.v1",
+  "task_id": "TASK-BAD-MEMORY",
+  "created_at": "2026-05-16T00:00:00Z",
+  "phase": "execute",
+  "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
+  "approved_files": [".codex/memories/example.md"],
+  "modified_files": [".codex/memories/example.md"],
+  "status": "completed",
+  "graph_refs": [],
+  "command_refs": ["cmd:example"],
+  "checkpoints": [
+    {
+      "step": "Invalid memory write without approval.",
+      "status": "completed"
+    }
+  ],
+  "risky_tool_approvals": [],
+  "deviations": [],
+  "approvals": []
+}

@@ -1,0 +1,6 @@
+{
+  "schema_version": "local-memory-index.schema.v1",
+  "accepted": ["MEM-CAND-001"],
+  "rejected": ["MEM-CAND-002"],
+  "superseded": []
+}

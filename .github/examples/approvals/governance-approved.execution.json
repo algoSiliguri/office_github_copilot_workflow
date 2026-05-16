@@ -1,0 +1,37 @@
+{
+  "schema_version": "execution-record.schema.v1",
+  "task_id": "TASK-APPROVAL-GOV",
+  "created_at": "2026-05-16T00:00:00Z",
+  "phase": "execute",
+  "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
+  "approved_files": [".github/workflow/config.json"],
+  "modified_files": [".github/workflow/config.json"],
+  "status": "completed",
+  "graph_refs": [],
+  "command_refs": ["cmd:example"],
+  "checkpoints": [
+    {
+      "step": "Edited workflow governance config.",
+      "status": "completed"
+    }
+  ],
+  "risky_tool_approvals": [
+    {
+      "category": "governance-edit",
+      "decision": "approved"
+    }
+  ],
+  "deviations": [],
+  "approvals": [
+    {
+      "approval_id": "APP-102",
+      "kind": "governance-edit",
+      "requested_by": "agent",
+      "approved_by": "example-human",
+      "approved_at": "2026-05-16T00:00:00Z",
+      "decision": "approved",
+      "reason": "Maintainer approved the governance configuration edit.",
+      "expires_at": null
+    }
+  ]
+}

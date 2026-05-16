@@ -11,3 +11,9 @@ office_github_copilot_workflow/
 graphify-out/
 .github/tasks/TASK-*/logs/
 .github/tasks/TASK-*/logs/events.jsonl
+.github/tasks/_orphans/
+.github/tasks/_orphans/logs/events.jsonl
+.github/local-memory/
+.github/evals/runs/
+.github/examples/hooks/*/.github/tasks/*/logs/
+.github/examples/hooks/*/.github/tasks/_orphans/

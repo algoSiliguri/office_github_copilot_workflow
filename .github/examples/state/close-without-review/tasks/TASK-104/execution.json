@@ -1,0 +1,29 @@
+{
+  "schema_version": "execution-record.schema.v1",
+  "task_id": "TASK-104",
+  "created_at": "2026-05-16T00:01:00Z",
+  "phase": "execute",
+  "plan_ref": ".github/tasks/TASK-104/plan.json",
+  "approved_files": [
+    "README.md"
+  ],
+  "modified_files": [
+    "README.md"
+  ],
+  "status": "completed",
+  "graph_refs": [
+    "graph-record:freshness:missing"
+  ],
+  "command_refs": [
+    "cmd:check-setup"
+  ],
+  "checkpoints": [
+    {
+      "step": "Completed fixture execution.",
+      "status": "completed"
+    }
+  ],
+  "risky_tool_approvals": [],
+  "deviations": [],
+  "approvals": []
+}

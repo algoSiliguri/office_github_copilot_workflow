@@ -1,0 +1,20 @@
+{
+  "candidate_id": "MEM-CAND-EVAL-005",
+  "source_task": "TASK-EVAL-MEMORY-SPAM",
+  "type": "successful-strategy",
+  "claim": "Accepted memory fixture candidate should count separately from proposed candidates.",
+  "evidence_refs": [".github/examples/evaluations/tasks/TASK-EVAL-MEMORY-SPAM/review.json"],
+  "why_it_matters": "This fixture helps evaluator count accepted memory candidates.",
+  "expiry": "none",
+  "status": "accepted",
+  "human_approval": {
+    "approval_id": "APP-EVAL-MEM-001",
+    "kind": "memory-write",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T05:04:00Z",
+    "decision": "approved",
+    "reason": "Human approved this accepted memory fixture candidate.",
+    "expires_at": null
+  }
+}

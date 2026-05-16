@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "memory-candidate.schema.v1",
+  "type": "object",
+  "required": ["candidate_id", "source_task", "type", "claim", "evidence_refs", "why_it_matters", "expiry", "status", "human_approval"],
+  "properties": {
+    "candidate_id": { "type": "string", "pattern": "^MEM-CAND-" },
+    "source_task": { "type": "string", "pattern": "^TASK-" },
+    "type": {
+      "enum": [
+        "domain-term",
+        "repo-fact",
+        "failure-pattern",
+        "successful-strategy",
+        "command-gotcha",
+        "architecture-decision"
+      ]
+    },
+    "claim": { "type": "string", "minLength": 10 },
+    "evidence_refs": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "why_it_matters": { "type": "string", "minLength": 10 },
+    "expiry": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["proposed", "accepted", "rejected", "superseded"] },
+    "human_approval": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "approval-record.schema.v1" }
+      ]
+    }
+  }
+}

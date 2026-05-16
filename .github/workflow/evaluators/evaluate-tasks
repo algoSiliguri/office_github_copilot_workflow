@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+import argparse
+import json
+from collections import Counter
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+PHASE_ORDER = {"plan": 1, "execute": 2, "verify": 3, "review": 4}
+
+
+def load_json(path):
+    if not path.exists():
+        return None
+    with path.open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def load_jsonl(path):
+    if not path.exists():
+        return []
+    events = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            events.append({"event_type": "invalid_jsonl", "decision": "observe"})
+            continue
+        if isinstance(event, dict):
+            events.append(event)
+    return events
+
+
+def iso_now():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def default_run_id():
+    return datetime.now(timezone.utc).strftime("EVAL-%Y%m%d-%H%M")
+
+
+def approval_decision(record):
+    if not isinstance(record, dict):
+        return None
+    return record.get("decision")
+
+
+def event_decision(event):
+    decision = event.get("decision")
+    if decision:
+        return decision
+    permission = event.get("permissionDecision")
+    return permission
+
+
+def event_type(event):
+    return event.get("event_type") or event.get("category") or "unknown"
+
+
+def event_timestamp(event):
+    return event.get("timestamp") or event.get("time") or ""
+
+
+def phase_transitions(plan, execution, verification, review, events):
+    transitions = []
+    for phase, artifact in [
+        ("plan", plan),
+        ("execute", execution),
+        ("verify", verification),
+        ("review", review),
+    ]:
+        if artifact and artifact.get("created_at"):
+            transitions.append({
+                "phase": phase,
+                "timestamp": artifact["created_at"],
+                "source": f"{phase}.json",
+            })
+    for event in events:
+        phase = event.get("phase")
+        if phase in PHASE_ORDER:
+            transitions.append({
+                "phase": phase,
+                "timestamp": event_timestamp(event),
+                "source": "events.jsonl",
+                "event_type": event_type(event),
+            })
+    return sorted(transitions, key=lambda item: (item.get("timestamp") or "", PHASE_ORDER.get(item.get("phase"), 99), item.get("source", "")))
+
+
+def count_memory_candidates(memory_dir, source_task):
+    proposed = accepted = 0
+    if not memory_dir or not memory_dir.exists():
+        return {"proposed": 0, "accepted": 0}
+    for path in sorted(memory_dir.glob("*/*.json")):
+        record = load_json(path)
+        if not isinstance(record, dict) or record.get("source_task") != source_task:
+            continue
+        if record.get("status") == "proposed":
+            proposed += 1
+        if record.get("status") == "accepted":
+            accepted += 1
+    return {"proposed": proposed, "accepted": accepted}
+
+
+def task_dirs(tasks_dir):
+    if not tasks_dir.exists():
+        return []
+    return [path for path in sorted(tasks_dir.iterdir()) if path.is_dir() and path.name.startswith("TASK-")]
+
+
+def task_metrics(task_dir, memory_dir):
+    plan = load_json(task_dir / "plan.json")
+    execution = load_json(task_dir / "execution.json")
+    verification = load_json(task_dir / "verification.json")
+    review = load_json(task_dir / "review.json")
+    event_log = task_dir / "logs" / "events.jsonl"
+    events = load_jsonl(event_log)
+
+    task_id = task_dir.name
+    if plan and plan.get("task_id"):
+        task_id = plan["task_id"]
+
+    scope_drift = set()
+    if review and isinstance(review.get("scope_drift"), list):
+        for item in review["scope_drift"]:
+            if isinstance(item, dict):
+                scope_drift.add(item.get("file") or json.dumps(item, sort_keys=True))
+            else:
+                scope_drift.add(str(item))
+    if execution:
+        approved = set(execution.get("approved_files", []))
+        modified = set(execution.get("modified_files", []))
+        for path in sorted(modified - approved):
+            scope_drift.add(path)
+
+    denied_tool_count = sum(1 for event in events if event_decision(event) == "deny")
+    memory_counts = count_memory_candidates(memory_dir, task_id)
+    graph_mode = None
+    if plan:
+        graph_mode = plan.get("graph_freshness_mode") or plan.get("graph_usage")
+
+    findings = []
+    if not event_log.exists():
+        findings.append("missing_event_log")
+    if graph_mode in {"stale", "missing", "degraded-approved", "degraded"}:
+        findings.append(f"graph_{graph_mode}")
+    if verification and verification.get("result") != "passed":
+        findings.append(f"verification_{verification.get('result', 'unknown')}")
+    if verification and verification.get("command_exit_code") not in (0, None):
+        findings.append("verification_nonzero_exit")
+    if scope_drift:
+        findings.append("scope_drift")
+    if memory_counts["proposed"] > 3:
+        findings.append("memory_spam")
+
+    return {
+        "task_id": task_id,
+        "task_path": str(task_dir),
+        "complete": bool(plan and execution and verification and review),
+        "plan_approved": approval_decision((plan or {}).get("human_approval")) == "approved",
+        "graph_freshness_mode": graph_mode,
+        "scope_drift_count": len(scope_drift),
+        "denied_tool_count": denied_tool_count,
+        "verification_result": (verification or {}).get("result"),
+        "verification_command_used": (verification or plan or {}).get("verification_command"),
+        "verification_command_exit_code": (verification or {}).get("command_exit_code"),
+        "review_decision": approval_decision((review or {}).get("human_approval")) or (review or {}).get("human_authorization", {}).get("status"),
+        "memory_candidates_proposed": memory_counts["proposed"],
+        "memory_candidates_accepted": memory_counts["accepted"],
+        "phase_transitions": phase_transitions(plan, execution, verification, review, events),
+        "missing_event_log": not event_log.exists(),
+        "findings": sorted(set(findings)),
+    }
+
+
+def build_summary(run_id, created_at, tasks_dir, metrics):
+    task_count = len(metrics)
+    completed_count = sum(1 for item in metrics if item["complete"])
+    approved_count = sum(1 for item in metrics if item["plan_approved"])
+    verification = Counter(item["verification_result"] or "missing" for item in metrics)
+    review = Counter(item["review_decision"] or "missing" for item in metrics)
+    graph = Counter(item["graph_freshness_mode"] or "unknown" for item in metrics)
+    findings = Counter(finding for item in metrics for finding in item["findings"])
+    repeated = sorted([name for name, count in findings.items() if count > 1])
+    return {
+        "schema_version": "eval-summary.schema.v1",
+        "run_id": run_id,
+        "created_at": created_at,
+        "tasks_dir": str(tasks_dir),
+        "task_count": task_count,
+        "completed_task_count": completed_count,
+        "plan_approval_rate": round(approved_count / task_count, 4) if task_count else 0,
+        "verification": dict(sorted(verification.items())),
+        "review": dict(sorted(review.items())),
+        "graph_freshness_modes": dict(sorted(graph.items())),
+        "scope_drift_count": sum(item["scope_drift_count"] for item in metrics),
+        "denied_tool_count": sum(item["denied_tool_count"] for item in metrics),
+        "memory_candidates": {
+            "proposed": sum(item["memory_candidates_proposed"] for item in metrics),
+            "accepted": sum(item["memory_candidates_accepted"] for item in metrics),
+        },
+        "missing_event_logs_count": sum(1 for item in metrics if item["missing_event_log"]),
+        "repeated_failure_patterns": repeated,
+    }
+
+
+def findings_markdown(summary, metrics):
+    lines = [
+        "# Evaluation Findings",
+        "",
+        f"Run: `{summary['run_id']}`",
+        f"Tasks evaluated: {summary['task_count']}",
+        f"Plan approval rate: {summary['plan_approval_rate']}",
+        "",
+        "## Findings",
+    ]
+    any_findings = False
+    for item in metrics:
+        if not item["findings"]:
+            continue
+        any_findings = True
+        lines.append(f"- `{item['task_id']}`: {', '.join(item['findings'])}")
+    if not any_findings:
+        lines.append("- No findings.")
+    lines.extend([
+        "",
+        "## Notes",
+        "- Raw prompts and transcripts are not included.",
+        "- Metrics are derived from task artifacts and redacted event summaries.",
+    ])
+    return "\n".join(lines) + "\n"
+
+
+def write_json(path, data):
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Evaluate completed workflow task artifacts.")
+    parser.add_argument("--tasks-dir", default=".github/tasks")
+    parser.add_argument("--memory-dir", default=".github/local-memory")
+    parser.add_argument("--output-root", default=".github/evals/runs")
+    parser.add_argument("--run-id", default=None)
+    parser.add_argument("--created-at", default=None)
+    parser.add_argument("--include-raw-prompts", action="store_true")
+    args = parser.parse_args()
+
+    run_id = args.run_id or default_run_id()
+    created_at = args.created_at or iso_now()
+    tasks_dir = Path(args.tasks_dir)
+    memory_dir = Path(args.memory_dir)
+    output_dir = Path(args.output_root) / run_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    metrics = [task_metrics(path, memory_dir) for path in task_dirs(tasks_dir)]
+    summary = build_summary(run_id, created_at, tasks_dir, metrics)
+    if args.include_raw_prompts:
+        summary["raw_prompts_included"] = False
+        summary["raw_prompt_note"] = "Raw prompt export is intentionally unsupported by this v1 evaluator."
+
+    write_json(output_dir / "summary.json", summary)
+    write_json(output_dir / "task-metrics.json", {
+        "schema_version": "task-metrics.schema.v1",
+        "run_id": run_id,
+        "tasks": metrics,
+    })
+    (output_dir / "findings.md").write_text(findings_markdown(summary, metrics), encoding="utf-8")
+    print(str(output_dir))
+
+
+if __name__ == "__main__":
+    main()

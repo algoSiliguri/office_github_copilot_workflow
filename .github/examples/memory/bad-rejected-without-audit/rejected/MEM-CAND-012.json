@@ -1,0 +1,22 @@
+{
+  "candidate_id": "MEM-CAND-012",
+  "source_task": "TASK-012",
+  "type": "repo-fact",
+  "claim": "Rejected memory must leave an audit trail before being ignored.",
+  "evidence_refs": [
+    ".github/tasks/TASK-012/review.json"
+  ],
+  "why_it_matters": "This negative fixture proves rejection remains auditable.",
+  "expiry": "none",
+  "status": "rejected",
+  "human_approval": {
+    "approval_id": "APP-MEM-012",
+    "kind": "memory-write",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T00:00:00Z",
+    "decision": "rejected",
+    "reason": "Human rejected this memory candidate for fixture coverage.",
+    "expires_at": null
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "candidate_id": "MEM-CAND-003",
+  "source_task": "TASK-001",
+  "type": "repo-fact",
+  "claim": "Hook trace events belong in task logs, not in the local memory notebook.",
+  "evidence_refs": [
+    ".github/tasks/TASK-001/logs/events.jsonl"
+  ],
+  "why_it_matters": "This keeps automatic diagnostic traces separate from curated durable memory.",
+  "expiry": "none",
+  "status": "proposed",
+  "human_approval": null
+}

@@ -2,59 +2,37 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "event.schema.v1",
   "type": "object",
-  "required": ["schema_version", "event_id", "timestamp", "task_id", "session_id", "category", "phase", "source", "summary", "refs", "sensitivity", "redaction"],
+  "required": ["schema_version", "event_id", "task_id", "phase", "timestamp", "event_type", "tool_name", "target_files", "decision", "reason", "risk", "redacted"],
   "properties": {
     "schema_version": { "const": "event.schema.v1" },
     "event_id": { "type": "string" },
+    "task_id": { "type": ["string", "null"] },
+    "phase": { "enum": ["setup", "plan", "execute", "verify", "review", "evaluate", null] },
     "timestamp": { "type": "string" },
-    "task_id": { "type": "string" },
-    "session_id": { "type": ["string", "null"] },
-    "category": {
+    "event_type": {
       "enum": [
         "session.started",
         "session.ended",
-        "command.invoked",
-        "skill.selected",
-        "graph.context_used",
-        "plan.step_started",
-        "plan.step_completed",
+        "prompt.submitted",
         "tool.requested",
-        "tool.approved",
+        "tool.allowed",
         "tool.denied",
-        "shell.command_run",
-        "file.modified",
-        "verification.command_run",
-        "verification.result",
-        "human.approval_requested",
-        "human.approval_recorded",
-        "assumption.recorded",
-        "deviation.recorded",
-        "review.finding",
-        "evaluation.finding",
-        "error.occurred"
+        "tool.asked",
+        "file.edit_attempt",
+        "command.execution_attempt",
+        "governance_file.edit_attempt",
+        "verification.command_execution",
+        "phase.transition",
+        "hook.error"
       ]
     },
-    "phase": { "enum": ["setup", "plan", "execute", "verify", "evaluate"] },
-    "source": { "enum": ["hook", "command", "validator", "human"] },
-    "summary": { "type": "string" },
-    "refs": {
-      "type": "object",
-      "required": ["artifact_paths", "file_paths", "graph_refs", "command_refs"],
-      "properties": {
-        "artifact_paths": { "type": "array", "items": { "type": "string" } },
-        "file_paths": { "type": "array", "items": { "type": "string" } },
-        "graph_refs": { "type": "array", "items": { "type": "string" } },
-        "command_refs": { "type": "array", "items": { "type": "string" } }
-      }
-    },
-    "sensitivity": { "enum": ["public", "internal", "sensitive"] },
-    "redaction": {
-      "type": "object",
-      "required": ["applied", "reason"],
-      "properties": {
-        "applied": { "type": "boolean" },
-        "reason": { "type": "string" }
-      }
-    }
+    "tool_name": { "type": "string" },
+    "target_files": { "type": "array", "items": { "type": "string" } },
+    "decision": { "enum": ["allow", "deny", "ask", "observe"] },
+    "reason": { "type": "string" },
+    "risk": { "enum": ["low", "medium", "high"] },
+    "redacted": { "type": "boolean" },
+    "session_id": { "type": ["string", "null"] },
+    "metadata": { "type": "object" }
   }
 }

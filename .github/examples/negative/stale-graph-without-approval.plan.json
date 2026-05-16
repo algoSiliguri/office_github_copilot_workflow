@@ -5,12 +5,28 @@
   "phase": "plan",
   "status": "EXECUTION_READY",
   "summary": "Invalid stale graph planning without approval.",
-  "intended_files": ["README.md"],
+  "intended_files": [
+    "README.md"
+  ],
   "risk": "low",
   "verification_command": "python3 .github/workflow/validators/check-setup",
   "graph_freshness_mode": "degraded-approved",
-  "graph_refs": ["graph-record:freshness:stale"],
-  "context_refs": ["README.md"],
+  "graph_usage": {
+    "required": true,
+    "status": "unavailable",
+    "graph_report_read": false,
+    "graph_queries_run": [],
+    "graph_refs": [
+      "graph-record:freshness:stale"
+    ],
+    "reason": "Graphify was unavailable or degraded, so planning used approved graph-light context."
+  },
+  "graph_refs": [
+    "graph-record:freshness:stale"
+  ],
+  "context_refs": [
+    "README.md"
+  ],
   "quick_task_classification": null,
   "diagnosis": null,
   "planning": {
@@ -21,8 +37,27 @@
   "assumptions": [],
   "deviations": [],
   "human_approval": {
-    "approved": false,
-    "approved_by": null,
-    "approved_at": null
+    "approval_id": "APP-001",
+    "kind": "plan",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-15T00:00:00Z",
+    "decision": "rejected",
+    "reason": "Fixture plan rejection for negative validator coverage.",
+    "expires_at": null
+  },
+  "approvals": [],
+  "graph_scope": {
+    "in_scope_modules": [],
+    "in_scope_files": [
+      "README.md"
+    ],
+    "nearby_but_out_of_scope": [
+      "CONTEXT.md"
+    ],
+    "risk_notes": [
+      "Graph was unavailable or degraded; degraded approval is required before execution."
+    ],
+    "graph_to_plan_decision": "Graphify was unavailable or degraded, so planning is constrained to approved intended files and excludes nearby references."
   }
 }

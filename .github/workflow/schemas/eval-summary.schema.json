@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eval-summary.schema.v1",
+  "type": "object",
+  "required": ["schema_version", "run_id", "created_at", "tasks_dir", "task_count", "completed_task_count", "plan_approval_rate", "verification", "review", "graph_freshness_modes", "scope_drift_count", "denied_tool_count", "memory_candidates", "missing_event_logs_count", "repeated_failure_patterns"],
+  "properties": {
+    "schema_version": { "const": "eval-summary.schema.v1" },
+    "run_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "tasks_dir": { "type": "string" },
+    "task_count": { "type": "integer" },
+    "completed_task_count": { "type": "integer" },
+    "plan_approval_rate": { "type": "number" },
+    "verification": { "type": "object" },
+    "review": { "type": "object" },
+    "graph_freshness_modes": { "type": "object" },
+    "scope_drift_count": { "type": "integer" },
+    "denied_tool_count": { "type": "integer" },
+    "memory_candidates": { "type": "object" },
+    "missing_event_logs_count": { "type": "integer" },
+    "repeated_failure_patterns": { "type": "array", "items": { "type": "string" } }
+  }
+}

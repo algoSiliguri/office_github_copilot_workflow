@@ -1,0 +1,1 @@
+{"schema_version":"event.schema.v1","event_id":"eval-memory-001","task_id":"TASK-EVAL-MEMORY-SPAM","phase":"review","timestamp":"2026-05-16T05:03:00Z","event_type":"phase.transition","tool_name":"","target_files":[],"decision":"observe","reason":"fixture memory spam event","risk":"low","redacted":true}

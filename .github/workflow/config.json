@@ -19,9 +19,17 @@
   },
   "graph_policy": {
     "output_path": "graphify-out/",
+    "required_outputs": [
+      "graphify-out/graph.json",
+      "graphify-out/GRAPH_REPORT.md",
+      "graphify-out/manifest.json"
+    ],
     "record_path": ".github/workflow/graph-record.json",
-    "freshness_states": ["missing", "stale", "unknown", "fresh"],
+    "copilot_install_command": "graphify copilot install",
+    "copilot_install_expected": true,
+    "freshness_states": ["fresh", "stale", "missing", "degraded-approved"],
     "normal_planning_requires": "fresh",
+    "graph_refs_cap": 5,
     "degraded_mode_requires_human_approval": true,
     "regeneration_requires_human_approval": true,
     "setup_may_silently_regenerate": false
@@ -33,6 +41,7 @@
       "network_commands",
       "dependency_installation",
       "graph_regeneration",
+      "memory_writes",
       "workflow_governance_edits",
       "secret_or_credential_access"
     ],
@@ -54,10 +63,20 @@
     "workflow-evaluation"
   ],
   "agent": ".github/agents/workflow-orchestrator.agent.md",
+  "local_memory_policy": {
+    "path": ".github/local-memory/",
+    "gitignored": true,
+    "candidate_schema": ".github/workflow/schemas/memory-candidate.schema.json",
+    "validator": ".github/workflow/validators/check-memory",
+    "writes_require_approval_kind": "memory-write",
+    "normal_hooks_write_memory": false,
+    "accepted_candidates_require_evidence": true
+  },
   "artifacts": {
     "graph_record": ".github/workflow/graph-record.json",
     "tasks_dir": ".github/tasks",
     "examples_dir": ".github/examples/tasks",
-    "evaluation_dir": ".github/examples/evaluations"
+    "evaluation_dir": ".github/evals/runs",
+    "evaluation_fixture_dir": ".github/examples/evaluations"
   }
 }

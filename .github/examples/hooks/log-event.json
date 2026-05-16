@@ -1,15 +1,8 @@
 {
-  "task_id": "TASK-HOOK",
-  "session_id": "example-session",
-  "category": "command.invoked",
+  "timestamp": 1778932800,
+  "cwd": ".github/examples/hooks/active-workspace",
+  "sessionId": "example-session",
+  "prompt": "/plan update README with graph context",
   "phase": "plan",
-  "source": "hook",
-  "summary": "Example redacted hook event.",
-  "write_log": false,
-  "refs": {
-    "artifact_paths": [".github/examples/tasks/TASK-001/plan.json"],
-    "file_paths": ["README.md"],
-    "graph_refs": ["graph-record:freshness:missing"],
-    "command_refs": []
-  }
+  "hookEventName": "userPromptSubmitted"
 }

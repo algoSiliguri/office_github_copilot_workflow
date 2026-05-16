@@ -2,33 +2,53 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "graph-record.schema.v1",
   "type": "object",
-  "required": ["schema_version", "graph_output_path", "freshness", "branch", "commit", "source_hash", "generated_at", "degraded_mode_approval", "notes"],
+  "required": [
+    "schema_version",
+    "provider",
+    "graph_dir",
+    "graph_json",
+    "graph_report",
+    "manifest",
+    "copilot_install_expected",
+    "graph_status",
+    "last_checked_at",
+    "status",
+    "generated_at",
+    "repo_root",
+    "git_commit",
+    "branch",
+    "graphify_manifest_path",
+    "graph_output_exists",
+    "approval",
+    "notes"
+  ],
   "properties": {
     "schema_version": { "const": "graph-record.schema.v1" },
-    "graph_output_path": { "type": "string" },
-    "freshness": { "enum": ["missing", "stale", "unknown", "fresh"] },
-    "branch": { "type": ["string", "null"] },
-    "commit": { "type": ["string", "null"] },
-    "source_hash": { "type": ["string", "null"] },
+    "provider": { "const": "graphify" },
+    "graph_dir": { "const": "graphify-out" },
+    "graph_json": { "const": "graphify-out/graph.json" },
+    "graph_report": { "const": "graphify-out/GRAPH_REPORT.md" },
+    "manifest": { "const": "graphify-out/manifest.json" },
+    "copilot_install_expected": { "const": true },
+    "graph_status": { "enum": ["fresh", "stale", "missing", "degraded-approved"] },
+    "last_checked_at": { "type": ["string", "null"] },
+    "status": { "enum": ["fresh", "stale", "missing", "degraded-approved"] },
     "generated_at": { "type": ["string", "null"] },
-    "degraded_mode_approval": {
-      "type": ["object", "null"],
-      "properties": {
-        "approved": { "type": "boolean" },
-        "approved_by": { "type": ["string", "null"] },
-        "approved_at": { "type": ["string", "null"] },
-        "reason": { "type": "string" }
-      }
-    },
-    "freshness_evidence": {
+    "repo_root": { "type": "string" },
+    "git_commit": { "type": ["string", "null"] },
+    "branch": { "type": ["string", "null"] },
+    "graphify_manifest_path": { "type": "string" },
+    "graph_output_exists": {
       "type": "object",
+      "required": ["graph_dir", "graph_json", "graph_report", "manifest"],
       "properties": {
-        "graphify_output_present": { "type": "boolean" },
-        "metadata_matches_current_branch": { "type": ["boolean", "null"] },
-        "metadata_matches_current_commit": { "type": ["boolean", "null"] },
-        "metadata_matches_source_hash": { "type": ["boolean", "null"] }
+        "graph_dir": { "type": "boolean" },
+        "graph_json": { "type": "boolean" },
+        "graph_report": { "type": "boolean" },
+        "manifest": { "type": "boolean" }
       }
     },
+    "approval": { "oneOf": [{ "$ref": "approval-record.schema.v1" }, { "type": "null" }] },
     "notes": { "type": "string" }
   }
 }

@@ -1,0 +1,13 @@
+{
+  "candidate_id": "MEM-CAND-011",
+  "source_task": "TASK-011",
+  "type": "repo-fact",
+  "claim": "Accepted memory must not be possible without human approval.",
+  "evidence_refs": [
+    ".github/tasks/TASK-011/review.json"
+  ],
+  "why_it_matters": "This negative fixture proves approval is mandatory.",
+  "expiry": "none",
+  "status": "accepted",
+  "human_approval": null
+}

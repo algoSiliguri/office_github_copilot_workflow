@@ -1,0 +1,2 @@
+{"candidate_id":"MEM-CAND-001","timestamp":"2026-05-16T00:00:00Z","decision":"accepted","reason":"Human approved this durable workflow memory."}
+{"candidate_id":"MEM-CAND-002","timestamp":"2026-05-16T00:00:00Z","decision":"rejected","reason":"Human rejected this candidate as not durable."}

@@ -1,0 +1,27 @@
+{
+  "schema_version": "verification-record.schema.v1",
+  "task_id": "TASK-BAD-VERIFY",
+  "created_at": "2026-05-16T00:00:00Z",
+  "phase": "verify",
+  "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
+  "execution_ref": ".github/examples/tasks/TASK-001/execution.json",
+  "verification_command": "python3 .github/workflow/validators/check-setup",
+  "command_executed_at": "2026-05-16T00:01:00Z",
+  "command_exit_code": 1,
+  "command_refs": [
+    "cmd:check-setup"
+  ],
+  "result": "failed",
+  "evidence_summary": "Fixture command failed but the acknowledgment is vague.",
+  "graph_refs": [],
+  "degraded_verification": {
+    "used": false,
+    "acknowledged_by": null,
+    "reason": null
+  },
+  "human_acknowledgment": {
+    "status": "approved",
+    "reason": null
+  },
+  "graph_context_used": false
+}

@@ -8,7 +8,8 @@ __pycache__/
 .worktrees/
 github.zip
 office_github_copilot_workflow/
-graphify-out/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
 .github/tasks/TASK-*/logs/
 .github/tasks/TASK-*/logs/events.jsonl
 .github/tasks/_orphans/

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "grill-record.schema.v2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task_id",
+    "grilled_at",
+    "phase",
+    "impacted_files",
+    "mandatory_verification_steps",
+    "risk_notes",
+    "human_approval"
+  ],
+  "properties": {
+    "schema_version": { "const": "grill-record.schema.v2" },
+    "task_id": { "type": "string" },
+    "grilled_at": { "type": "string", "format": "date-time" },
+    "phase": { "const": "grill" },
+    "impacted_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "All files the grill session determined are potentially impacted by the task. plan.intended_files must be a subset of this array."
+    },
+    "mandatory_verification_steps": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 1,
+        "description": "A single shell command as a string array, e.g. [\"pytest\", \"tests/auth/\"]"
+      },
+      "description": "Pool of valid verification commands. plan.verification_commands must be a subset of this array."
+    },
+    "risk_notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "High-risk files, dependency edges, or cross-module concerns surfaced during the grill session."
+    },
+    "requirements_ref": {
+      "type": ["string", "null"],
+      "description": "Path to the requirements.json snapshot this grill session was conducted against, if any."
+    },
+    "human_approval": {
+      "$ref": "approval-record.schema.v1",
+      "description": "The Discovery Gate. Human attests the blast-radius analysis is correct before planning begins."
+    }
+  }
+}

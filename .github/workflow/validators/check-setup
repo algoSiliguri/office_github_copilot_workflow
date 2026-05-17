@@ -7,39 +7,15 @@ from validator_core import load_json as _load_json, make_validator
 
 ROOT = Path.cwd()
 
-REQUIRED_PATHS = [
+# Paths that must exist regardless of config — the minimum bootstrap surface.
+BOOTSTRAP_PATHS = [
     "AGENTS.md",
     ".github/copilot-instructions.md",
     ".github/agents/workflow-orchestrator.agent.md",
     ".github/workflow/config.json",
     ".github/workflow/orchestration.json",
     ".github/workflow/graph-record.json",
-    ".github/workflow/schemas/graph-record.schema.json",
-    ".github/workflow/schemas/approval-record.schema.json",
-    ".github/workflow/schemas/memory-candidate.schema.json",
-    ".github/workflow/schemas/plan-record.schema.json",
-    ".github/workflow/schemas/execution-record.schema.json",
-    ".github/workflow/schemas/verification-record.schema.json",
-    ".github/workflow/schemas/review-record.schema.json",
-    ".github/workflow/schemas/event.schema.json",
-    ".github/workflow/schemas/eval-summary.schema.json",
-    ".github/workflow/schemas/task-metrics.schema.json",
-    ".github/workflow/evaluators/evaluate-tasks",
-    ".github/workflow/validators/check-setup",
-    ".github/workflow/validators/check-plan",
-    ".github/workflow/validators/check-execution",
-    ".github/workflow/validators/check-verification",
-    ".github/workflow/validators/check-state",
-    ".github/workflow/validators/check-graph",
-    ".github/workflow/validators/check-graphify-copilot",
-    ".github/workflow/validators/check-memory",
-    ".github/tasks/README.md",
-    ".github/tasks/.gitkeep",
-    ".github/evals/README.md",
-    ".github/examples/tasks/TASK-001/plan.json",
-    ".github/examples/tasks/TASK-001/execution.json",
-    ".github/examples/tasks/TASK-001/verification.json",
-    ".github/examples/tasks/TASK-001/review.json",
+    ".github/workflow/process_gate.py",
 ]
 
 SKILLS = [
@@ -50,7 +26,6 @@ SKILLS = [
     "workflow-evaluation",
 ]
 
-
 fail, require = make_validator("check-setup")
 
 
@@ -58,22 +33,14 @@ def load_json(path):
     return _load_json(path, fail)
 
 
-for rel in REQUIRED_PATHS:
+# Bootstrap presence check.
+for rel in BOOTSTRAP_PATHS:
     if not (ROOT / rel).exists():
         fail(f"missing required path: {rel}")
 
-for rel in REQUIRED_PATHS:
-    if rel.endswith(".json"):
-        load_json(ROOT / rel)
-
-for skill in SKILLS:
-    skill_path = ROOT / ".github" / "skills" / skill / "SKILL.md"
-    if not skill_path.exists():
-        fail(f"missing required skill: {skill}")
-
 config = load_json(ROOT / ".github/workflow/config.json")
-require(config.get("schema_version") == "config.schema.v1", "config.json has wrong schema_version")
-require(config.get("commands") == ["/setup", "/plan", "/execute", "/verify"], "config.json must expose exactly /setup, /plan, /execute, /verify")
+require(config.get("schema_version") == "config.schema.v2", "config.json has wrong schema_version")
+require(config.get("commands") == ["/setup", "/grill", "/plan", "/execute", "/verify"], "config.json must expose exactly the v2 commands")
 require(config.get("maintainer_commands") == ["/evaluate"], "config.json must keep /evaluate maintainer-only")
 require(config.get("skills") == SKILLS, "config.json must list exactly the five v1 skills")
 require(config.get("safe_default_required") is True, "config.json must require Safe Default Mode")
@@ -90,6 +57,68 @@ require(graph_policy.get("copilot_install_expected") is True, "graph policy must
 require(graph_policy.get("degraded_mode_requires_human_approval") is True, "degraded graph mode must require human approval")
 require(graph_policy.get("regeneration_requires_human_approval") is True, "graph regeneration must require human approval")
 require(graph_policy.get("setup_may_silently_regenerate") is False, "setup must not silently regenerate graph output")
+
+orchestration = load_json(ROOT / ".github/workflow/orchestration.json")
+require(orchestration.get("schema_version") == "orchestration.schema.v2", "orchestration.json has wrong schema_version")
+
+# Config-driven presence check: validate every script declared in enterprise_pipeline exists.
+pipeline = orchestration.get("enterprise_pipeline", {})
+require(isinstance(pipeline, dict) and pipeline, "orchestration.json must define enterprise_pipeline")
+for phase_name, steps in pipeline.items():
+    require(isinstance(steps, list), f"enterprise_pipeline.{phase_name} must be a list")
+    for i, step in enumerate(steps):
+        script = step.get("script")
+        require(isinstance(script, str) and script.strip(), f"enterprise_pipeline.{phase_name}[{i}] must have a script path")
+        require((ROOT / script).exists(), f"enterprise_pipeline.{phase_name}[{i}] script is missing: {script}")
+        require(isinstance(step.get("args", []), list), f"enterprise_pipeline.{phase_name}[{i}] args must be a list")
+
+# Schema files presence check.
+for schema_rel in [
+    ".github/workflow/schemas/grill-record.schema.json",
+    ".github/workflow/schemas/requirements-record.schema.json",
+    ".github/workflow/schemas/verification-draft.schema.json",
+    ".github/workflow/schemas/verification-receipt.schema.json",
+    ".github/workflow/schemas/approval-record.schema.json",
+    ".github/workflow/schemas/memory-candidate.schema.json",
+    ".github/workflow/schemas/plan-record.schema.json",
+    ".github/workflow/schemas/execution-record.schema.json",
+    ".github/workflow/schemas/graph-record.schema.json",
+    ".github/workflow/schemas/event.schema.json",
+    ".github/workflow/schemas/eval-summary.schema.json",
+    ".github/workflow/schemas/task-metrics.schema.json",
+]:
+    if not (ROOT / schema_rel).exists():
+        fail(f"missing required schema: {schema_rel}")
+
+for schema_rel in [
+    ".github/workflow/schemas/plan-record.schema.json",
+    ".github/workflow/schemas/grill-record.schema.json",
+]:
+    load_json(ROOT / schema_rel)
+
+# Tasks directory structure.
+for rel in [
+    ".github/tasks/README.md",
+    ".github/tasks/.gitkeep",
+    ".github/evals/README.md",
+]:
+    if not (ROOT / rel).exists():
+        fail(f"missing required path: {rel}")
+
+# Example task fixtures (v2 schema).
+for rel in [
+    ".github/examples/tasks/TASK-001/plan.json",
+    ".github/examples/tasks/TASK-001/grill.json",
+    ".github/examples/tasks/TASK-001/execution.json",
+    ".github/examples/tasks/TASK-001/verification_receipt.json",
+]:
+    if not (ROOT / rel).exists():
+        fail(f"missing required example fixture: {rel}")
+
+for skill in SKILLS:
+    skill_path = ROOT / ".github" / "skills" / skill / "SKILL.md"
+    if not skill_path.exists():
+        fail(f"missing required skill: {skill}")
 
 hooks = load_json(ROOT / ".github/hooks/workflow-hooks.json")
 required_events = ["sessionStart", "userPromptSubmitted", "preToolUse", "postToolUse", "agentStop", "sessionEnd"]
@@ -148,10 +177,10 @@ if graph.get("graph_status") == "degraded-approved":
 
 yaml_files = list((ROOT / ".github").glob("**/*.yaml")) + list((ROOT / ".github").glob("**/*.yml"))
 if yaml_files:
-    fail("required v1 path must not contain YAML files")
+    fail("required v2 path must not contain YAML files")
 
 for validator in (ROOT / ".github/workflow/validators").iterdir():
-    if validator.is_file():
+    if validator.is_file() and not validator.name.endswith(".pyc"):
         text = validator.read_text(encoding="utf-8")
         forbidden_imports = [
             ("import", "yaml"),

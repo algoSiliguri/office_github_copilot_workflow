@@ -27,38 +27,32 @@ def plan_is_approved(plan):
     return plan.get("status") == "EXECUTION_READY" and plan.get("human_approval", {}).get("decision") == "approved"
 
 
-def verification_is_terminal(verification):
-    acknowledgment = verification.get("human_acknowledgment", {})
-    return verification.get("result") in {"passed", "failed"} and acknowledgment.get("status") in {"approved", "rejected"}
-
-
-def review_is_terminal(review):
-    authorization = review.get("human_authorization", {})
-    if authorization.get("status") == "approved":
-        return review.get("human_approval", {}).get("decision") == "approved"
-    if authorization.get("status") == "rejected":
-        return review.get("human_approval", {}).get("decision") == "rejected"
-    return False
+def receipt_is_terminal(receipt):
+    authorization = receipt.get("human_authorization", {})
+    return authorization.get("status") in {"approved", "rejected"}
 
 
 def task_is_closed(task_dir):
-    verification_path = task_dir / "verification.json"
-    review_path = task_dir / "review.json"
-    if not verification_path.exists() or not review_path.exists():
+    receipt_path = task_dir / "verification_receipt.json"
+    if not receipt_path.exists():
         return False
-    return verification_is_terminal(load_json(verification_path)) and review_is_terminal(load_json(review_path))
+    return receipt_is_terminal(load_json(receipt_path))
 
 
 def validate_task_folder(task_dir):
     task_id = task_dir.name
+    grill_path = task_dir / "grill.json"
     plan_path = task_dir / "plan.json"
     execution_path = task_dir / "execution.json"
-    verification_path = task_dir / "verification.json"
-    review_path = task_dir / "review.json"
+    receipt_path = task_dir / "verification_receipt.json"
 
     require(plan_path.exists(), f"{task_id} missing plan.json")
     plan = load_json(plan_path)
     required_task_id(plan, task_id, plan_path)
+
+    if grill_path.exists():
+        grill = load_json(grill_path)
+        required_task_id(grill, task_id, grill_path)
 
     if execution_path.exists():
         execution = load_json(execution_path)
@@ -66,16 +60,11 @@ def validate_task_folder(task_dir):
         require(plan_is_approved(plan), f"{task_id} cannot execute without an approved execution-ready plan")
         require(execution.get("plan_ref"), f"{task_id} execution must reference plan")
 
-    if verification_path.exists() or review_path.exists():
+    if receipt_path.exists():
         require(execution_path.exists(), f"{task_id} cannot close without execution.json")
-        require(verification_path.exists(), f"{task_id} cannot close without verification.json")
-        require(review_path.exists(), f"{task_id} cannot close without review.json")
-        verification = load_json(verification_path)
-        review = load_json(review_path)
-        required_task_id(verification, task_id, verification_path)
-        required_task_id(review, task_id, review_path)
-        require(verification_is_terminal(verification), f"{task_id} verification must be acknowledged before closeout")
-        require(review_is_terminal(review), f"{task_id} review must be approved or rejected before closeout")
+        receipt = load_json(receipt_path)
+        required_task_id(receipt, task_id, receipt_path)
+        require(receipt.get("schema_version") == "verification-receipt.schema.v2", f"{task_id} verification_receipt.json has wrong schema_version")
 
     return task_is_closed(task_dir)
 

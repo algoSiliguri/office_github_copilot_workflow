@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from approval_model import require_approved, require_approved_kind, validate_approval
-from graph_policy import graph_refs_max, is_graph_light_quick_task
+from graph_policy import graph_refs_max
 from validator_core import load_json as _load_json, make_validator, require_iso8601
 
 
@@ -17,6 +17,31 @@ def load_json(path):
 
 _orchestration = load_json(Path(__file__).resolve().parent.parent / "orchestration.json")
 _GRAPH_REF_CAP = graph_refs_max(_orchestration)
+
+
+def validate_grill_gate(record):
+    grill_ref = record.get("grill_ref")
+    require(isinstance(grill_ref, str) and grill_ref.strip(), "grill_ref is required")
+    grill_path = Path(grill_ref)
+    require(grill_path.exists(), f"grill_ref points to missing file: {grill_ref}")
+    grill = load_json(grill_path)
+
+    require_approved(grill.get("human_approval"), "grill", "grill.human_approval", fail)
+
+    impacted = set(grill.get("impacted_files", []))
+    intended = set(record["intended_files"])
+    unlisted = sorted(intended - impacted)
+    require(
+        not unlisted,
+        f"plan.intended_files contains files not in grill.impacted_files: {', '.join(unlisted)}",
+    )
+
+    mandatory = {tuple(step) for step in grill.get("mandatory_verification_steps", [])}
+    for i, cmd in enumerate(record.get("verification_commands", [])):
+        require(
+            tuple(cmd) in mandatory,
+            f"verification_commands[{i}] {cmd} is not in grill.mandatory_verification_steps",
+        )
 
 
 def validate_graph_usage(record):
@@ -33,33 +58,22 @@ def validate_graph_usage(record):
     require(isinstance(usage["reason"], str) and len(usage["reason"].strip()) >= 10, "graph_usage.reason must explain Graphify use or skip")
     require(record["graph_refs"] == usage["graph_refs"], "top-level graph_refs must match graph_usage.graph_refs")
 
-    graph_light_quick = is_graph_light_quick_task(record)
     if usage["status"] == "used":
         require(usage["graph_report_read"] is True, "graph_usage.status=used requires graph_report_read=true")
-        if not graph_light_quick:
-            require(usage["graph_refs"], "graph_usage.status=used requires graph_refs for non-quick tasks")
+        require(usage["graph_refs"], "graph_usage.status=used requires graph_refs")
     elif usage["status"] == "skipped-with-approval":
         require_approved(record["human_approval"], "plan", "human_approval", fail)
-        if not graph_light_quick:
-            require_approved_kind(record["approvals"], "graph-degraded", "skipped Graphify planning", fail)
+        require_approved_kind(record["approvals"], "graph-degraded", "skipped Graphify planning", fail)
         require(not usage["graph_refs"], "skipped Graphify planning must not record graph_refs")
     elif usage["status"] == "unavailable":
-        if not graph_light_quick:
-            require_approved_kind(record["approvals"], "graph-degraded", "unavailable Graphify planning", fail)
-        require(not usage["graph_refs"] or record["graph_freshness_mode"] == "degraded-approved", "unavailable Graphify planning cannot use graph_refs without degraded mode")
+        require_approved_kind(record["approvals"], "graph-degraded", "unavailable Graphify planning", fail)
+        require(not usage["graph_refs"], "unavailable Graphify planning must not record graph_refs")
 
 
 def validate_graph_scope(record):
     scope = record["graph_scope"]
     require(isinstance(scope, dict), "graph_scope must be an object")
-    required_scope = [
-        "in_scope_modules",
-        "in_scope_files",
-        "nearby_but_out_of_scope",
-        "risk_notes",
-        "graph_to_plan_decision",
-    ]
-    for key in required_scope:
+    for key in ["in_scope_modules", "in_scope_files", "nearby_but_out_of_scope", "risk_notes", "graph_to_plan_decision"]:
         require(key in scope, f"graph_scope missing required field: {key}")
     for key in ["in_scope_modules", "in_scope_files", "nearby_but_out_of_scope", "risk_notes"]:
         require(isinstance(scope[key], list), f"graph_scope.{key} must be a list")
@@ -68,14 +82,8 @@ def validate_graph_scope(record):
     require(isinstance(decision, str) and decision.strip(), "graph_scope.graph_to_plan_decision is required")
     normalized = " ".join(decision.lower().split())
     vague = {
-        "graphify was checked",
-        "graph was checked",
-        "graph checked",
-        "checked graphify",
-        "graphify checked",
-        "read graph report",
-        "graph report was read",
-        "used graphify",
+        "graphify was checked", "graph was checked", "graph checked", "checked graphify",
+        "graphify checked", "read graph report", "graph report was read", "used graphify",
         "graph context was used",
     }
     require(normalized not in vague and len(normalized) >= 25, "graph_scope.graph_to_plan_decision must explain a concrete graph-to-plan decision")
@@ -104,38 +112,29 @@ with path.open(encoding="utf-8") as handle:
     record = json.load(handle)
 
 required = [
-    "schema_version",
-    "task_id",
-    "created_at",
-    "phase",
-    "status",
-    "summary",
-    "intended_files",
-    "risk",
-    "verification_command",
-    "graph_freshness_mode",
-    "graph_usage",
-    "graph_scope",
-    "graph_refs",
-    "context_refs",
-    "assumptions",
-    "deviations",
-    "planning",
-    "diagnosis",
-    "quick_task_classification",
-    "human_approval",
-    "approvals",
+    "schema_version", "task_id", "created_at", "phase", "status", "summary",
+    "intended_files", "risk", "verification_commands", "grill_ref",
+    "graph_freshness_mode", "graph_usage", "graph_scope", "graph_refs",
+    "context_refs", "assumptions", "deviations", "planning", "diagnosis",
+    "human_approval", "approvals",
 ]
 missing = [key for key in required if key not in record]
 if missing:
     fail(f"missing required fields: {', '.join(missing)}")
-require(record["schema_version"] == "plan-record.schema.v1", "wrong schema_version")
+
+require(record["schema_version"] == "plan-record.schema.v2", "wrong schema_version")
 require_iso8601(record["created_at"], "created_at", fail)
 require(record["phase"] == "plan", "phase must be plan")
 require(record["status"] in {"EXECUTION_READY", "DIAGNOSIS_REQUIRED", "BLOCKED"}, "invalid status")
 require(isinstance(record["intended_files"], list) and bool(record["intended_files"]), "intended_files must be a non-empty list")
 require(record["risk"] in {"low", "medium", "high"}, "invalid risk")
-require(bool(record["verification_command"]), "verification_command is required")
+
+require(isinstance(record["verification_commands"], list) and record["verification_commands"], "verification_commands must be a non-empty list")
+for i, cmd in enumerate(record["verification_commands"]):
+    require(isinstance(cmd, list) and cmd, f"verification_commands[{i}] must be a non-empty array")
+    for j, token in enumerate(cmd):
+        require(isinstance(token, str) and token.strip(), f"verification_commands[{i}][{j}] must be a non-empty string")
+
 require(record["graph_freshness_mode"] in {"fresh", "degraded-approved"}, "invalid graph_freshness_mode")
 require(isinstance(record["graph_refs"], list), "graph_refs must be a list")
 require(len(record["graph_refs"]) <= _GRAPH_REF_CAP, "graph_refs must contain at most 5 entries")
@@ -147,12 +146,8 @@ for index, approval in enumerate(record["approvals"]):
     validate_approval(approval, None, f"approvals[{index}]", fail)
 if record["graph_freshness_mode"] == "degraded-approved":
     require_approved_kind(record["approvals"], "graph-degraded", "degraded graph mode", fail)
-quick = record.get("quick_task_classification")
-if quick:
-    require(quick.get("is_quick_task") in {True, False}, "quick_task_classification must declare is_quick_task")
-    if quick.get("is_quick_task") is True:
-        require("graph_light_planning_allowed" in quick, "quick_task_classification must declare graph_light_planning_allowed")
-    require_approved(record["human_approval"], "plan", "human_approval", fail)
+
+validate_grill_gate(record)
 validate_graph_usage(record)
 validate_graph_scope(record)
 

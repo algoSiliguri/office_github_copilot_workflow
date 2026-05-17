@@ -1,0 +1,62 @@
+{
+  "schema_version": "verification-receipt.schema.v2",
+  "task_id": "TASK-001",
+  "created_at": "2026-05-15T00:01:00Z",
+  "phase": "verify",
+  "plan_ref": ".github/examples/tasks/TASK-001/plan.json",
+  "execution_ref": ".github/examples/tasks/TASK-001/execution.json",
+  "witness": {
+    "commands": [
+      {
+        "command": ["python3", ".github/workflow/validators/check-setup"],
+        "exit_code": 0,
+        "executed_at": "2026-05-15T00:01:00Z"
+      }
+    ],
+    "all_passed": true,
+    "witnessed_at": "2026-05-15T00:01:00Z"
+  },
+  "evidence_summary": "Example fixture: check-setup exited 0. Documentation change required no code path changes.",
+  "graph_context_used": false,
+  "graph_refs": [],
+  "degraded_verification": {
+    "used": false,
+    "acknowledged_by": null,
+    "reason": null
+  },
+  "approved_files": [
+    "README.md"
+  ],
+  "actual_files": [
+    "README.md"
+  ],
+  "scope_drift": [],
+  "findings": [],
+  "assumptions": [
+    "Example artifact only."
+  ],
+  "deviations": [],
+  "graph_scope_review": {
+    "actual_files_inside_graph_scope": [
+      "README.md"
+    ],
+    "actual_files_outside_graph_scope": [],
+    "requires_scope_drift_approval": false,
+    "notes": "Actual files stayed inside approved plan scope."
+  },
+  "human_authorization": {
+    "status": "approved",
+    "reason": null
+  },
+  "human_approval": {
+    "approval_id": "APP-004",
+    "kind": "plan",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-15T00:02:00Z",
+    "decision": "approved",
+    "reason": "Fixture receipt approval for task closeout.",
+    "expires_at": null
+  },
+  "approvals": []
+}

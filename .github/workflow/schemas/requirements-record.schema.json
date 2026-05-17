@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "requirements-record.schema.v2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "source_system",
+    "issue_id",
+    "title",
+    "acceptance_criteria",
+    "raw_context_tokens",
+    "provenance_metadata"
+  ],
+  "properties": {
+    "schema_version": { "const": "requirements-record.schema.v2" },
+    "source_system": {
+      "type": "string",
+      "description": "Originating tracker: 'github_issues', 'jira', 'linear', or 'none' for internally-motivated engineering tasks."
+    },
+    "issue_id": {
+      "type": ["string", "null"],
+      "description": "Tracker issue ID (e.g. 'GH-142'). Null when source_system is 'none'."
+    },
+    "title": { "type": "string", "minLength": 5 },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Human-readable acceptance criteria. check-plan performs keyword overlap check against plan text fields."
+    },
+    "raw_context_tokens": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Key technical terms from the requirement used for lightweight plan alignment checks."
+    },
+    "provenance_metadata": {
+      "type": "object",
+      "required": ["generated_by", "fetched_at"],
+      "properties": {
+        "generated_by": { "type": "string" },
+        "fetched_at": { "type": "string", "format": "date-time" },
+        "upstream_status": { "type": ["string", "null"] },
+        "upstream_url": { "type": ["string", "null"] }
+      }
+    },
+    "human_approval": {
+      "oneOf": [
+        { "$ref": "approval-record.schema.v1" },
+        { "type": "null" }
+      ],
+      "description": "Required when source_system is 'none'. Null is valid for externally-sourced snapshots whose provenance is the external tracker's IdP/RBAC."
+    }
+  }
+}

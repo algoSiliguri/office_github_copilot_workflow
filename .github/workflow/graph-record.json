@@ -7,11 +7,11 @@
   "manifest": "graphify-out/manifest.json",
   "copilot_install_expected": true,
   "graph_status": "fresh",
-  "last_checked_at": "2026-05-16T12:00:00Z",
+  "last_checked_at": "2026-05-16T14:00:00Z",
   "status": "fresh",
   "generated_at": "2026-05-16T00:00:00Z",
   "repo_root": ".",
-  "git_commit": "db18906a30eadea3afb970f89f6a8e557cbf1812",
+  "git_commit": "44af69fd975b3fdd9ebf5c1f0508cc0e543c14c8",
   "branch": "main",
   "graphify_manifest_path": "graphify-out/manifest.json",
   "graph_output_exists": {

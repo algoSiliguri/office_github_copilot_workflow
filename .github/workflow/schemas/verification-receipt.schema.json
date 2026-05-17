@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verification-receipt.schema.v2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task_id",
+    "created_at",
+    "phase",
+    "plan_ref",
+    "execution_ref",
+    "witness",
+    "evidence_summary",
+    "graph_context_used",
+    "graph_refs",
+    "degraded_verification",
+    "approved_files",
+    "actual_files",
+    "scope_drift",
+    "findings",
+    "assumptions",
+    "deviations",
+    "graph_scope_review",
+    "human_authorization",
+    "human_approval",
+    "approvals"
+  ],
+  "properties": {
+    "schema_version": { "const": "verification-receipt.schema.v2" },
+    "task_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "phase": { "const": "verify" },
+    "plan_ref": { "type": "string" },
+    "execution_ref": { "type": "string" },
+
+    "witness": {
+      "type": "object",
+      "required": ["commands", "all_passed", "witnessed_at"],
+      "description": "Machine-witnessed execution facts written by check-verification. Immutable after script completes.",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["command", "exit_code", "executed_at"],
+            "properties": {
+              "command": { "type": "array", "items": { "type": "string" } },
+              "exit_code": { "type": "integer" },
+              "executed_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "all_passed": { "type": "boolean" },
+        "witnessed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "evidence_summary": { "type": "string", "minLength": 10 },
+    "graph_context_used": { "type": "boolean" },
+    "graph_refs": { "type": "array", "items": { "type": "string" } },
+    "degraded_verification": {
+      "type": "object",
+      "required": ["used"],
+      "properties": {
+        "used": { "type": "boolean" },
+        "acknowledged_by": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+
+    "approved_files": { "type": "array", "items": { "type": "string" } },
+    "actual_files": { "type": "array", "items": { "type": "string" } },
+    "scope_drift": { "type": "array" },
+    "findings": { "type": "array" },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "deviations": { "type": "array" },
+
+    "graph_scope_review": {
+      "type": "object",
+      "required": ["actual_files_inside_graph_scope", "actual_files_outside_graph_scope", "requires_scope_drift_approval", "notes"],
+      "properties": {
+        "actual_files_inside_graph_scope": { "type": "array", "items": { "type": "string" } },
+        "actual_files_outside_graph_scope": { "type": "array", "items": { "type": "string" } },
+        "requires_scope_drift_approval": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "human_authorization": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["approved", "rejected", "pending"] },
+        "reason": {
+          "type": ["object", "null"],
+          "properties": {
+            "category": {
+              "enum": ["scope_violation", "incorrect_implementation", "criteria_not_met", "verification_incomplete", "quality_issue", "other"]
+            },
+            "details": { "type": "string", "minLength": 10 }
+          }
+        }
+      }
+    },
+    "human_approval": {
+      "oneOf": [
+        { "$ref": "approval-record.schema.v1" },
+        { "type": "null" }
+      ]
+    },
+    "approvals": {
+      "type": "array",
+      "items": { "$ref": "approval-record.schema.v1" }
+    }
+  },
+  "description": "Single authoritative artifact for the verify phase (v2). Written initially by check-verification (witness section + AI semantic fields). Human review disposition fields filled afterward. Replaces verification-record.schema.v1 and review-record.schema.v1."
+}

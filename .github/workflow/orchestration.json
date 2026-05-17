@@ -1,6 +1,8 @@
 {
-  "schema_version": "orchestration.schema.v1",
-  "phase_order": ["setup", "plan", "execute", "verify"],
+  "schema_version": "orchestration.schema.v2",
+  "phase_order": ["setup", "grill", "plan", "execute", "verify"],
+  "approval_kinds": ["plan", "grill", "requirements", "graph-degraded", "scope-drift", "memory-write", "governance-edit"],
+
   "setup_contract": {
     "validate_bundle_layout": true,
     "target_agents_managed_block_only": true,
@@ -21,29 +23,45 @@
       "fresh": "Graph metadata matches the current branch and commit/source hash."
     }
   },
-  "approval_kinds": ["plan", "graph-degraded", "scope-drift", "memory-write", "governance-edit"],
+
+  "grill_contract": {
+    "artifact": ".github/tasks/TASK-{NNN}/grill.json",
+    "schema": ".github/workflow/schemas/grill-record.schema.json",
+    "requires_graph_report_read": true,
+    "human_approval_kind": "grill",
+    "discovery_gate_required_before_plan": true,
+    "impacted_files_must_be_nonempty": true,
+    "mandatory_verification_steps_must_be_nonempty": true,
+    "requirements_ref_optional": true
+  },
+
+  "requirements_contract": {
+    "artifact": ".github/tasks/TASK-{NNN}/requirements.json",
+    "schema": ".github/workflow/schemas/requirements-record.schema.json",
+    "source_systems": ["github_issues", "jira", "linear", "azure_devops", "none"],
+    "internal_source_requires_human_approval_kind": "requirements",
+    "external_source_provenance_via_idp": true,
+    "check_plan_enforces_token_overlap": true
+  },
+
   "plan_contract": {
     "artifact": ".github/tasks/TASK-{NNN}/plan.json",
+    "schema": ".github/workflow/schemas/plan-record.schema.json",
     "normal_planning_requires_graph_freshness": "fresh",
     "degraded_planning_requires_human_approval": true,
     "graph_usage_declaration_required": true,
     "graph_usage_statuses": ["used", "skipped-with-approval", "unavailable"],
     "graph_refs_max": 5,
     "graph_scope_required": true,
-    "graph_scope_questions": [
-      "Which graph/module area is relevant?",
-      "Which files are directly in scope?",
-      "Which nearby files are related but intentionally out of scope?",
-      "Which high-risk/high-reach files were identified?",
-      "Did Graphify reveal test, documentation, or configuration files that should be considered?"
-    ],
-    "graph_light_quick_tasks_require_explicit_policy": true,
+    "grill_gate_required": true,
+    "intended_files_subset_of_grill_impacted": true,
+    "verification_commands_subset_of_grill_steps": true,
     "approval_artifact_kind": "plan",
     "degraded_graph_approval_artifact_kind": "graph-degraded",
-    "quick_task_is_classification_only": true,
     "diagnosis_required_blocks_execution": true,
     "writes_active_task_to_state": true
   },
+
   "execute_contract": {
     "artifact": ".github/tasks/TASK-{NNN}/execution.json",
     "requires_approved_plan": true,
@@ -66,17 +84,21 @@
       ".codex/memories/"
     ]
   },
+
   "verify_contract": {
-    "artifacts": [
-      ".github/tasks/TASK-{NNN}/verification.json",
-      ".github/tasks/TASK-{NNN}/review.json"
-    ],
+    "draft_artifact": ".github/tasks/TASK-{NNN}/verification_draft.json",
+    "receipt_artifact": ".github/tasks/TASK-{NNN}/verification_receipt.json",
+    "draft_schema": ".github/workflow/schemas/verification-draft.schema.json",
+    "receipt_schema": ".github/workflow/schemas/verification-receipt.schema.json",
+    "verification_commands_locked_to_plan": true,
+    "executor_witness_pattern": true,
+    "shell_false_required": true,
+    "draft_deleted_after_receipt_written": true,
+    "review_fields_filled_by_human_after_witnessing": true,
     "graph_data_is_not_correctness_evidence": true,
-    "degraded_verification_requires_acknowledgement": true,
-    "failed_verification_requires_rejection_reason": true,
-    "remaining_assumptions_or_deviations_require_human_decision": true,
     "clears_active_task_on_closeout": true
   },
+
   "local_memory_contract": {
     "path": ".github/local-memory/",
     "directories": ["inbox", "accepted", "rejected"],
@@ -87,6 +109,7 @@
     "accepted_candidates_require_evidence": true,
     "rejected_candidates_are_audit_only": true
   },
+
   "evaluation_contract": {
     "command": "/evaluate",
     "maintainer_only": true,
@@ -96,12 +119,15 @@
     "raw_prompts_included_by_default": false,
     "requires_network": false
   },
+
   "human_gates": [
+    "approve_grill",
     "approve_plan",
     "approve_risky_tool_use",
     "approve_verification_review"
   ],
   "conditional_maintainer_gates": ["approve_workflow_improvement"],
+
   "safe_default_mode": {
     "requires_plugins": false,
     "requires_mcp": false,
@@ -109,5 +135,54 @@
     "requires_hooks": false,
     "requires_admin": false,
     "requires_third_party_python": false
+  },
+
+  "enterprise_pipeline": {
+    "on_setup": [
+      {
+        "script": ".github/workflow/validators/check-setup",
+        "args": []
+      }
+    ],
+    "on_grill": [
+      {
+        "script": ".github/workflow/validators/check-grill",
+        "args": [".github/tasks/{active_task}/grill.json"]
+      }
+    ],
+    "on_planning": [
+      {
+        "script": ".github/workflow/validators/check-graph",
+        "args": [".github/workflow/graph-record.json", ".github/tasks/{active_task}/plan.json"]
+      },
+      {
+        "script": ".github/workflow/validators/check-plan",
+        "args": [".github/tasks/{active_task}/plan.json"]
+      },
+      {
+        "script": ".github/workflow/validators/check-state",
+        "args": []
+      }
+    ],
+    "on_execution": [
+      {
+        "script": ".github/workflow/validators/check-execution",
+        "args": [".github/tasks/{active_task}/execution.json"]
+      },
+      {
+        "script": ".github/workflow/validators/check-state",
+        "args": []
+      }
+    ],
+    "on_verification": [
+      {
+        "script": ".github/workflow/validators/check-verification",
+        "args": [".github/tasks/{active_task}/verification_draft.json"]
+      },
+      {
+        "script": ".github/workflow/validators/check-state",
+        "args": []
+      }
+    ]
   }
 }

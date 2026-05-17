@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verification-draft.schema.v2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task_id",
+    "created_at",
+    "phase",
+    "plan_ref",
+    "execution_ref",
+    "evidence_summary",
+    "graph_context_used",
+    "graph_refs",
+    "degraded_verification"
+  ],
+  "properties": {
+    "schema_version": { "const": "verification-draft.schema.v2" },
+    "task_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "phase": { "const": "verify" },
+    "plan_ref": {
+      "type": "string",
+      "description": "Path to the canonical plan.json for this task."
+    },
+    "execution_ref": {
+      "type": "string",
+      "description": "Path to the canonical execution.json for this task."
+    },
+    "evidence_summary": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Human-readable explanation of what the work achieved. Must not use graph data as correctness proof."
+    },
+    "graph_context_used": { "type": "boolean" },
+    "graph_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "degraded_verification": {
+      "type": "object",
+      "required": ["used"],
+      "properties": {
+        "used": { "type": "boolean" },
+        "acknowledged_by": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "description": "AI-written semantic context only. Does NOT contain verification_command — that is read from plan.json by check-verification. Deleted by check-verification after verification_receipt.json is written."
+}

@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+from approval_model import validate_approval
+from validator_core import load_json as _load_json, make_validator, require_iso8601
+
+EXTERNAL_SOURCES = {"github_issues", "jira", "linear", "azure_devops"}
+
+fail, require = make_validator("check-requirements")
+
+
+def load_json(path):
+    return _load_json(path, fail)
+
+
+if len(sys.argv) != 2:
+    fail("usage: check-requirements PATH")
+
+path = Path(sys.argv[1])
+with path.open(encoding="utf-8") as handle:
+    import json
+    record = json.load(handle)
+
+for key in [
+    "schema_version",
+    "source_system",
+    "issue_id",
+    "title",
+    "acceptance_criteria",
+    "raw_context_tokens",
+    "provenance_metadata",
+]:
+    if key not in record:
+        fail(f"missing required field: {key}")
+
+require(record["schema_version"] == "requirements-record.schema.v2", "wrong schema_version")
+require(isinstance(record["source_system"], str) and record["source_system"].strip(), "source_system is required")
+
+source = record["source_system"]
+if source != "none" and source not in EXTERNAL_SOURCES:
+    fail(f"source_system must be 'none' or one of: {', '.join(sorted(EXTERNAL_SOURCES))}")
+
+if source == "none":
+    require(record["issue_id"] is None, "issue_id must be null when source_system is 'none'")
+else:
+    require(isinstance(record["issue_id"], str) and record["issue_id"].strip(), "issue_id is required for external source systems")
+
+require(isinstance(record["title"], str) and len(record["title"].strip()) >= 5, "title must be at least 5 characters")
+
+require(isinstance(record["acceptance_criteria"], list) and record["acceptance_criteria"], "acceptance_criteria must be a non-empty list")
+for i, criterion in enumerate(record["acceptance_criteria"]):
+    require(isinstance(criterion, str) and criterion.strip(), f"acceptance_criteria[{i}] must be a non-empty string")
+
+require(isinstance(record["raw_context_tokens"], list) and record["raw_context_tokens"], "raw_context_tokens must be a non-empty list")
+for i, token in enumerate(record["raw_context_tokens"]):
+    require(isinstance(token, str) and token.strip(), f"raw_context_tokens[{i}] must be a non-empty string")
+
+provenance = record["provenance_metadata"]
+require(isinstance(provenance, dict), "provenance_metadata must be an object")
+require(isinstance(provenance.get("generated_by"), str) and provenance["generated_by"].strip(), "provenance_metadata.generated_by is required")
+require_iso8601(provenance.get("fetched_at", ""), "provenance_metadata.fetched_at", fail)
+
+if source == "none":
+    approval = record.get("human_approval")
+    require(isinstance(approval, dict), "source_system 'none' requires human_approval")
+    validate_approval(approval, "requirements", "human_approval", fail)
+    require(approval.get("decision") == "approved", "human_approval must be approved for internally-motivated tasks")
+
+print("check-requirements: ok")

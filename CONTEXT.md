@@ -189,3 +189,55 @@ The clean v1 repository structure that replaces the old command, agent, schema, 
 **Authoritative in phase 1:** validators, approved artifacts, human approval records, verification command output and exit code, graph-record status for the planning gate.
 
 **Not authoritative in phase 1:** raw hook event logs, Graphify report as verification proof, local memory notebook contents, evaluation findings, skills text without validator support.
+
+---
+
+### GrillRecord
+
+The task artifact at `.github/tasks/TASK-{NNN}/grill.json` produced at the end of a `/grill` session. It records the AI-discovered blast radius (`impacted_files`), mandatory verification steps (`mandatory_verification_steps`), and a human ApprovalRecord (the Discovery Gate). `check-plan` requires a human-approved GrillRecord before evaluating any PlanRecord.
+_Avoid_: grill output, grill summary, grill notes
+
+### RequirementsSnapshot
+
+The task artifact at `.github/tasks/TASK-{NNN}/requirements.json` that freezes external issue or engineering intent into a local, deterministic file before any validation runs. External-sourced snapshots (`source_system: "github_issues"`, `"jira"`, etc.) carry `provenance_metadata` and no local human_approval. Internally-motivated tasks (`source_system: "none"`) must carry a full local ApprovalRecord. Network lookups happen once at ingest time; no validator ever calls the network.
+_Avoid_: ticket snapshot, issue snapshot, task spec
+
+### VerificationDraft
+
+A temporary AI-written artifact at `.github/tasks/TASK-{NNN}/verification_draft.json` carrying only semantic context the AI and human can supply: `evidence_summary`, `graph_refs`, and `degraded_verification.acknowledged_by`. It does not contain a `verification_command` — that field is locked to the PlanRecord. `check-verification` reads the draft for semantic fields, cross-validates against canonical plan and execution artifacts, and deletes the draft after writing the VerificationReceipt.
+_Avoid_: verification artifact, verification record draft
+
+### VerificationReceipt
+
+The permanent, script-generated compliance artifact at `.github/tasks/TASK-{NNN}/verification_receipt.json`. Written by `check-verification` only after all cross-checks pass and the kernel-witnessed exit code is 0. Contains both AI-sourced semantic fields (from VerificationDraft) and deterministically verified facts (file scope, exit codes). Replaces the AI-authored `verification.json` in the hardened architecture.
+_Avoid_: verification record, verification output
+
+### ProcessGate
+
+A thin stdlib-only runner at `.github/workflow/process_gate.py` that reads `orchestration.json.enterprise_pipeline`, interpolates `{active_task}` from `state.json`, and invokes validators in declared phase order via `subprocess.run`. Contains zero business logic or path-construction knowledge. Fails fast with an explicit governance message if `active_task` is null when a phase requires it.
+_Avoid_: orchestrator, runner script, pipeline runner
+
+### Discovery Gate
+
+The mandatory human ApprovalRecord on a GrillRecord (`grill.json.human_approval`). The human attests that the AI's blast-radius analysis (`impacted_files`) and verification strategy (`mandatory_verification_steps`) correctly capture the task's scope. `check-plan` validates the Discovery Gate before evaluating any subset invariant. Distinct from the Commitment Gate on the PlanRecord.
+_Avoid_: grill approval, grill sign-off
+
+### Commitment Gate
+
+The mandatory human ApprovalRecord on a PlanRecord (`plan.json.human_approval`). The human attests that the chosen execution strategy — the subset of grill-discovered scope — is safe and correct. Evaluated by `check-plan` after the Discovery Gate passes. Distinct from the Discovery Gate on the GrillRecord.
+_Avoid_: plan approval
+
+### Executor-Witness Pattern
+
+The design in which `check-verification` spawns the locked verification commands from the PlanRecord via `subprocess.run` (with `shell=False` and array arguments) and captures the OS-reported `returncode` directly. The script is an observer of execution, not a parser of logs. The integer returncode is the only tamper-proof signal — text output is streamed to terminal and log but ignored by the script's logic.
+_Avoid_: test runner, execution engine, log parser
+
+### Verification Command Lock
+
+The invariant that `verification_commands` originates in the human-approved PlanRecord and cannot be overridden by the AI at verify time. `check-verification` reads commands exclusively from `plan.json`. The VerificationDraft carries no command field. Prevents the "agent rewrites the exam question" exploit.
+_Avoid_: locked command, pinned verification
+
+### Enterprise Pipeline Map
+
+The `orchestration.json.enterprise_pipeline` object that maps lifecycle phase names (`on_setup`, `on_planning`, `on_execution`, `on_verification`) to ordered arrays of validator step objects. Each step declares a `script` path and an `args` array with `{active_task}` and `{tasks_root}` tokens. ProcessGate interpolates tokens at runtime. Adding a validator requires only updating this map — no runner code changes.
+_Avoid_: pipeline config, validator registry, orchestration map

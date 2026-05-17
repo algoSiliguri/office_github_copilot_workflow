@@ -1,5 +1,5 @@
 {
-  "schema_version": "plan-record.schema.v1",
+  "schema_version": "plan-record.schema.v2",
   "task_id": "TASK-001",
   "created_at": "2026-05-15T00:00:00Z",
   "phase": "plan",
@@ -9,30 +9,23 @@
     "README.md"
   ],
   "risk": "low",
-  "verification_command": "python3 .github/workflow/validators/check-setup",
+  "verification_commands": [
+    ["python3", ".github/workflow/validators/check-setup"]
+  ],
+  "grill_ref": ".github/examples/tasks/TASK-001/grill.json",
   "graph_freshness_mode": "degraded-approved",
   "graph_usage": {
     "required": true,
     "status": "unavailable",
     "graph_report_read": false,
     "graph_queries_run": [],
-    "graph_refs": [
-      "graph-record:freshness:missing"
-    ],
-    "reason": "Graphify was unavailable or degraded, so planning used approved graph-light context."
+    "graph_refs": [],
+    "reason": "Graphify was unavailable; degraded-mode approval obtained. No graph node refs available."
   },
-  "graph_refs": [
-    "graph-record:freshness:missing"
-  ],
+  "graph_refs": [],
   "context_refs": [
     "README.md"
   ],
-  "quick_task_classification": {
-    "is_quick_task": true,
-    "reason": "Single documentation file with low behavioral risk.",
-    "graph_light_planning_allowed": true,
-    "graph_light_reason": "Quick task is low risk and explicitly allowed to plan without fresh graph references."
-  },
   "diagnosis": null,
   "planning": {
     "source": "/plan",
@@ -44,18 +37,18 @@
   ],
   "deviations": [],
   "human_approval": {
-    "approval_id": "APP-001",
+    "approval_id": "APP-002",
     "kind": "plan",
     "requested_by": "agent",
     "approved_by": "example-human",
     "approved_at": "2026-05-15T00:00:00Z",
     "decision": "approved",
-    "reason": "Fixture plan approval for execution gate.",
+    "reason": "Fixture Commitment Gate approval for execution gate.",
     "expires_at": null
   },
   "approvals": [
     {
-      "approval_id": "APP-002",
+      "approval_id": "APP-003",
       "kind": "graph-degraded",
       "requested_by": "agent",
       "approved_by": "example-human",
@@ -74,8 +67,8 @@
       "CONTEXT.md"
     ],
     "risk_notes": [
-      "Graph-light quick task; no graph module was treated as authoritative."
+      "Degraded graph mode; scope includes only the explicitly intended file because graph context was unavailable."
     ],
-    "graph_to_plan_decision": "Graphify was unavailable, so this quick low-risk plan includes only the explicit intended files and excludes nearby references."
+    "graph_to_plan_decision": "Graphify was unavailable so scope includes only README.md because no dependency graph was available to identify related files."
   }
 }

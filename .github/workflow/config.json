@@ -1,8 +1,8 @@
 {
-  "schema_version": "config.schema.v1",
-  "workflow_version": "v1",
+  "schema_version": "config.schema.v2",
+  "workflow_version": "v2",
   "safe_default_required": true,
-  "commands": ["/setup", "/plan", "/execute", "/verify"],
+  "commands": ["/setup", "/grill", "/plan", "/execute", "/verify"],
   "maintainer_commands": ["/evaluate"],
   "managed_agents_block": {
     "begin_marker": "<!-- BEGIN COPILOT WORKFLOW V1 -->",

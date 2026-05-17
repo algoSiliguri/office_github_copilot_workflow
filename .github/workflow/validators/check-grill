@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+from approval_model import require_approved, validate_approval
+from validator_core import load_json as _load_json, make_validator, require_iso8601
+
+fail, require = make_validator("check-grill")
+
+
+def load_json(path):
+    return _load_json(path, fail)
+
+
+if len(sys.argv) != 2:
+    fail("usage: check-grill PATH")
+
+path = Path(sys.argv[1])
+with path.open(encoding="utf-8") as handle:
+    import json
+    record = json.load(handle)
+
+for key in [
+    "schema_version",
+    "task_id",
+    "grilled_at",
+    "phase",
+    "impacted_files",
+    "mandatory_verification_steps",
+    "risk_notes",
+    "human_approval",
+]:
+    if key not in record:
+        fail(f"missing required field: {key}")
+
+require(record["schema_version"] == "grill-record.schema.v2", "wrong schema_version")
+require(isinstance(record["task_id"], str) and record["task_id"].startswith("TASK-"), "task_id must start with TASK-")
+require_iso8601(record["grilled_at"], "grilled_at", fail)
+require(record["phase"] == "grill", "phase must be grill")
+require(isinstance(record["impacted_files"], list), "impacted_files must be a list")
+require(bool(record["impacted_files"]), "impacted_files must be non-empty")
+for i, f in enumerate(record["impacted_files"]):
+    require(isinstance(f, str) and f.strip(), f"impacted_files[{i}] must be a non-empty string")
+
+require(isinstance(record["mandatory_verification_steps"], list), "mandatory_verification_steps must be a list")
+require(bool(record["mandatory_verification_steps"]), "mandatory_verification_steps must be non-empty")
+for i, step in enumerate(record["mandatory_verification_steps"]):
+    require(isinstance(step, list) and step, f"mandatory_verification_steps[{i}] must be a non-empty array")
+    for j, token in enumerate(step):
+        require(isinstance(token, str) and token.strip(), f"mandatory_verification_steps[{i}][{j}] must be a non-empty string")
+
+require(isinstance(record["risk_notes"], list), "risk_notes must be a list")
+
+require_approved(record["human_approval"], "grill", "human_approval", fail)
+
+if record.get("requirements_ref"):
+    req_path = Path(str(record["requirements_ref"]))
+    require(req_path.exists(), f"requirements_ref points to missing file: {record['requirements_ref']}")
+
+print("check-grill: ok")

@@ -1,9 +1,25 @@
 #!/usr/bin/env python3
+"""Executor-Witness for the verify phase (v2).
+
+Reads verification_draft.json (AI semantic context), loads canonical plan.json
+and execution.json via the refs in the draft, runs each locked command from
+plan.verification_commands via subprocess.run(shell=False), captures the
+kernel returncode, and — if all commands pass — writes verification_receipt.json
+(machine-witnessed facts + AI semantic fields + pending review placeholders)
+then deletes the draft.
+
+check-state validates that the receipt's human_authorization is terminal after
+the human fills in the review section.
+"""
 import json
+import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
-from approval_model import require_approved_kind, validate_approval
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+
+from approval_model import validate_approval
 from evidence_policy import uses_graph_as_proof
 from validator_core import load_json as _load_json, make_validator, require_iso8601
 
@@ -14,168 +30,129 @@ def load_json(path):
     return _load_json(path, fail)
 
 
-REJECTION_CATEGORIES = {
-    "scope_violation",
-    "incorrect_implementation",
-    "criteria_not_met",
-    "verification_incomplete",
-    "quality_issue",
-    "other",
-}
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def require_rejection_reason(decision, field):
-    require(decision.get("status") in {"approved", "rejected", "pending"}, f"{field}.status is invalid")
-    reason = decision.get("reason")
-    if decision.get("status") == "rejected":
-        require(isinstance(reason, dict), f"{field}.reason is required when status is rejected")
-        require(reason.get("category") in REJECTION_CATEGORIES, f"{field}.reason.category is invalid")
-        require(isinstance(reason.get("details"), str) and len(reason["details"]) >= 10, f"{field}.reason.details must be at least 10 characters")
-
-
-def load_ref_json(ref, field):
+def load_ref(ref, label):
     path = Path(str(ref))
-    require(path.exists(), f"{field} must reference an existing JSON file: {ref}")
+    require(path.exists(), f"{label} must reference an existing file: {ref}")
     return load_json(path)
 
 
-def deviation_files(items):
-    files = set()
-    for item in items:
-        if isinstance(item, dict) and item.get("type") == "out_of_scope_file" and item.get("file"):
-            files.add(item["file"])
-    return files
+if len(sys.argv) != 2:
+    fail("usage: check-verification VERIFICATION_DRAFT_PATH")
 
-
-def validate_graph_scope_review(review, plan, execution):
-    scope_review = review["graph_scope_review"]
-    require(isinstance(scope_review, dict), "graph_scope_review must be an object")
-    for key in ["actual_files_inside_graph_scope", "actual_files_outside_graph_scope", "requires_scope_drift_approval", "notes"]:
-        require(key in scope_review, f"graph_scope_review missing required field: {key}")
-    require(isinstance(scope_review["actual_files_inside_graph_scope"], list), "graph_scope_review.actual_files_inside_graph_scope must be a list")
-    require(isinstance(scope_review["actual_files_outside_graph_scope"], list), "graph_scope_review.actual_files_outside_graph_scope must be a list")
-    require(scope_review["requires_scope_drift_approval"] in {True, False}, "graph_scope_review.requires_scope_drift_approval must be boolean")
-    require(isinstance(scope_review["notes"], str), "graph_scope_review.notes must be a string")
-
-    actual_files = set(review["actual_files"])
-    approved_files = set(review["approved_files"])
-    plan_scope = (plan.get("graph_scope") or {}) if isinstance(plan, dict) else {}
-    graph_in_scope = set(plan_scope.get("in_scope_files") or [])
-    graph_near = set(plan_scope.get("nearby_but_out_of_scope") or [])
-    require(set(review["actual_files"]) == set(execution.get("modified_files", [])), "review actual_files must match execution modified_files")
-    approved_deviation_files = deviation_files(review["deviations"]) | deviation_files(execution.get("deviations", []))
-    allowed_files = approved_files | graph_in_scope | approved_deviation_files
-
-    expected_inside = sorted(actual_files & graph_in_scope)
-    expected_outside = sorted(actual_files - graph_in_scope)
-    require(sorted(scope_review["actual_files_inside_graph_scope"]) == expected_inside, "graph_scope_review.actual_files_inside_graph_scope must match actual files inside approved graph scope")
-    require(sorted(scope_review["actual_files_outside_graph_scope"]) == expected_outside, "graph_scope_review.actual_files_outside_graph_scope must match actual files outside approved graph scope")
-
-    unapproved_outside = sorted(actual_files - allowed_files)
-    require(scope_review["requires_scope_drift_approval"] == bool(unapproved_outside), "graph_scope_review.requires_scope_drift_approval must match unapproved files outside plan, graph scope, and deviations")
-    if unapproved_outside:
-        require(review["scope_drift"], f"scope drift must be recorded for files outside approved plan, graph scope, and deviations: {', '.join(unapproved_outside)}")
-        require_approved_kind(review["approvals"], "scope-drift", "review graph scope drift", fail)
-
-    outside_graph_scope = actual_files - graph_in_scope
-    graph_near_actual = sorted(outside_graph_scope & graph_near)
-    graph_unrelated_actual = sorted(outside_graph_scope - graph_near)
-    if graph_near_actual:
-        require("graph-near" in scope_review["notes"].lower(), "graph-near drift must be noted in graph_scope_review.notes")
-    if graph_unrelated_actual:
-        notes = scope_review["notes"].lower()
-        require("graph-unrelated" in notes and "higher risk" in notes, "graph-unrelated drift must be noted as higher risk in graph_scope_review.notes")
-
-
-if len(sys.argv) != 3:
-    fail("usage: check-verification VERIFICATION_PATH REVIEW_PATH")
-
-with Path(sys.argv[1]).open(encoding="utf-8") as handle:
-    verification = json.load(handle)
-with Path(sys.argv[2]).open(encoding="utf-8") as handle:
-    review = json.load(handle)
-plan = load_ref_json(verification.get("plan_ref"), "verification.plan_ref")
-execution = load_ref_json(verification.get("execution_ref"), "verification.execution_ref")
+draft_path = Path(sys.argv[1])
+with draft_path.open(encoding="utf-8") as fh:
+    draft = json.load(fh)
 
 for key in [
-    "schema_version",
-    "task_id",
-    "created_at",
-    "phase",
-    "plan_ref",
-    "execution_ref",
-    "verification_command",
-    "command_executed_at",
-    "command_exit_code",
-    "command_refs",
-    "result",
-    "evidence_summary",
-    "graph_context_used",
-    "graph_refs",
-    "degraded_verification",
-    "human_acknowledgment",
+    "schema_version", "task_id", "created_at", "phase",
+    "plan_ref", "execution_ref",
+    "evidence_summary", "graph_context_used", "graph_refs", "degraded_verification",
 ]:
-    if key not in verification:
-        fail(f"verification missing required field: {key}")
-require(verification["schema_version"] == "verification-record.schema.v1", "verification has wrong schema_version")
-require_iso8601(verification["created_at"], "verification.created_at", fail)
-require_iso8601(verification["command_executed_at"], "verification.command_executed_at", fail)
-require(verification["phase"] == "verify", "verification phase must be verify")
-require(verification["result"] in {"passed", "failed", "not_run"}, "invalid verification result")
-require(bool(verification["verification_command"]), "verification_command is required")
-require(isinstance(verification["command_exit_code"], int), "command_exit_code must be an integer")
-if verification["result"] == "passed":
-    require(verification["command_exit_code"] == 0, "passed result requires command_exit_code 0")
-else:
-    require(verification["human_acknowledgment"].get("status") == "rejected", "failed or not_run verification requires rejected human_acknowledgment with reason")
-require(isinstance(verification["command_refs"], list), "verification command_refs must be a list")
-require(bool(verification["command_refs"]), "verification command_refs must include command output or log reference")
-require(bool(verification["evidence_summary"]), "evidence_summary is required")
-require(verification["graph_context_used"] in {True, False}, "graph_context_used must be boolean")
-require(isinstance(verification["graph_refs"], list), "verification graph_refs must be a list")
-if verification["graph_context_used"]:
-    require(verification["graph_refs"], "graph_context_used=true requires graph_refs")
-require(not uses_graph_as_proof(verification["evidence_summary"]), "Graphify may be mentioned as context but not used as verification proof")
-if verification["result"] == "not_run" or verification["degraded_verification"].get("used"):
-    require(bool(verification["degraded_verification"].get("acknowledged_by")), "degraded verification requires acknowledgement")
-require_rejection_reason(verification["human_acknowledgment"], "human_acknowledgment")
+    if key not in draft:
+        fail(f"verification draft missing required field: {key}")
 
-for key in [
-    "schema_version",
-    "task_id",
-    "created_at",
-    "phase",
-    "approved_files",
-    "actual_files",
-    "scope_drift",
-    "findings",
-    "assumptions",
-    "deviations",
-    "human_approval",
-    "human_authorization",
-    "approvals",
-    "graph_scope_review",
-]:
-    if key not in review:
-        fail(f"review missing required field: {key}")
-require(review["schema_version"] == "review-record.schema.v1", "review has wrong schema_version")
-require_iso8601(review["created_at"], "review.created_at", fail)
-require(review["phase"] == "review", "review phase must be review")
-require(isinstance(review["approved_files"], list), "review approved_files must be a list")
-require(isinstance(review["actual_files"], list), "review actual_files must be a list")
-require(isinstance(review["assumptions"], list), "review assumptions must be a list")
-require(isinstance(review["deviations"], list), "review deviations must be a list")
-require(isinstance(review["approvals"], list), "review approvals must be a list")
-validate_approval(review["human_approval"], None, "review human_approval", fail)
-for index, approval in enumerate(review["approvals"]):
-    validate_approval(approval, None, f"review approvals[{index}]", fail)
-validate_graph_scope_review(review, plan, execution)
-require_rejection_reason(review["human_authorization"], "human_authorization")
-if review["assumptions"] or review["deviations"] or review["scope_drift"]:
-    require(review["human_authorization"].get("status") in {"approved", "rejected"}, "assumptions, deviations, or drift require a human decision")
-if review["human_authorization"].get("status") == "approved":
-    require(review["human_approval"].get("decision") == "approved", "approved review requires approved human_approval")
-if review["human_authorization"].get("status") == "rejected":
-    require(review["human_approval"].get("decision") == "rejected", "rejected review requires rejected human_approval")
+require(draft["schema_version"] == "verification-draft.schema.v2", "draft has wrong schema_version")
+require_iso8601(draft["created_at"], "draft.created_at", fail)
+require(draft["phase"] == "verify", "draft phase must be verify")
+require(bool(draft["evidence_summary"]), "evidence_summary is required")
+require(not uses_graph_as_proof(draft["evidence_summary"]), "Graphify may not be used as verification proof")
+require(draft["graph_context_used"] in {True, False}, "graph_context_used must be boolean")
+require(isinstance(draft["graph_refs"], list), "graph_refs must be a list")
+if draft["graph_context_used"]:
+    require(draft["graph_refs"], "graph_context_used=true requires graph_refs")
 
-print("check-verification: ok")
+degraded = draft["degraded_verification"]
+require(isinstance(degraded, dict) and "used" in degraded, "degraded_verification must be an object with 'used'")
+if degraded.get("used"):
+    require(bool(degraded.get("acknowledged_by")), "degraded verification requires acknowledged_by")
+
+# Load canonical plan and execution via refs.
+plan = load_ref(draft["plan_ref"], "draft.plan_ref")
+execution = load_ref(draft["execution_ref"], "draft.execution_ref")
+
+require(plan.get("task_id") == draft["task_id"], "plan.task_id must match draft.task_id")
+require(execution.get("task_id") == draft["task_id"], "execution.task_id must match draft.task_id")
+
+# Cross-validate scope: execution.modified_files must be within plan.intended_files or deviation-approved.
+approved_files = set(execution.get("approved_files", []))
+modified_files = set(execution.get("modified_files", []))
+out_of_scope = modified_files - approved_files
+if out_of_scope:
+    deviation_files = {
+        item.get("file")
+        for item in execution.get("deviations", [])
+        if isinstance(item, dict) and item.get("type") == "out_of_scope_file"
+    }
+    unapproved = sorted(out_of_scope - deviation_files)
+    require(not unapproved, f"execution modified files outside approved scope without deviation records: {', '.join(unapproved)}")
+
+# Read locked commands from the human-approved plan.
+verification_commands = plan.get("verification_commands", [])
+require(isinstance(verification_commands, list) and verification_commands, "plan.verification_commands must be a non-empty list")
+
+# Executor-Witness: spawn each command, capture kernel returncode.
+witnessed = []
+for cmd in verification_commands:
+    require(isinstance(cmd, list) and cmd, f"plan.verification_commands entry must be a non-empty array: {cmd}")
+    executed_at = now_iso()
+    result = subprocess.run(cmd, shell=False)
+    exit_code = result.returncode
+    witnessed.append({"command": cmd, "exit_code": exit_code, "executed_at": executed_at})
+    if exit_code != 0:
+        print(f"check-verification: FAIL: command {cmd} exited {exit_code}", file=sys.stderr)
+        sys.exit(1)
+
+# All commands passed — assemble receipt.
+all_actual_files = sorted(modified_files)
+plan_scope = plan.get("graph_scope", {})
+graph_in_scope = set(plan_scope.get("in_scope_files", []))
+actual_set = set(all_actual_files)
+inside = sorted(actual_set & graph_in_scope)
+outside = sorted(actual_set - graph_in_scope)
+
+receipt = {
+    "schema_version": "verification-receipt.schema.v2",
+    "task_id": draft["task_id"],
+    "created_at": now_iso(),
+    "phase": "verify",
+    "plan_ref": draft["plan_ref"],
+    "execution_ref": draft["execution_ref"],
+    "witness": {
+        "commands": witnessed,
+        "all_passed": True,
+        "witnessed_at": now_iso(),
+    },
+    "evidence_summary": draft["evidence_summary"],
+    "graph_context_used": draft["graph_context_used"],
+    "graph_refs": draft["graph_refs"],
+    "degraded_verification": draft["degraded_verification"],
+    # Review section — filled in by the agent + human after witnessing.
+    "approved_files": sorted(approved_files),
+    "actual_files": all_actual_files,
+    "scope_drift": [],
+    "findings": [],
+    "assumptions": [],
+    "deviations": list(execution.get("deviations", [])),
+    "graph_scope_review": {
+        "actual_files_inside_graph_scope": inside,
+        "actual_files_outside_graph_scope": outside,
+        "requires_scope_drift_approval": bool(outside),
+        "notes": "",
+    },
+    "human_authorization": {"status": "pending", "reason": None},
+    "human_approval": None,
+    "approvals": [],
+}
+
+receipt_path = draft_path.parent / "verification_receipt.json"
+with receipt_path.open("w", encoding="utf-8") as fh:
+    json.dump(receipt, fh, indent=2)
+    fh.write("\n")
+
+draft_path.unlink()
+
+print(f"check-verification: witness complete — receipt written to {receipt_path}")

@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from approval_model import require_approved, validate_approval
-from graph_policy import graph_refs_max, is_graph_light_quick_task
+from graph_policy import graph_refs_max
 from validator_core import load_json as _load_json, make_validator, require_iso8601
 
 ROOT = Path.cwd()
@@ -28,13 +28,6 @@ def require_iso8601_or_null(value, field):
 
 _orchestration = load_json(Path(__file__).resolve().parent.parent / "orchestration.json")
 _GRAPH_REF_CAP = graph_refs_max(_orchestration)
-
-
-def allowed_quick_task(plan):
-    return (
-        is_graph_light_quick_task(plan)
-        and plan.get("human_approval", {}).get("decision") == "approved"
-    )
 
 
 def validate_graph_record(record):
@@ -123,7 +116,6 @@ def validate_plan_against_graph(record, plan):
     status = record["status"]
     usage = usage_object["status"]
     mode = plan.get("graph_freshness_mode")
-    quick = allowed_quick_task(plan)
 
     if status == "fresh":
         require(mode == "fresh", "fresh graph requires plan graph_freshness_mode=fresh")
@@ -132,10 +124,9 @@ def validate_plan_against_graph(record, plan):
     elif status == "stale":
         fail("stale graph cannot be used for planning without degraded approval")
     elif status == "missing":
-        require(quick, "missing graph is allowed only for approved low-risk quick tasks")
-        require(mode == "degraded-approved", "missing graph quick task must record degraded-approved mode")
-        require(usage == "unavailable", "missing graph quick task must record graph_usage.status=unavailable")
-        require(plan["graph_refs"] == [], "missing graph quick task must not record graph_refs")
+        require(mode == "degraded-approved", "missing graph requires degraded-approved mode with human approval")
+        require(usage == "unavailable", "missing graph requires graph_usage.status=unavailable")
+        require(plan["graph_refs"] == [], "missing graph planning must not record graph_refs")
     elif status == "degraded-approved":
         require(mode == "degraded-approved", "degraded-approved graph requires plan graph_freshness_mode=degraded-approved")
         require(usage in {"unavailable", "skipped-with-approval"}, "degraded-approved graph requires unavailable or skipped-with-approval graph usage")

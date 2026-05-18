@@ -64,3 +64,26 @@ bash .github/workflow/doctor
 ```
 
 It reports which validators pass and what is missing.
+
+## Known unknowns (check these on first office laptop test)
+
+These three things depend on the exact Copilot CLI version installed and have not been
+verified in a live office environment. Note what you observe so the bundle can be fixed.
+
+**1. Does Copilot CLI auto-load `.github/copilot-instructions.md`?**
+Expected: yes, GitHub docs say Copilot CLI reads this file automatically from repo root.
+Check: after opening Copilot in a repo with this bundle, type `/setup` and see if it
+follows the workflow rules (creates graph-record.json, writes AGENTS.md block). If Copilot
+ignores the instructions file, the version may be too old — update Copilot CLI first.
+
+**2. Does `graphify copilot install` make Copilot load graph context?**
+Expected: yes, the install command registers a Copilot skill that surfaces graphify output.
+Check: after running `/grill`, does Copilot reference files from graphify-out/GRAPH_REPORT.md
+when identifying blast radius? If not, `graphify copilot install` may not have worked —
+run it again and check `~/.copilot/skills/` for a graphify entry.
+
+**3. Do `.github/hooks/workflow-hooks.json` hooks actually fire?**
+Expected: yes, Copilot CLI loads hooks from `.github/hooks/` per the hooks spec.
+Check: after `/execute`, look for a log file at `.github/tasks/TASK-001/logs/events.jsonl`.
+If the file is absent, hooks are not firing — the Copilot CLI version may predate hook
+support, or the hook config format may need adjustment for the installed version.

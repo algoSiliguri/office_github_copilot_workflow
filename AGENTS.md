@@ -22,3 +22,17 @@ Runtime precedence and command behavior are defined in `.github/copilot-instruct
 - Workflow governance changes require maintainer approval.
 - Never treat stale graph metadata as fresh.
 - Never claim verification without a real command/check result.
+
+<!-- BEGIN COPILOT WORKFLOW V1 -->
+## Copilot Workflow (managed — do not edit this block manually)
+
+This repo uses a structured Copilot CLI workflow bundle.
+See `.github/QUICKSTART.md` for setup instructions.
+
+Workflow rules: `.github/copilot-instructions.md`
+Quick start: `.github/QUICKSTART.md`
+Skills: `.github/skills/`
+Agent: `.github/agents/workflow-orchestrator.agent.md`
+Workflow config: `.github/workflow/config.json`
+Graph state: `.github/workflow/graph-record.json`
+<!-- END COPILOT WORKFLOW V1 -->

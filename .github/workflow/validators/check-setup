@@ -52,6 +52,12 @@ require(managed.get("begin_marker") == "<!-- BEGIN COPILOT WORKFLOW V1 -->", "ma
 require(managed.get("end_marker") == "<!-- END COPILOT WORKFLOW V1 -->", "managed AGENTS block end marker is missing")
 require(managed.get("overwrite_existing_team_instructions") is False, "setup must not overwrite existing team AGENTS instructions")
 
+agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+require(managed["begin_marker"] in agents_text, "AGENTS.md is missing the managed block begin marker")
+require(managed["end_marker"] in agents_text, "AGENTS.md is missing the managed block end marker")
+for link in managed.get("required_links", []):
+    require(link in agents_text, f"AGENTS.md managed block is missing required link: {link}")
+
 graph_policy = config.get("graph_policy", {})
 require(graph_policy.get("required_outputs") == ["graphify-out/graph.json", "graphify-out/GRAPH_REPORT.md", "graphify-out/manifest.json"], "graph policy must list required Graphify outputs")
 require(graph_policy.get("copilot_install_command") == "graphify copilot install", "graph policy must tell setup users to run graphify copilot install")

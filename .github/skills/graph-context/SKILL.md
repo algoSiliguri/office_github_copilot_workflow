@@ -19,6 +19,40 @@ Connect graphify output to workflow artifacts without loading the whole graph in
 - `/plan` needs codebase context for intended files, affected modules, or risk.
 - `/verify` records which approved graph refs were used.
 
+## Setup: Write the Managed AGENTS.md Block
+
+`/setup` writes a bounded block into the target repo's `AGENTS.md`. This block is the
+orientation surface for every future Copilot session in that repo.
+
+### Rules
+
+- If `AGENTS.md` does not exist, create it with only the managed block.
+- If `AGENTS.md` exists, find the markers and replace the block between them. If the markers are
+  absent, append the block at the end of the file. Never delete or overwrite content outside the
+  markers (`overwrite_existing_team_instructions: false`).
+- After writing, confirm the file contains both markers and all six required links.
+
+### Exact managed block to write
+
+```
+<!-- BEGIN COPILOT WORKFLOW V1 -->
+## Copilot Workflow (managed — do not edit this block manually)
+
+This repo uses a structured Copilot CLI workflow bundle.
+See `.github/QUICKSTART.md` for setup instructions.
+
+Workflow rules: `.github/copilot-instructions.md`
+Quick start: `.github/QUICKSTART.md`
+Skills: `.github/skills/`
+Agent: `.github/agents/workflow-orchestrator.agent.md`
+Workflow config: `.github/workflow/config.json`
+Graph state: `.github/workflow/graph-record.json`
+<!-- END COPILOT WORKFLOW V1 -->
+```
+
+Write this block verbatim (substituting no values — the paths are repo-relative constants).
+After writing, tell the user which file was created or updated and confirm the markers are present.
+
 ## Setup: Detect and Record Graph State
 
 `/setup` is responsible for detecting actual graphify output and writing `graph-record.json`. It must not assume output exists.

@@ -1,0 +1,4 @@
+{
+  "task_id": "TASK-NEG-DRIFT-NOTE",
+  "plan_ref": ".github/examples/state/drift-without-risk-note/tasks/TASK-NEG-DRIFT-NOTE/plan.json"
+}

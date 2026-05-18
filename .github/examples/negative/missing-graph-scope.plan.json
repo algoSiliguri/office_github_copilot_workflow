@@ -1,39 +1,30 @@
 {
-  "schema_version": "plan-record.schema.v1",
+  "schema_version": "plan-record.schema.v2",
   "task_id": "TASK-NEG-MISSING-GRAPH-SCOPE",
   "created_at": "2026-05-16T00:00:00Z",
   "phase": "plan",
   "status": "EXECUTION_READY",
-  "summary": "Negative fixture missing graph scope.",
-  "intended_files": [
-    "README.md"
-  ],
+  "summary": "Invalid: graph_scope field absent.",
+  "intended_files": ["README.md"],
   "risk": "medium",
-  "verification_command": "bash release-check.sh",
+  "verification_commands": [["python3", ".github/workflow/validators/check-setup"]],
+  "grill_ref": ".github/examples/graph/shared-fixture.grill.json",
   "graph_freshness_mode": "fresh",
   "graph_usage": {
     "required": true,
     "status": "used",
     "graph_report_read": true,
-    "graph_queries_run": [
-      "graph-report:related-files"
-    ],
-    "graph_refs": [
-      "graph:file:README.md"
-    ],
+    "graph_queries_run": ["graph-report:related-files"],
+    "graph_refs": ["graph:file:README.md"],
     "reason": "Used Graphify to identify related modules before selecting intended_files."
   },
-  "graph_refs": [
-    "graph:file:README.md"
-  ],
-  "context_refs": [
-    "README.md"
-  ],
+  "graph_refs": ["graph:file:README.md"],
+  "context_refs": ["README.md"],
   "quick_task_classification": null,
   "diagnosis": null,
   "planning": {
     "source": "/plan",
-    "decision": "This fixture must fail because graph_scope is missing.",
+    "decision": "Invalid — graph_scope field is intentionally absent.",
     "diagnosis_required": false
   },
   "assumptions": [],

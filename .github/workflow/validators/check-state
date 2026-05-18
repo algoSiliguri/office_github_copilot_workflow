@@ -66,6 +66,19 @@ def validate_task_folder(task_dir):
         required_task_id(receipt, task_id, receipt_path)
         require(receipt.get("schema_version") == "verification-receipt.schema.v2", f"{task_id} verification_receipt.json has wrong schema_version")
 
+        auth = receipt.get("human_authorization", {})
+        if auth.get("status") == "rejected":
+            require(bool(auth.get("reason")), f"{task_id} rejected authorization requires a structured reason")
+
+        approval = receipt.get("human_approval") or {}
+        if approval.get("decision") == "rejected":
+            require(bool(approval.get("reason")), f"{task_id} rejected human_approval requires a structured reason")
+
+        scope_review = receipt.get("graph_scope_review", {})
+        outside_files = scope_review.get("actual_files_outside_graph_scope", [])
+        if outside_files:
+            require(scope_review.get("notes", "").strip(), f"{task_id} modified files outside graph scope; graph_scope_review.notes is required")
+
     return task_is_closed(task_dir)
 
 

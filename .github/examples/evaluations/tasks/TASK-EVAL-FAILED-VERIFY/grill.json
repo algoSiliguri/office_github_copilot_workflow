@@ -1,0 +1,22 @@
+{
+  "schema_version": "grill-record.schema.v2",
+  "task_id": "TASK-EVAL-FAILED-VERIFY",
+  "grilled_at": "2026-05-16T02:58:00Z",
+  "phase": "grill",
+  "impacted_files": ["README.md"],
+  "mandatory_verification_steps": [
+    ["bash", "release-check.sh"]
+  ],
+  "risk_notes": ["Single documentation file. Verification uses release-check.sh."],
+  "requirements_ref": null,
+  "human_approval": {
+    "approval_id": "APP-EVAL-GRILL-008",
+    "kind": "grill",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T02:58:00Z",
+    "decision": "approved",
+    "reason": "Blast radius confirmed as README.md. Verification command locked to release-check.sh.",
+    "expires_at": null
+  }
+}

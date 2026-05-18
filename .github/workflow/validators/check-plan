@@ -149,6 +149,14 @@ if record["graph_freshness_mode"] == "degraded-approved":
 
 validate_grill_gate(record)
 validate_graph_usage(record)
+
+quick_class = record.get("quick_task_classification") or {}
+if quick_class.get("is_quick_task") and record.get("graph_usage", {}).get("status") in {"unavailable", "skipped-with-approval"}:
+    require(
+        quick_class.get("graph_light_planning_allowed") is True,
+        "quick task skipping Graphify must declare graph_light_planning_allowed=true",
+    )
+
 validate_graph_scope(record)
 
 if record["status"] == "DIAGNOSIS_REQUIRED":

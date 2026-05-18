@@ -1,0 +1,45 @@
+{
+  "schema_version": "verification-receipt.schema.v2",
+  "task_id": "TASK-104",
+  "created_at": "2026-05-16T00:02:00Z",
+  "phase": "verify",
+  "plan_ref": ".github/examples/state/close-without-review/tasks/TASK-104/plan.json",
+  "execution_ref": ".github/examples/state/close-without-review/tasks/TASK-104/execution.json",
+  "witness": {
+    "commands": [
+      {
+        "command": ["python3", ".github/workflow/validators/check-setup"],
+        "exit_code": 0,
+        "executed_at": "2026-05-16T00:02:00Z"
+      }
+    ],
+    "all_passed": true,
+    "witnessed_at": "2026-05-16T00:02:00Z"
+  },
+  "evidence_summary": "Fixture command passed. Review not yet completed.",
+  "graph_context_used": false,
+  "graph_refs": [],
+  "degraded_verification": {
+    "used": false,
+    "acknowledged_by": null,
+    "reason": null
+  },
+  "approved_files": ["README.md"],
+  "actual_files": ["README.md"],
+  "scope_drift": [],
+  "findings": [],
+  "assumptions": [],
+  "deviations": [],
+  "graph_scope_review": {
+    "actual_files_inside_graph_scope": [],
+    "actual_files_outside_graph_scope": ["README.md"],
+    "requires_scope_drift_approval": false,
+    "notes": ""
+  },
+  "human_authorization": {
+    "status": "pending",
+    "reason": null
+  },
+  "human_approval": null,
+  "approvals": []
+}

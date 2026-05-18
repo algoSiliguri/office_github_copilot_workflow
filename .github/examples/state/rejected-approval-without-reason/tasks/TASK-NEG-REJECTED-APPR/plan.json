@@ -1,0 +1,5 @@
+{
+  "task_id": "TASK-NEG-REJECTED-APPR",
+  "status": "EXECUTION_READY",
+  "human_approval": {"decision": "approved"}
+}

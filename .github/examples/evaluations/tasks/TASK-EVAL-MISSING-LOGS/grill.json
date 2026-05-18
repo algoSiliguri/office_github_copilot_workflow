@@ -1,0 +1,22 @@
+{
+  "schema_version": "grill-record.schema.v2",
+  "task_id": "TASK-EVAL-MISSING-LOGS",
+  "grilled_at": "2026-05-16T00:58:00Z",
+  "phase": "grill",
+  "impacted_files": ["README.md"],
+  "mandatory_verification_steps": [
+    ["python3", ".github/workflow/validators/check-setup"]
+  ],
+  "risk_notes": ["Single documentation file. No code paths affected."],
+  "requirements_ref": null,
+  "human_approval": {
+    "approval_id": "APP-EVAL-GRILL-003",
+    "kind": "grill",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T00:58:00Z",
+    "decision": "approved",
+    "reason": "Blast radius confirmed as README.md only. Low risk.",
+    "expires_at": null
+  }
+}

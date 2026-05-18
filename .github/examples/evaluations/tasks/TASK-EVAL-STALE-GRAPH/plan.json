@@ -1,32 +1,25 @@
 {
-  "schema_version": "plan-record.schema.v1",
+  "schema_version": "plan-record.schema.v2",
   "task_id": "TASK-EVAL-STALE-GRAPH",
   "created_at": "2026-05-16T02:00:00Z",
   "phase": "plan",
   "status": "EXECUTION_READY",
   "summary": "Stale graph evaluation fixture.",
-  "intended_files": [
-    "README.md"
-  ],
+  "intended_files": ["README.md"],
   "risk": "medium",
-  "verification_command": "python3 .github/workflow/validators/check-setup",
+  "verification_commands": [["python3", ".github/workflow/validators/check-setup"]],
+  "grill_ref": ".github/examples/evaluations/tasks/TASK-EVAL-STALE-GRAPH/grill.json",
   "graph_freshness_mode": "stale",
   "graph_usage": {
     "required": true,
     "status": "skipped-with-approval",
     "graph_report_read": false,
     "graph_queries_run": [],
-    "graph_refs": [
-      "graph-record:freshness:stale"
-    ],
-    "reason": "Graphify was unavailable or degraded, so planning used approved graph-light context."
+    "graph_refs": ["graph-record:freshness:stale"],
+    "reason": "Graphify was stale; planning used approved degraded context."
   },
-  "graph_refs": [
-    "graph-record:freshness:stale"
-  ],
-  "context_refs": [
-    "README.md"
-  ],
+  "graph_refs": ["graph-record:freshness:stale"],
+  "context_refs": ["README.md"],
   "quick_task_classification": null,
   "diagnosis": null,
   "planning": {
@@ -34,9 +27,7 @@
     "decision": "Fixture records stale graph mode.",
     "diagnosis_required": false
   },
-  "assumptions": [
-    "Graph freshness was stale in this fixture."
-  ],
+  "assumptions": ["Graph freshness was stale in this fixture."],
   "deviations": [],
   "human_approval": {
     "approval_id": "APP-EVAL-005",
@@ -62,15 +53,9 @@
   ],
   "graph_scope": {
     "in_scope_modules": [],
-    "in_scope_files": [
-      "README.md"
-    ],
-    "nearby_but_out_of_scope": [
-      "CONTEXT.md"
-    ],
-    "risk_notes": [
-      "Graph was unavailable or degraded; degraded approval is required before execution."
-    ],
-    "graph_to_plan_decision": "Graphify was unavailable or degraded, so planning is constrained to approved intended files and excludes nearby references."
+    "in_scope_files": ["README.md"],
+    "nearby_but_out_of_scope": ["CONTEXT.md"],
+    "risk_notes": ["Graph was stale; degraded approval required before execution."],
+    "graph_to_plan_decision": "Graphify was stale, so planning is constrained to the approved intended files and excludes nearby references."
   }
 }

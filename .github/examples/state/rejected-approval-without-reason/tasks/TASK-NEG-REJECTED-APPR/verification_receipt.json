@@ -1,0 +1,22 @@
+{
+  "schema_version": "verification-receipt.schema.v2",
+  "task_id": "TASK-NEG-REJECTED-APPR",
+  "human_authorization": {
+    "status": "rejected",
+    "reason": "Scope changed after execution."
+  },
+  "human_approval": {
+    "approval_id": "APP-NEG-001",
+    "kind": "plan",
+    "requested_by": "agent",
+    "approved_by": "example-human",
+    "approved_at": "2026-05-16T00:00:00Z",
+    "decision": "rejected",
+    "reason": null,
+    "expires_at": null
+  },
+  "graph_scope_review": {
+    "actual_files_outside_graph_scope": [],
+    "notes": ""
+  }
+}

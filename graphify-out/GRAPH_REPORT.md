@@ -1,12 +1,18 @@
-# Graph Report - .  (2026-05-16)
+# Graph Report - office_github_copilot_workflow  (2026-05-17)
 
 ## Corpus Check
-- Corpus is ~24,383 words - fits in a single context window. You may not need a graph.
+- 189 files · ~29,917 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3347 nodes · 3265 edges · 186 communities (162 shown, 24 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.8)
-- Token cost: 50,000 input · 8,557 output
+- 3641 nodes · 3545 edges · 200 communities (174 shown, 26 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 3 edges (avg confidence: 0.77)
+- Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `b224e254`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - [[_COMMUNITY_Misc plan|Misc: plan]]
@@ -162,7 +168,6 @@
 - [[_COMMUNITY_Misc state|Misc: state]]
 - [[_COMMUNITY_Schema plan 6|Schema: plan #6]]
 - [[_COMMUNITY_Schema review 7|Schema: review #7]]
-- [[_COMMUNITY_Misc graph policy|Misc: graph policy]]
 - [[_COMMUNITY_Misc settings|Misc: settings]]
 - [[_COMMUNITY_Misc settings.local|Misc: settings.local]]
 - [[_COMMUNITY_Doc context 3|Doc: context #3]]
@@ -190,45 +195,59 @@
 - [[_COMMUNITY_Doc context 9|Doc: context #9]]
 - [[_COMMUNITY_Doc copilot instructions|Doc: copilot instructions]]
 - [[_COMMUNITY_Doc workflow orchestrator.agent|Doc: workflow orchestrator.agent]]
+- [[_COMMUNITY_Community 186|Community 186]]
+- [[_COMMUNITY_Community 187|Community 187]]
+- [[_COMMUNITY_Community 188|Community 188]]
+- [[_COMMUNITY_Community 189|Community 189]]
+- [[_COMMUNITY_Community 190|Community 190]]
+- [[_COMMUNITY_Community 191|Community 191]]
+- [[_COMMUNITY_Community 192|Community 192]]
+- [[_COMMUNITY_Community 193|Community 193]]
+- [[_COMMUNITY_Community 194|Community 194]]
+- [[_COMMUNITY_Community 195|Community 195]]
+- [[_COMMUNITY_Community 196|Community 196]]
+- [[_COMMUNITY_Community 197|Community 197]]
+- [[_COMMUNITY_Community 198|Community 198]]
+- [[_COMMUNITY_Community 199|Community 199]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `properties` - 22 edges
-2. `properties` - 19 edges
-3. `properties` - 17 edges
-4. `properties` - 16 edges
-5. `plan_contract` - 15 edges
-6. `properties` - 15 edges
-7. `properties` - 15 edges
+1. `Glossary` - 57 edges
+2. `properties` - 22 edges
+3. `properties` - 22 edges
+4. `properties` - 19 edges
+5. `properties` - 17 edges
+6. `plan_contract` - 16 edges
+7. `properties` - 16 edges
 8. `properties` - 15 edges
-9. `graph_policy` - 12 edges
-10. `setup_contract` - 10 edges
+9. `properties` - 15 edges
+10. `properties` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Safe Default Mode` --semantically_similar_to--> `Safe Default Mode`  [INFERRED] [semantically similar]
-  AGENTS.md → CONTEXT.md
-- `Core Path /setup /plan /execute /verify` --semantically_similar_to--> `V1 Acceptance Criterion`  [INFERRED] [semantically similar]
-  AGENTS.md → CONTEXT.md
-- `Graph-Light Planning` --semantically_similar_to--> `task-planning skill`  [INFERRED] [semantically similar]
-  CONTEXT.md → .github/skills/task-planning/SKILL.md
 - `Fixture Graphify Copilot skill` --semantically_similar_to--> `CLAUDE.md graphify instructions`  [INFERRED] [semantically similar]
   .github/examples/graphify-copilot/good-home/.copilot/skills/graphify/SKILL.md → CLAUDE.md
-- `Evaluation Run` --semantically_similar_to--> `workflow-evaluation skill`  [INFERRED] [semantically similar]
-  CONTEXT.md → .github/skills/workflow-evaluation/SKILL.md
+- `Bundle AGENTS.md` --references--> `Copilot Workflow Instructions`  [EXTRACTED]
+  AGENTS.md → .github/copilot-instructions.md
+- `Precedence Order` --references--> `Bundle AGENTS.md`  [EXTRACTED]
+  .github/copilot-instructions.md → AGENTS.md
+- `ADR-0003 Execute Halts on Graphify Scope Discovery` --rationale_for--> `bounded-execution skill`  [EXTRACTED]
+  docs/adr/0003-execute-halts-on-graphify-scope-discovery.md → .github/skills/bounded-execution/SKILL.md
+- `validate_approval()` --calls--> `require_iso8601()`  [INFERRED]
+  .github/workflow/validators/approval_model.py → .github/workflow/validators/validator_core.py
 
 ## Hyperedges (group relationships)
 - **V1 Core Path with Phase Skills** — github_copilot_instructions_setup_cmd, github_copilot_instructions_plan_cmd, github_copilot_instructions_execute_cmd, github_copilot_instructions_verify_cmd, graph_context_skill, task_planning_skill, bounded_execution_skill, verification_review_skill [EXTRACTED 1.00]
 - **V1 Task Artifact Lifecycle** — context_graphrecord, context_planrecord, bounded_execution_executionrecord, verification_review_verificationrecord, verification_review_reviewrecord, context_diagnostic_event_log [EXTRACTED 1.00]
 - **Human-In-The-Loop Approval Gates** — context_approvalrecord, context_approve_plan_gate, context_approve_risky_tool_use_gate, context_approve_verification_review_gate, context_approve_workflow_improvement_gate [EXTRACTED 1.00]
 
-## Communities (186 total, 24 thin omitted)
+## Communities (200 total, 26 thin omitted)
 
 ### Community 0 - "Misc: plan"
 Cohesion: 0.04
 Nodes (47): approvals, assumptions, context_refs, created_at, deviations, diagnosis, graph_freshness_mode, graph_refs (+39 more)
 
 ### Community 1 - "Task Example: plan"
-Cohesion: 0.04
-Nodes (47): approvals, assumptions, context_refs, created_at, deviations, diagnosis, graph_freshness_mode, graph_refs (+39 more)
+Cohesion: 0.05
+Nodes (43): approvals, assumptions, context_refs, created_at, deviations, diagnosis, graph_freshness_mode, graph_refs (+35 more)
 
 ### Community 2 - "Schema: graph-record"
 Cohesion: 0.05
@@ -407,8 +426,8 @@ Cohesion: 0.07
 Nodes (28): actual_files, approvals, approved_files, assumptions, created_at, deviations, findings, graph_scope_review (+20 more)
 
 ### Community 46 - "Task Example: review"
-Cohesion: 0.07
-Nodes (28): actual_files, approvals, approved_files, assumptions, created_at, deviations, findings, graph_scope_review (+20 more)
+Cohesion: 0.04
+Nodes (57): ApprovalRecord, Approve Plan Gate, Approve Risky Tool Use Gate, Approve Verification Review Gate, Approve Workflow Improvement Gate, Authority Rule, Bundle AGENTS.md, Commitment Gate (+49 more)
 
 ### Community 47 - "Eval Example: review #5"
 Cohesion: 0.07
@@ -423,8 +442,8 @@ Cohesion: 0.07
 Nodes (27): pattern, type, format, type, minLength, type, enum, format (+19 more)
 
 ### Community 50 - "Schema: plan"
-Cohesion: 0.07
-Nodes (28): format, type, type, type, enum, $ref, const, type (+20 more)
+Cohesion: 0.08
+Nodes (24): type, type, enum, description, type, $ref, const, type (+16 more)
 
 ### Community 51 - "Eval Example: verification"
 Cohesion: 0.08
@@ -499,8 +518,8 @@ Cohesion: 0.09
 Nodes (21): command_executed_at, command_exit_code, command_refs, created_at, degraded_verification, acknowledged_by, reason, used (+13 more)
 
 ### Community 69 - "Task Example: verification"
-Cohesion: 0.09
-Nodes (21): command_executed_at, command_exit_code, command_refs, created_at, degraded_verification, acknowledged_by, reason, used (+13 more)
+Cohesion: 0.05
+Nodes (43): description, items, minItems, type, format, type, type, description (+35 more)
 
 ### Community 70 - "State Example: verification"
 Cohesion: 0.09
@@ -599,12 +618,12 @@ Cohesion: 0.13
 Nodes (14): approvals, approved_files, checkpoints, command_refs, created_at, deviations, graph_refs, modified_files (+6 more)
 
 ### Community 94 - "Schema: plan #2"
-Cohesion: 0.13
-Nodes (15): properties, required, type, type, items, type, items, type (+7 more)
+Cohesion: 0.11
+Nodes (18): properties, required, type, type, items, type, items, type (+10 more)
 
 ### Community 95 - "Schema: plan #3"
 Cohesion: 0.13
-Nodes (15): items, type, type, properties, required, type, graph_refs, graph_report_read (+7 more)
+Nodes (15): items, type, type, properties, required, type, graph_queries_run, graph_report_read (+7 more)
 
 ### Community 96 - "Schema: verification"
 Cohesion: 0.13
@@ -615,28 +634,28 @@ Cohesion: 0.13
 Nodes (14): approvals, approved_files, checkpoints, command_refs, created_at, deviations, graph_refs, modified_files (+6 more)
 
 ### Community 98 - "Misc: plan #6"
-Cohesion: 0.13
-Nodes (15): plan_contract, approval_artifact_kind, artifact, degraded_graph_approval_artifact_kind, degraded_planning_requires_human_approval, diagnosis_required_blocks_execution, graph_light_quick_tasks_require_explicit_policy, graph_refs_max (+7 more)
+Cohesion: 0.12
+Nodes (16): plan_contract, approval_artifact_kind, artifact, degraded_graph_approval_artifact_kind, degraded_planning_requires_human_approval, diagnosis_required_blocks_execution, graph_refs_max, graph_scope_required (+8 more)
 
 ### Community 99 - "Schema: task-metrics"
 Cohesion: 0.14
 Nodes (13): $id, type, properties, run_id, schema_version, tasks, required, type (+5 more)
 
 ### Community 100 - "Schema: plan #4"
-Cohesion: 0.15
-Nodes (13): items, type, items, type, items, type, items, type (+5 more)
+Cohesion: 0.17
+Nodes (13): items, type, items, type, items, type, items, minItems (+5 more)
 
 ### Community 101 - "Misc: approval-record #2"
 Cohesion: 0.25
 Nodes (8): approval_is_approved(), approvals_of_kind(), require_approved(), require_approved_kind(), validate_approval(), make_validator(), Return (fail, require) bound to the given validator name prefix., require_iso8601()
 
 ### Community 102 - "Doc: agents"
-Cohesion: 0.22
-Nodes (10): Bundle AGENTS.md, Change Discipline, Safe Default Mode, V1 Constraints, Workflow Orchestrator Agent, Phase Routing Table, Authority Rule, Workflow Orchestrator Agent (+2 more)
+Cohesion: 0.07
+Nodes (31): ADR-0002 Setup Completes With Degraded Status, ADR-0003 Execute Halts on Graphify Scope Discovery, Bundle AGENTS.md, Change Discipline, Core Path /setup /plan /execute /verify, Safe Default Mode, V1 Constraints, Workflow Orchestrator Agent (+23 more)
 
 ### Community 103 - "Doc: plan"
-Cohesion: 0.22
-Nodes (10): ADR-0002 Setup Completes With Degraded Status, CLAUDE.md graphify instructions, Graphify Navigation Rules, check-plan validator, Degraded Graph Mode, GraphRecord, /setup command, graph-context skill (+2 more)
+Cohesion: 0.05
+Nodes (41): actual_files, approvals, approved_files, assumptions, created_at, degraded_verification, acknowledged_by, reason (+33 more)
 
 ### Community 104 - "Eval Example: memory-candidate #2"
 Cohesion: 0.2
@@ -674,33 +693,25 @@ Nodes (10): items, type, items, items, type, type, type, actual_files (+2 more)
 Cohesion: 0.2
 Nodes (10): execute_contract, artifact, edits_limited_to_plan_intended_files, governance_edit_approval_artifact_kind, governance_prefixes, memory_prefixes, memory_write_approval_artifact_kind, out_of_scope_changes_require_deviation_approval (+2 more)
 
-### Community 113 - "Doc: event"
-Cohesion: 0.25
-Nodes (9): Diagnostic Event Log, Evaluation Run, Maintainer Evaluation Command, Redacted Event Summary, User-Facing Workflow Command, Evaluation Runs README, /evaluate command, Live Task Artifacts README (+1 more)
-
 ### Community 114 - "Misc: approval-record #4"
 Cohesion: 0.22
 Nodes (9): local_memory_contract, accepted_candidates_require_evidence, candidate_schema, directories, normal_hooks_write_memory, path, rejected_candidates_are_audit_only, validator (+1 more)
 
 ### Community 115 - "Misc: graph-record #8"
-Cohesion: 0.22
-Nodes (9): setup_contract, copilot_install_command, copilot_install_expected_not_guaranteed, graph_provider, graph_record_required, graph_regeneration_requires_approval, required_graph_outputs, target_agents_managed_block_only (+1 more)
-
-### Community 116 - "Doc: context"
-Cohesion: 0.29
-Nodes (8): ADR-0001 Repo-Local Copilot CLI-First V1, Enhanced Local Mode, Enterprise-Approved Mode, Future Plugin Mode, Project Skill, Repo-Local Copilot CLI Orchestration Bundle, Safe Default Mode, V1 Acceptance Criterion
+Cohesion: 0.14
+Nodes (14): degraded-approved, fresh, missing, stale, setup_contract, copilot_install_command, copilot_install_expected_not_guaranteed, graph_provider (+6 more)
 
 ### Community 117 - "Doc: execution"
-Cohesion: 0.32
-Nodes (7): ADR-0003 Execute Halts on Graphify Scope Discovery, Core Path /setup /plan /execute /verify, bounded-execution skill, Structural Scope Error, /execute command, /plan command, V1 Skills List
+Cohesion: 0.05
+Nodes (41): type, format, type, properties, required, type, description, description (+33 more)
 
 ### Community 118 - "Doc: context #2"
-Cohesion: 0.39
-Nodes (8): Diagnosis Required, Graph-Light Planning, Graph References, Graph Scope, Graph Usage, PlanRecord, Quick Task Classification, task-planning skill
+Cohesion: 0.06
+Nodes (36): format, type, description, $ref, $id, description, items, type (+28 more)
 
 ### Community 119 - "Skill Doc: review"
-Cohesion: 0.36
-Nodes (8): ExecutionRecord, Graph Scope Review, Graph Verification Boundary, V1 Task Artifact Set, /verify command, ReviewRecord, verification-review skill, VerificationRecord
+Cohesion: 0.08
+Nodes (24): type, minLength, type, type, type, type, oneOf, const (+16 more)
 
 ### Community 120 - "Misc: post tool use"
 Cohesion: 0.25
@@ -731,12 +742,12 @@ Cohesion: 0.25
 Nodes (8): evaluation_contract, command, evaluator, maintainer_only, output_pattern, outputs, raw_prompts_included_by_default, requires_network
 
 ### Community 127 - "ADR: 0004 policy values in orchestratio..."
-Cohesion: 0.29
-Nodes (7): ADR-0004 Policy Values in orchestration.json, orchestration.json policy registry, ADR-0005 Evidence Policy Heuristics Stay in Python, evidence_policy.py heuristics, Required V1 Configuration, Safe Default Validator, release-check.sh
+Cohesion: 0.5
+Nodes (4): ADR-0004 Policy Values in orchestration.json, orchestration.json policy registry, ADR-0005 Evidence Policy Heuristics Stay in Python, evidence_policy.py heuristics
 
 ### Community 128 - "Doc: plan #2"
-Cohesion: 0.29
-Nodes (7): ApprovalRecord, Approve Plan Gate, Approve Risky Tool Use Gate, Approve Verification Review Gate, Approve Workflow Improvement Gate, Local Memory Notebook, MemoryCandidate
+Cohesion: 0.11
+Nodes (17): grilled_at, human_approval, approval_id, approved_at, approved_by, decision, expires_at, kind (+9 more)
 
 ### Community 129 - "Misc: event #2"
 Cohesion: 0.29
@@ -755,8 +766,8 @@ Cohesion: 0.29
 Nodes (7): safe_default_mode, requires_admin, requires_hooks, requires_lsp, requires_mcp, requires_plugins, requires_third_party_python
 
 ### Community 133 - "Misc: verification"
-Cohesion: 0.29
-Nodes (7): verify_contract, artifacts, clears_active_task_on_closeout, degraded_verification_requires_acknowledgement, failed_verification_requires_rejection_reason, graph_data_is_not_correctness_evidence, remaining_assumptions_or_deviations_require_human_decision
+Cohesion: 0.17
+Nodes (12): verify_contract, clears_active_task_on_closeout, draft_artifact, draft_deleted_after_receipt_written, draft_schema, executor_witness_pattern, graph_data_is_not_correctness_evidence, receipt_artifact (+4 more)
 
 ### Community 134 - "Misc: pre tool use approved"
 Cohesion: 0.33
@@ -815,8 +826,8 @@ Cohesion: 0.4
 Nodes (4): $id, required, $schema, type
 
 ### Community 149 - "Misc: orchestration #3"
-Cohesion: 0.4
-Nodes (5): degraded-approved, fresh, missing, stale, graph_states
+Cohesion: 0.12
+Nodes (16): items, type, items, type, items, type, items, properties (+8 more)
 
 ### Community 151 - "Schema: plan #6"
 Cohesion: 0.5
@@ -827,12 +838,12 @@ Cohesion: 0.5
 Nodes (4): items, type, $ref, approvals
 
 ### Community 156 - "Doc: context #3"
-Cohesion: 0.67
-Nodes (3): Open Task, V1 Hook Layer, Workflow State File
+Cohesion: 0.14
+Nodes (14): items, type, items, type, properties, required, type, type (+6 more)
 
 ### Community 165 - "Schema: plan #7"
-Cohesion: 0.67
-Nodes (3): items, type, nearby_but_out_of_scope
+Cohesion: 0.14
+Nodes (14): enum, minLength, type, properties, required, type, category, details (+6 more)
 
 ### Community 166 - "Schema: review #8"
 Cohesion: 0.67
@@ -850,25 +861,77 @@ Nodes (3): format, type, command_executed_at
 Cohesion: 0.67
 Nodes (3): format, type, created_at
 
+### Community 170 - "Doc: context #4"
+Cohesion: 0.17
+Nodes (12): type, type, all_passed, commands, witness, witnessed_at, description, properties (+4 more)
+
+### Community 171 - "Doc: context #5"
+Cohesion: 0.22
+Nodes (9): grill_contract, artifact, discovery_gate_required_before_plan, human_approval_kind, impacted_files_must_be_nonempty, mandatory_verification_steps_must_be_nonempty, requirements_ref_optional, requires_graph_report_read (+1 more)
+
+### Community 180 - "Doc: context #6"
+Cohesion: 0.25
+Nodes (8): type, properties, required, type, acknowledged_by, degraded_verification, used, type
+
+### Community 181 - "Doc: context #7"
+Cohesion: 0.29
+Nodes (7): requirements_contract, artifact, check_plan_enforces_token_overlap, external_source_provenance_via_idp, internal_source_requires_human_approval_kind, schema, source_systems
+
+### Community 182 - "Doc: context #8"
+Cohesion: 0.33
+Nodes (5): description, $id, required, $schema, type
+
+### Community 183 - "Doc: context #9"
+Cohesion: 0.33
+Nodes (6): enterprise_pipeline, on_execution, on_grill, on_planning, on_setup, on_verification
+
+### Community 186 - "Community 186"
+Cohesion: 0.4
+Nodes (4): V1 artifacts, V2 Contract Break — Phase 1 Artifact Schemas Unfrozen for Security Hardening, What changes in v2, Why this break is acceptable
+
+### Community 187 - "Community 187"
+Cohesion: 0.5
+Nodes (4): items, minItems, type, intended_files
+
+### Community 188 - "Community 188"
+Cohesion: 0.5
+Nodes (4): verification_commands, description, minItems, type
+
+### Community 189 - "Community 189"
+Cohesion: 0.5
+Nodes (4): items, type, $ref, approvals
+
+### Community 192 - "Community 192"
+Cohesion: 0.67
+Nodes (3): format, type, created_at
+
+### Community 193 - "Community 193"
+Cohesion: 0.67
+Nodes (3): format, type, created_at
+
+### Community 194 - "Community 194"
+Cohesion: 0.67
+Nodes (3): items, type, graph_refs
+
 ## Knowledge Gaps
-- **2693 isolated node(s):** `PreToolUse`, `allow`, `schema_version`, `task_id`, `created_at` (+2688 more)
+- **2902 isolated node(s):** `schema_version`, `task_id`, `grilled_at`, `phase`, `impacted_files` (+2897 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **24 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `properties` connect `Schema: review` to `Schema: review #8`, `Schema: review #9`, `Schema: review #5`, `Schema: review #2`, `Schema: review #6`, `Schema: review #7`, `Schema: review #4`?**
+- **Why does `properties` connect `Schema: plan` to `Community 192`, `Schema: plan #4`, `Schema: plan #5`, `Schema: plan #6`, `Community 187`, `Community 188`, `Schema: plan #2`, `Schema: plan #3`?**
+  _High betweenness centrality (0.001) - this node is a cross-community bridge._
+- **Why does `setup_contract` connect `Misc: graph-record #8` to `Misc: approval-record #5`?**
+  _High betweenness centrality (0.001) - this node is a cross-community bridge._
+- **Why does `properties` connect `Skill Doc: review` to `Community 193`, `Community 194`, `Schema: plan #7`, `Doc: context #4`, `Doc: context #6`, `Misc: orchestration #3`, `Doc: context #8`, `Doc: context #3`, `Community 189`?**
   _High betweenness centrality (0.000) - this node is a cross-community bridge._
-- **Why does `properties` connect `Schema: plan` to `Schema: plan #4`, `Schema: plan #5`, `Schema: plan #6`, `Schema: plan #2`, `Schema: plan #3`?**
-  _High betweenness centrality (0.000) - this node is a cross-community bridge._
-- **What connects `PreToolUse`, `allow`, `schema_version` to the rest of the system?**
-  _2693 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `schema_version`, `task_id`, `grilled_at` to the rest of the system?**
+  _2902 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Misc: plan` be split into smaller, more focused modules?**
   _Cohesion score 0.04 - nodes in this community are weakly interconnected._
 - **Should `Task Example: plan` be split into smaller, more focused modules?**
-  _Cohesion score 0.04 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `Schema: graph-record` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
-- **Should `Negative Example: plan` be split into smaller, more focused modules?**
-  _Cohesion score 0.04 - nodes in this community are weakly interconnected._

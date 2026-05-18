@@ -19,6 +19,10 @@ Produce an execution-ready PlanRecord or explicitly stop at `DIAGNOSIS_REQUIRED`
 
 ## Instructions
 
+- Before creating a plan, require a valid approved GrillRecord at `.github/tasks/TASK-{NNN}/grill.json`.
+  If none exists, refuse to plan and route the user to `/grill` first.
+- Set `grill_ref` to `.github/tasks/TASK-{NNN}/grill.json`. `intended_files` must be a subset of
+  `grill.impacted_files`. `verification_commands` must be a subset of `grill.mandatory_verification_steps`.
 - Create or update `.github/tasks/TASK-{NNN}/plan.json`.
 - Populate `created_at` with the artifact creation time in ISO 8601 format.
 - Read `.github/workflow/graph-record.json` and `graphify-out/GRAPH_REPORT.md` before selecting intended files. Graph state and module relationships must inform scope decisions before any broad repository search.

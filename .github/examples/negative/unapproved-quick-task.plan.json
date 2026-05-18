@@ -1,43 +1,34 @@
 {
-  "schema_version": "plan-record.schema.v1",
+  "schema_version": "plan-record.schema.v2",
   "task_id": "TASK-NEG-003",
   "created_at": "2026-05-15T00:00:00Z",
   "phase": "plan",
   "status": "EXECUTION_READY",
-  "summary": "Invalid quick task without approval.",
-  "intended_files": [
-    "README.md"
-  ],
+  "summary": "Invalid: EXECUTION_READY plan with rejected human_approval.",
+  "intended_files": ["README.md"],
   "risk": "low",
-  "verification_command": "python3 .github/workflow/validators/check-setup",
+  "verification_commands": [["python3", ".github/workflow/validators/check-setup"]],
+  "grill_ref": ".github/examples/graph/shared-fixture.grill.json",
   "graph_freshness_mode": "fresh",
   "graph_usage": {
     "required": true,
     "status": "used",
     "graph_report_read": true,
-    "graph_queries_run": [
-      "graph-report:related-files"
-    ],
-    "graph_refs": [
-      "graph:file:README.md"
-    ],
+    "graph_queries_run": ["graph-report:related-files"],
+    "graph_refs": ["graph:file:README.md"],
     "reason": "Used Graphify to identify related modules before selecting intended_files."
   },
-  "graph_refs": [
-    "graph:file:README.md"
-  ],
-  "context_refs": [
-    "README.md"
-  ],
+  "graph_refs": ["graph:file:README.md"],
+  "context_refs": ["README.md"],
   "quick_task_classification": {
     "is_quick_task": true,
-    "reason": "Invalid because approval is missing.",
+    "reason": "Invalid because approval is rejected.",
     "graph_light_planning_allowed": false
   },
   "diagnosis": null,
   "planning": {
     "source": "/plan",
-    "decision": "Invalid fixture.",
+    "decision": "Invalid — human_approval is rejected on an EXECUTION_READY plan.",
     "diagnosis_required": false
   },
   "assumptions": [],
@@ -54,18 +45,10 @@
   },
   "approvals": [],
   "graph_scope": {
-    "in_scope_modules": [
-      "graph:file:README.md"
-    ],
-    "in_scope_files": [
-      "README.md"
-    ],
-    "nearby_but_out_of_scope": [
-      "CONTEXT.md"
-    ],
-    "risk_notes": [
-      "Graph references were capped to task-relevant nodes before selecting intended files."
-    ],
-    "graph_to_plan_decision": "Graph showed related workflow nodes, so intended files were limited to the files needed for this plan and nearby files were excluded."
+    "in_scope_modules": ["graph:file:README.md"],
+    "in_scope_files": ["README.md"],
+    "nearby_but_out_of_scope": ["CONTEXT.md"],
+    "risk_notes": [],
+    "graph_to_plan_decision": "Graph showed related workflow nodes, so intended files were limited to README.md and nearby files were excluded."
   }
 }

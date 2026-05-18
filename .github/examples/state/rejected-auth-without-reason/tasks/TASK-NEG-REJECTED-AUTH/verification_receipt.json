@@ -1,0 +1,13 @@
+{
+  "schema_version": "verification-receipt.schema.v2",
+  "task_id": "TASK-NEG-REJECTED-AUTH",
+  "human_authorization": {
+    "status": "rejected",
+    "reason": null
+  },
+  "human_approval": null,
+  "graph_scope_review": {
+    "actual_files_outside_graph_scope": [],
+    "notes": ""
+  }
+}

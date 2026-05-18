@@ -4,7 +4,7 @@ set -euo pipefail
 python3 .github/workflow/validators/check-setup
 python3 .github/workflow/validators/check-plan .github/examples/tasks/TASK-001/plan.json
 python3 .github/workflow/validators/check-execution .github/examples/tasks/TASK-001/execution.json
-python3 .github/workflow/validators/check-verification .github/examples/tasks/TASK-001/verification.json .github/examples/tasks/TASK-001/review.json
+cp .github/examples/tasks/TASK-001/verification_draft.json /tmp/test-verification-draft.json && python3 .github/workflow/validators/check-verification /tmp/test-verification-draft.json
 python3 .github/workflow/validators/check-state
 python3 .github/workflow/validators/check-memory
 python3 .github/workflow/validators/check-state .github/examples/state/good-full-lifecycle/state.json .github/examples/tasks
@@ -46,7 +46,7 @@ expect_fail_contains() {
   fi
 }
 
-expect_fail "stale graph without degraded approval" \
+expect_fail_contains "stale graph without degraded approval" "requires an approval of kind graph-degraded" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/stale-graph-without-approval.plan.json
 expect_fail_contains "missing Graphify command reports fix" "Install Graphify" \
   python3 .github/workflow/validators/check-graphify-copilot --repo-root .github/examples/graphify-copilot/good-repo --home .github/examples/graphify-copilot/good-home --graphify-bin .github/examples/graphify-copilot/missing-bin/graphify
@@ -54,23 +54,23 @@ expect_fail_contains "missing Copilot Graphify skill reports fix" "graphify copi
   python3 .github/workflow/validators/check-graphify-copilot --repo-root .github/examples/graphify-copilot/good-repo --home .github/examples/graphify-copilot/missing-skill-home --graphify-bin .github/examples/graphify-copilot/fake-bin/graphify
 expect_fail_contains "missing Graphify output reports fix" "Run: graphify" \
   python3 .github/workflow/validators/check-graphify-copilot --repo-root .github/examples/graphify-copilot/missing-output-repo --home .github/examples/graphify-copilot/good-home --graphify-bin .github/examples/graphify-copilot/fake-bin/graphify
-expect_fail "plan missing graph usage declaration" \
+expect_fail_contains "plan missing graph usage declaration" "missing required fields: graph_usage" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/missing-graph-usage.plan.json
-expect_fail "used graph without refs" \
+expect_fail_contains "used graph without refs" "graph_usage.status=used requires graph_refs" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/used-graph-without-refs.plan.json
-expect_fail "skipped graph without approval" \
+expect_fail_contains "skipped graph without approval" "requires an approval of kind graph-degraded" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/skipped-graph-without-approval.plan.json
-expect_fail "quick graph-light task without explicit policy" \
+expect_fail_contains "quick graph-light task without explicit policy" "graph_light_planning_allowed=true" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/quick-graph-light-without-policy.plan.json
-expect_fail "plan missing graph scope" \
+expect_fail_contains "plan missing graph scope" "missing required fields: graph_scope" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/missing-graph-scope.plan.json
-expect_fail "vague graph scope decision" \
+expect_fail_contains "vague graph scope decision" "graph_to_plan_decision must explain" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/vague-graph-scope.plan.json
-expect_fail "nearby graph scope overlaps intended files" \
+expect_fail_contains "nearby graph scope overlaps intended files" "nearby_but_out_of_scope must not overlap intended_files" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/graph-scope-overlap.plan.json
-expect_fail "missing verification command" \
+expect_fail_contains "missing verification command" "verification_commands must be a non-empty list" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/missing-verification-command.plan.json
-expect_fail "unapproved quick task" \
+expect_fail_contains "unapproved quick task" "human_approval must be approved" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/unapproved-quick-task.plan.json
 expect_fail "out-of-scope modification without approved deviation" \
   python3 .github/workflow/validators/check-execution .github/examples/negative/out-of-scope.execution.json
@@ -85,21 +85,13 @@ expect_fail "accepted memory without approval" \
 expect_fail "rejected memory without audit" \
   python3 .github/workflow/validators/check-memory .github/examples/memory/bad-rejected-without-audit
 expect_fail "degraded verification without acknowledgement" \
-  python3 .github/workflow/validators/check-verification .github/examples/negative/degraded-verification.verification.json .github/examples/negative/degraded-verification.review.json
-expect_fail "failed verification cannot be approved vaguely" \
-  python3 .github/workflow/validators/check-verification .github/examples/negative/failed-verification-vague-approval.verification.json .github/examples/negative/failed-verification-vague-approval.review.json
+  python3 .github/workflow/validators/check-verification .github/examples/negative/degraded-verification.verification_draft.json
 expect_fail "graphify cannot be verification proof" \
-  python3 .github/workflow/validators/check-verification .github/examples/negative/graph-only-verification.verification.json .github/examples/negative/graph-only-verification.review.json
+  python3 .github/workflow/validators/check-verification .github/examples/negative/graph-only-verification.verification_draft.json
 expect_fail "graph-near scope drift requires approval" \
-  python3 .github/workflow/validators/check-verification .github/examples/negative/graph-near-drift-without-approval.verification.json .github/examples/negative/graph-near-drift-without-approval.review.json
-expect_fail "graph-unrelated drift must be noted as higher risk" \
-  python3 .github/workflow/validators/check-verification .github/examples/negative/graph-unrelated-drift-without-risk-note.verification.json .github/examples/negative/graph-unrelated-drift-without-risk-note.review.json
-expect_fail "missing created_at timestamp" \
+  python3 .github/workflow/validators/check-verification .github/examples/negative/graph-near-drift-without-approval.verification_draft.json
+expect_fail_contains "missing created_at timestamp" "missing required fields: created_at" \
   python3 .github/workflow/validators/check-plan .github/examples/negative/missing-created-at.plan.json
-expect_fail "rejected verification without structured reason" \
-  python3 .github/workflow/validators/check-verification .github/examples/negative/rejected-verification-without-reason.verification.json .github/examples/negative/rejected-verification-without-reason.review.json
-expect_fail "rejected review without structured reason" \
-  python3 .github/workflow/validators/check-verification .github/examples/negative/rejected-review-without-reason.verification.json .github/examples/negative/rejected-review-without-reason.review.json
 expect_fail "active task points to missing folder" \
   python3 .github/workflow/validators/check-state .github/examples/state/missing-active-folder/state.json .github/examples/tasks
 expect_fail "two active task folders" \
@@ -110,15 +102,19 @@ expect_fail "plan did not set active task" \
   python3 .github/workflow/validators/check-state .github/examples/state/plan-without-active-task/state.json .github/examples/state/plan-without-active-task/tasks
 expect_fail "task closeout missing review" \
   python3 .github/workflow/validators/check-state .github/examples/state/close-without-review/state.json .github/examples/state/close-without-review/tasks
+expect_fail "rejected authorization without structured reason" \
+  python3 .github/workflow/validators/check-state .github/examples/state/rejected-auth-without-reason/state.json .github/examples/state/rejected-auth-without-reason/tasks
+expect_fail "rejected approval without structured reason" \
+  python3 .github/workflow/validators/check-state .github/examples/state/rejected-approval-without-reason/state.json .github/examples/state/rejected-approval-without-reason/tasks
+expect_fail "modified files outside graph scope without risk note" \
+  python3 .github/workflow/validators/check-state .github/examples/state/drift-without-risk-note/state.json .github/examples/state/drift-without-risk-note/tasks
 expect_fail "stale graph without degraded approval" \
   python3 .github/workflow/validators/check-graph .github/examples/graph/stale.graph-record.json .github/examples/graph/fresh.plan.json
 expect_fail "fresh graph record without graph JSON" \
   python3 .github/workflow/validators/check-graph .github/examples/graph/fresh-missing-graph-json.graph-record.json .github/examples/graph/fresh.plan.json
 expect_fail "fresh graph record without graph report" \
   python3 .github/workflow/validators/check-graph .github/examples/graph/fresh-missing-report.graph-record.json .github/examples/graph/fresh.plan.json
-expect_fail "missing graph for normal task" \
-  python3 .github/workflow/validators/check-graph .github/examples/graph/missing.graph-record.json .github/examples/graph/missing-normal.plan.json
-expect_fail "graph refs above cap" \
+expect_fail_contains "graph refs above cap" "graph_refs must contain at most 5 entries" \
   python3 .github/workflow/validators/check-plan .github/examples/graph/too-many-refs.plan.json
 if git rev-parse HEAD >/dev/null 2>&1; then
   expect_fail "stale git commit in fresh graph record" \

@@ -20,6 +20,7 @@ BOOTSTRAP_PATHS = [
 
 SKILLS = [
     "graph-context",
+    "grill",
     "task-planning",
     "bounded-execution",
     "verification-review",
@@ -42,7 +43,7 @@ config = load_json(ROOT / ".github/workflow/config.json")
 require(config.get("schema_version") == "config.schema.v2", "config.json has wrong schema_version")
 require(config.get("commands") == ["/setup", "/grill", "/plan", "/execute", "/verify"], "config.json must expose exactly the v2 commands")
 require(config.get("maintainer_commands") == ["/evaluate"], "config.json must keep /evaluate maintainer-only")
-require(config.get("skills") == SKILLS, "config.json must list exactly the five v1 skills")
+require(config.get("skills") == SKILLS, "config.json must list exactly the v2 skills")
 require(config.get("safe_default_required") is True, "config.json must require Safe Default Mode")
 
 managed = config.get("managed_agents_block", {})

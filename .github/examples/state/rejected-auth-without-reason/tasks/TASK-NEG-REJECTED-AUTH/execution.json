@@ -1,0 +1,4 @@
+{
+  "task_id": "TASK-NEG-REJECTED-AUTH",
+  "plan_ref": ".github/examples/state/rejected-auth-without-reason/tasks/TASK-NEG-REJECTED-AUTH/plan.json"
+}

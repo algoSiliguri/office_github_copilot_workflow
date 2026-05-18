@@ -5,7 +5,8 @@ This repository uses a repo-local Copilot CLI orchestration bundle.
 ## Commands
 
 - `/setup`: validate the bundle, create or update the target repo managed `AGENTS.md` block, record Graphify output presence, and tell the user to run `graphify copilot install`.
-- `/plan`: create a PlanRecord before edits.
+- `/grill`: run the Discovery Gate — map blast radius, surface risk, propose verification commands, and get human approval before planning is allowed.
+- `/plan`: require a valid `grill_ref` pointing to an approved GrillRecord, then create a PlanRecord before edits. Refuse to produce an execution-ready plan without it.
 - `/execute`: perform only approved plan edits and record execution.
 - `/verify`: prove the result with real checks and review.
 - `/evaluate`: maintainer-only workflow evaluation.

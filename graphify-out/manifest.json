@@ -1,7 +1,7 @@
 {
   "/Users/koustavdas/Documents/office_github_copilot_workflow/release-check.sh": {
-    "mtime": 1778927541.2495182,
-    "ast_hash": "57c9d0192db0a62f5cda67ab6218d318",
+    "mtime": 1779087536.8781753,
+    "ast_hash": "7b4e63e289fec69f3576410b517e0688",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.claude/settings.json": {
@@ -15,12 +15,12 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/evals/runs/EVAL-20260516-0000/summary.json": {
-    "mtime": 1778928069.4757733,
+    "mtime": 1779088297.5988886,
     "ast_hash": "76f19bb163087778be10f5d601caf576",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/evals/runs/EVAL-20260516-0000/task-metrics.json": {
-    "mtime": 1778928069.4759955,
+    "mtime": 1779088297.5990832,
     "ast_hash": "d5ec3a3f3c06f6f1d058e2e513293f04",
     "semantic_hash": ""
   },
@@ -72,6 +72,11 @@
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/tasks/TASK-001/verification_receipt.json": {
     "mtime": 1779055536.9167178,
     "ast_hash": "b5ba5a04b1356ae38231fa99af94dcd8",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/tasks/TASK-001/verification_draft.json": {
+    "mtime": 1779086211.0821292,
+    "ast_hash": "a598faa9c47b25c95411f90ab1c468f7",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/tasks/TASK-001/execution.json": {
@@ -130,8 +135,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-SCOPE-DRIFT/plan.json": {
-    "mtime": 1778921653.008666,
-    "ast_hash": "f4fc9a0397b656d8c5927cef1d6dde3f",
+    "mtime": 1779087643.2980487,
+    "ast_hash": "5d8c7de7545d1f2f9e8ddd21c13c3f09",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-SCOPE-DRIFT/grill.json": {
+    "mtime": 1779087609.0952265,
+    "ast_hash": "80f0fe3e0de9f2b3b787e134c610589b",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-SCOPE-DRIFT/verification.json": {
@@ -150,8 +160,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-MEMORY-SPAM/plan.json": {
-    "mtime": 1778921653.0081654,
-    "ast_hash": "e9a9f7ad32c3963d46253fd9ac6cd4f8",
+    "mtime": 1779087632.8836806,
+    "ast_hash": "77bf219a3a2d4bcaa016917bbf1141f3",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-MEMORY-SPAM/grill.json": {
+    "mtime": 1779087604.513215,
+    "ast_hash": "3e07cd6ee0240f4d52f98ac5cee402e3",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-MEMORY-SPAM/verification.json": {
@@ -170,8 +185,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-MISSING-LOGS/plan.json": {
-    "mtime": 1778921653.0085113,
-    "ast_hash": "94e3281e50f89f5d1ab62d501b60aca6",
+    "mtime": 1779087637.0247178,
+    "ast_hash": "8d5f81e82ecd26b8f60df2a752c9ef10",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-MISSING-LOGS/grill.json": {
+    "mtime": 1779087606.8591576,
+    "ast_hash": "0a190d18018aa5df776c789a4a5a4c56",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-MISSING-LOGS/verification.json": {
@@ -190,8 +210,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-GOOD/plan.json": {
-    "mtime": 1778921653.0079706,
-    "ast_hash": "5467750af9bec0b27b3b1ec051990183",
+    "mtime": 1779087623.6478736,
+    "ast_hash": "f90df82b4d93c47bb9e5c41efb7c54ab",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-GOOD/grill.json": {
+    "mtime": 1779087599.9224136,
+    "ast_hash": "dd2abf00ba51f6e11bed541d5d89ac9c",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-GOOD/verification.json": {
@@ -210,8 +235,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-STALE-GRAPH/plan.json": {
-    "mtime": 1778921653.0089078,
-    "ast_hash": "a92019a6aabfa9be54714abd250d4e85",
+    "mtime": 1779087648.3673954,
+    "ast_hash": "fca6fb86bb631dbd4efd306106a75e3a",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-STALE-GRAPH/grill.json": {
+    "mtime": 1779087611.8171797,
+    "ast_hash": "2de7bdea330f895f5f1ab50c020b4bba",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-STALE-GRAPH/verification.json": {
@@ -230,8 +260,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-FAILED-VERIFY/plan.json": {
-    "mtime": 1778921653.007677,
-    "ast_hash": "0afe0a901d194315c3306f165b7471c6",
+    "mtime": 1779087628.270783,
+    "ast_hash": "e8efa6fc67290a3a911e0e488d541a2b",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-FAILED-VERIFY/grill.json": {
+    "mtime": 1779087602.2676823,
+    "ast_hash": "b79d62a3bb6ea2af6c1012825833bdb6",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/evaluations/tasks/TASK-EVAL-FAILED-VERIFY/verification.json": {
@@ -279,6 +314,11 @@
     "ast_hash": "826c2a04137748df0e351af198ec94bf",
     "semantic_hash": ""
   },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/shared-fixture.grill.json": {
+    "mtime": 1779086385.353835,
+    "ast_hash": "8bb75f42a11f1c17ef896c28c8933b63",
+    "semantic_hash": ""
+  },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/fresh.graph-record.json": {
     "mtime": 1778921100.7442133,
     "ast_hash": "ddd9cfd32b7c3c2fd08b5d08b38c6f29",
@@ -295,13 +335,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/missing-quick.plan.json": {
-    "mtime": 1778921653.010902,
-    "ast_hash": "df97cf3e2feb284cee1f7d38b275cf3a",
+    "mtime": 1779086414.6558251,
+    "ast_hash": "89fb3111be9e22bc3a35a09a530648fe",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/degraded.plan.json": {
-    "mtime": 1778921653.0103092,
-    "ast_hash": "59f97817f2eda5b0140057a7d1e77662",
+    "mtime": 1779086405.206852,
+    "ast_hash": "d315468b9a28fdba2c15d3f6fb2789cc",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/stale-commit.graph-record.json": {
@@ -315,8 +355,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/too-many-refs.plan.json": {
-    "mtime": 1778921653.0116432,
-    "ast_hash": "59545160ec32424371f9821aa986e647",
+    "mtime": 1779087533.4441037,
+    "ast_hash": "2f61a87b4b5410a249d1b2b17ea09c5a",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/fresh-missing-report.graph-record.json": {
@@ -324,14 +364,9 @@
     "ast_hash": "3cfc0021ba03747583eece2d77ab2d1b",
     "semantic_hash": ""
   },
-  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/missing-normal.plan.json": {
-    "mtime": 1778921653.010718,
-    "ast_hash": "e29270f54bc5f36ae3e50777e27b2b60",
-    "semantic_hash": ""
-  },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/fresh.plan.json": {
-    "mtime": 1778921653.0105817,
-    "ast_hash": "fc5b43db08b9d8e7f251fd5b87ae4852",
+    "mtime": 1779086396.3276036,
+    "ast_hash": "5c6004b591c3715729fda84829b1fc40",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graph/missing.graph-record.json": {
@@ -370,8 +405,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/stale-graph-without-approval.plan.json": {
-    "mtime": 1778924605.9581547,
-    "ast_hash": "2b1fbd56fb285ce12ec7250a3c2f863a",
+    "mtime": 1779087434.703329,
+    "ast_hash": "c90dd0fb13aac33e73a5b8c39388bf26",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/graph-unrelated-drift-without-risk-note.review.json": {
@@ -385,18 +420,18 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/missing-verification-command.plan.json": {
-    "mtime": 1778924605.957235,
-    "ast_hash": "31d480e4b83397a81e0fa9fe1b5c3493",
+    "mtime": 1779087479.67897,
+    "ast_hash": "b81dd6b55352b7f150f5980923349bbb",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/vague-graph-scope.plan.json": {
-    "mtime": 1778921697.4140143,
-    "ast_hash": "c8b477cd37b3021c8c37219dcf376d15",
+    "mtime": 1779087466.6869087,
+    "ast_hash": "e22d49f0f8c541cace2753168255eac8",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/missing-created-at.plan.json": {
-    "mtime": 1778924605.9571104,
-    "ast_hash": "2520e95d11970b089572246426af09ae",
+    "mtime": 1779087488.9494922,
+    "ast_hash": "7ee45245441d97a994f1da98cc66b62e",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/graph-unrelated-drift-without-risk-note.execution.json": {
@@ -404,9 +439,19 @@
     "ast_hash": "1fcd56198d38dc31359d5fd0cf64868e",
     "semantic_hash": ""
   },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/degraded-verification.verification_draft.json": {
+    "mtime": 1779086211.0887077,
+    "ast_hash": "629da22a64e1f24f25b0e6dcf497a2f4",
+    "semantic_hash": ""
+  },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/graph-unrelated-drift-without-risk-note.verification.json": {
     "mtime": 1778922122.5154963,
     "ast_hash": "3c49e806220ba6a5438ea134888d0a0b",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/graph-near-drift-without-approval.verification_draft.json": {
+    "mtime": 1779086211.781667,
+    "ast_hash": "e8654fd9a1f9e2f1f7f2b759b7f62f30",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/out-of-scope.execution.json": {
@@ -415,8 +460,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/missing-graph-scope.plan.json": {
-    "mtime": 1778921697.3717878,
-    "ast_hash": "e130ae5e04835850b3ea90934b96e030",
+    "mtime": 1779087462.5629563,
+    "ast_hash": "e3842ccfece76a083f8df3b394ea96ca",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/degraded-verification.verification.json": {
@@ -429,19 +474,24 @@
     "ast_hash": "caae70b5e157e56530c1caf204cd8150",
     "semantic_hash": ""
   },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/graph-only-verification.verification_draft.json": {
+    "mtime": 1779086211.095893,
+    "ast_hash": "81d0197f2c6960e3f6f470204679e15c",
+    "semantic_hash": ""
+  },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/graph-near-drift-without-approval.review.json": {
     "mtime": 1778922122.4413948,
     "ast_hash": "5cc5a4a54aca08864bfbae88e37e88e0",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/graph-scope-overlap.plan.json": {
-    "mtime": 1778921697.453811,
-    "ast_hash": "4325ca598bcdfa2eec61d2eb7088fe06",
+    "mtime": 1779087471.6578846,
+    "ast_hash": "4b86798cf5ea9374f193d4f5c1988e07",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/unapproved-quick-task.plan.json": {
-    "mtime": 1778924605.9582973,
-    "ast_hash": "730b73fb631bb36023b1783fef6c05b8",
+    "mtime": 1779087485.053794,
+    "ast_hash": "a2073cb1a772131557a64feceadbbf23",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/rejected-verification-without-reason.verification.json": {
@@ -450,8 +500,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/missing-graph-usage.plan.json": {
-    "mtime": 1778921653.0120249,
-    "ast_hash": "f73d2dc0d578b0c008f0d944f0e4f4bf",
+    "mtime": 1779087438.9884434,
+    "ast_hash": "41185a04e9ee89856b32028f89b3b8b7",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/rejected-review-without-reason.review.json": {
@@ -465,8 +515,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/skipped-graph-without-approval.plan.json": {
-    "mtime": 1778921653.0124173,
-    "ast_hash": "e728a83391da9379a8a8ab6bdcaabd1c",
+    "mtime": 1779087448.3107204,
+    "ast_hash": "cd5cc38ae46c4092092528f306b9d1c2",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/rejected-verification-without-reason.review.json": {
@@ -480,13 +530,53 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/used-graph-without-refs.plan.json": {
-    "mtime": 1778921653.012814,
-    "ast_hash": "eca4299786361f122ba7882414eacb19",
+    "mtime": 1779087444.6003587,
+    "ast_hash": "17c79302147d2d6eca644f5202e11a3f",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/negative/quick-graph-light-without-policy.plan.json": {
-    "mtime": 1778921653.0122738,
-    "ast_hash": "2eb2b72d896d4971a915d67e546d77f1",
+    "mtime": 1779087458.3195949,
+    "ast_hash": "e024aad6ab60621d74e96121d656db69",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/drift-without-risk-note/state.json": {
+    "mtime": 1779086730.5677717,
+    "ast_hash": "1a39cfdce00cc57f1ab653f05f57257f",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/drift-without-risk-note/tasks/TASK-NEG-DRIFT-NOTE/plan.json": {
+    "mtime": 1779086746.5023408,
+    "ast_hash": "c4ed084c555fc1ba1a1cc4e90e2b173f",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/drift-without-risk-note/tasks/TASK-NEG-DRIFT-NOTE/verification_receipt.json": {
+    "mtime": 1779086748.8446033,
+    "ast_hash": "5ce8f20b1099b2cfd5363aa05774c2ab",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/drift-without-risk-note/tasks/TASK-NEG-DRIFT-NOTE/execution.json": {
+    "mtime": 1779086747.5782335,
+    "ast_hash": "cf7653b5530cd7956ed9ef28b0c31fd0",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/rejected-approval-without-reason/state.json": {
+    "mtime": 1779086729.9948826,
+    "ast_hash": "1a39cfdce00cc57f1ab653f05f57257f",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/rejected-approval-without-reason/tasks/TASK-NEG-REJECTED-APPR/plan.json": {
+    "mtime": 1779086738.953587,
+    "ast_hash": "1751d6a3e8077e49159c5040b644fd04",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/rejected-approval-without-reason/tasks/TASK-NEG-REJECTED-APPR/verification_receipt.json": {
+    "mtime": 1779086742.5396523,
+    "ast_hash": "a2b0b5f6ccd590f8691dcbc6ba8861a8",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/rejected-approval-without-reason/tasks/TASK-NEG-REJECTED-APPR/execution.json": {
+    "mtime": 1779086740.1012616,
+    "ast_hash": "59cd817ef7d02b7b459d2220f336ea5d",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/plan-without-active-task/state.json": {
@@ -497,6 +587,26 @@
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/plan-without-active-task/tasks/TASK-103/plan.json": {
     "mtime": 1778921653.0144153,
     "ast_hash": "9bea59f9c2e4dfdc5feccdcce67ceb9d",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/rejected-auth-without-reason/state.json": {
+    "mtime": 1779086729.2426553,
+    "ast_hash": "1a39cfdce00cc57f1ab653f05f57257f",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/rejected-auth-without-reason/tasks/TASK-NEG-REJECTED-AUTH/plan.json": {
+    "mtime": 1779086733.8473506,
+    "ast_hash": "45b57f30e487168885f4b2d0910acc39",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/rejected-auth-without-reason/tasks/TASK-NEG-REJECTED-AUTH/verification_receipt.json": {
+    "mtime": 1779086735.962679,
+    "ast_hash": "692905d57d3fbaf5829df81293891038",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/rejected-auth-without-reason/tasks/TASK-NEG-REJECTED-AUTH/execution.json": {
+    "mtime": 1779086734.511469,
+    "ast_hash": "982445fb7cbf76a14a12e85e450a02ab",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/two-active-tasks/state.json": {
@@ -515,13 +625,18 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/close-without-review/state.json": {
-    "mtime": 1778915526.3976543,
-    "ast_hash": "ad4a0b850719eecbd40d8cbbfe3899d6",
+    "mtime": 1779086484.8829854,
+    "ast_hash": "1a39cfdce00cc57f1ab653f05f57257f",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/close-without-review/tasks/TASK-104/plan.json": {
     "mtime": 1778921653.0133536,
     "ast_hash": "180a0a23e60f7514feb0d2d8a88882f5",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/close-without-review/tasks/TASK-104/verification_receipt.json": {
+    "mtime": 1779086484.2035735,
+    "ast_hash": "579f4a541f138857570b0a39597b6289",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/state/close-without-review/tasks/TASK-104/verification.json": {
@@ -635,13 +750,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/config.json": {
-    "mtime": 1779055455.1676428,
-    "ast_hash": "aea1fd9d422122861f33c027e359eee7",
+    "mtime": 1779086894.7682319,
+    "ast_hash": "364e498425ab90e816f5976a34e09148",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/graph-record.json": {
-    "mtime": 1778928065.353098,
-    "ast_hash": "bac32c8e8104110b681cb8e710a67221",
+    "mtime": 1779088227.5850322,
+    "ast_hash": "ffc5533161abcb6ea51d7de281e11d37",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/doctor": {
@@ -740,8 +855,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/validators/check-plan": {
-    "mtime": 1779055265.6656933,
-    "ast_hash": "9f952e23a64008d240ebc7db4221ab8f",
+    "mtime": 1779087380.9157279,
+    "ast_hash": "9135614bbd19d3e8c49719b6b0b502c2",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/validators/check-verification": {
@@ -770,8 +885,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/validators/check-setup": {
-    "mtime": 1779055503.6937327,
-    "ast_hash": "375603816a683ff09c435ee00bce810c",
+    "mtime": 1779088196.4690826,
+    "ast_hash": "510034ddae4e926037d97c973d1b330b",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/validators/approval_model.py": {
@@ -790,8 +905,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/validators/check-state": {
-    "mtime": 1779055372.0805566,
-    "ast_hash": "b57fabda9e841e07817e97da7005b1a0",
+    "mtime": 1779086725.0204442,
+    "ast_hash": "5457c3ac579f8ccf5e789af85b1ad640",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/workflow/validators/check-grill": {
@@ -815,8 +930,8 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/AGENTS.md": {
-    "mtime": 1778864596.117804,
-    "ast_hash": "29af56dcbbb51b53c107ec1d1861306a",
+    "mtime": 1779088214.6354704,
+    "ast_hash": "6f9f4a78b6a47f9c34ed6fc80972ae24",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/CLAUDE.md": {
@@ -889,9 +1004,14 @@
     "ast_hash": "ea5bb2a416bf5a50ed9a8750adb68646",
     "semantic_hash": ""
   },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/QUICKSTART.md": {
+    "mtime": 1779088292.918675,
+    "ast_hash": "694dd9506fd9c0e45f5c258d03d979e4",
+    "semantic_hash": ""
+  },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/copilot-instructions.md": {
-    "mtime": 1778924605.9561143,
-    "ast_hash": "e9936ce7e7a9fc128899fa8800bec9fd",
+    "mtime": 1779086916.115294,
+    "ast_hash": "cc6cc3a6d0a9f8a2cc0979faa025a3b6",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/evals/README.md": {
@@ -900,7 +1020,7 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/evals/runs/EVAL-20260516-0000/findings.md": {
-    "mtime": 1778928069.4760747,
+    "mtime": 1779088297.5992532,
     "ast_hash": "dc1d85a68ee8e6e1997d4ceeec820850",
     "semantic_hash": ""
   },
@@ -910,13 +1030,18 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/agents/workflow-orchestrator.agent.md": {
-    "mtime": 1778864281.81798,
-    "ast_hash": "aef1d26128dce52d79a2514d3cbf9a5c",
+    "mtime": 1779087933.19649,
+    "ast_hash": "68816b18a2447d9a5ab22dc5cf644aea",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/examples/graphify-copilot/good-home/.copilot/skills/graphify/SKILL.md": {
     "mtime": 1778922292.5883071,
     "ast_hash": "4bec2c95082d773f84bce64ee4dd70b0",
+    "semantic_hash": ""
+  },
+  "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/skills/grill/SKILL.md": {
+    "mtime": 1779088080.8546164,
+    "ast_hash": "24b7c1427f2dea43400d63e003b0a21c",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/skills/workflow-evaluation/SKILL.md": {
@@ -930,13 +1055,13 @@
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/skills/graph-context/SKILL.md": {
-    "mtime": 1778924605.9108317,
-    "ast_hash": "41e1a9c6f9a30fa1f0a2c1fc7251863e",
+    "mtime": 1779088187.1568127,
+    "ast_hash": "4599c1e5a357725e52da83330f2ad6de",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/skills/task-planning/SKILL.md": {
-    "mtime": 1778924605.9117184,
-    "ast_hash": "b530eed75cb0764b3fde6953ca1df214",
+    "mtime": 1779086921.3883572,
+    "ast_hash": "09cd261486ce4ab99bf9d711e923ead8",
     "semantic_hash": ""
   },
   "/Users/koustavdas/Documents/office_github_copilot_workflow/.github/skills/bounded-execution/SKILL.md": {

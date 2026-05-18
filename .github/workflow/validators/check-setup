@@ -10,6 +10,7 @@ ROOT = Path.cwd()
 # Paths that must exist regardless of config — the minimum bootstrap surface.
 BOOTSTRAP_PATHS = [
     "AGENTS.md",
+    ".github/QUICKSTART.md",
     ".github/copilot-instructions.md",
     ".github/agents/workflow-orchestrator.agent.md",
     ".github/workflow/config.json",

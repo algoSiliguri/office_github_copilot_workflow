@@ -27,8 +27,28 @@ Connect graphify output to workflow artifacts without loading the whole graph in
 - Write `graph_output_exists` (each key as a boolean) and `last_checked_at` (ISO 8601) into `graph-record.json`.
 - Set `graph_status` to `fresh`, `stale`, `missing`, or `degraded-approved` based on detected state.
 - If `graphify-out/` is absent or required files are missing, set `graph_status: missing` and complete setup. Do not halt. The plan phase gate handles degraded-mode approval.
-- Tell the user to run `graphify` then `graphify copilot install` when status is `missing` or `stale`.
 - Run `check-graphify-copilot` as a non-mutating health check. Report its fix command on failure; do not auto-install.
+
+### When graph is missing or stale — output this pre-flight checklist to the user
+
+```
+⚠ Graphify output not found (or stale). Bundle is in degraded mode.
+
+To enable full graph context, run from your repo root:
+
+  pip install graphify          # install once per machine
+  graphify .                    # build the knowledge graph
+  graphify copilot install      # register the Copilot skill
+
+Then re-run /setup to record fresh graph state.
+
+If Graphify is unavailable, you can still proceed — each phase will
+ask for explicit human approval to continue in degraded mode.
+
+See .github/QUICKSTART.md for the full setup guide.
+```
+
+Output this block verbatim (or equivalent). Do not silently record degraded mode and move on.
 
 ## Instructions
 

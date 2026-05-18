@@ -29,7 +29,8 @@ Use read/search by default. Shell and writes require the active phase contract a
 | Intent | Skill | Notes |
 |---|---|---|
 | setup, bundle validation, graph record | `graph-context` | validate with `check-setup` |
-| planning, diagnosis, design, exploration | `task-planning` | load `graph-context` only to select `graph_refs[]` |
+| discovery gate, blast-radius, risk mapping | `grill` | mandatory before planning; produces approved GrillRecord |
+| planning, diagnosis, design, exploration | `task-planning` | requires approved GrillRecord; load `graph-context` only to select `graph_refs[]` |
 | approved implementation, edits, test updates | `bounded-execution` | requires approved PlanRecord |
 | verification, review, task closeout | `verification-review` | requires both VerificationRecord and ReviewRecord |
 | workflow/system analysis, maintainer audit | `workflow-evaluation` | maintainer only; never on normal task path |

@@ -11,7 +11,7 @@
   "status": "fresh",
   "generated_at": "2026-05-17T00:00:00Z",
   "repo_root": ".",
-  "git_commit": "b224e254d06187032a247fca8130d65723809dca",
+  "git_commit": "1e62abb49e3d6a5406e8d9e8fe8215ae3b905ff8",
   "branch": "main",
   "graphify_manifest_path": "graphify-out/manifest.json",
   "graph_output_exists": {

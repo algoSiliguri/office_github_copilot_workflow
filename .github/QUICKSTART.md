@@ -31,21 +31,25 @@
 
 6. **Run `/setup`** — validates the bundle, checks graph state, reports anything missing.
 
+7. **Describe your task** — type `/grill I want to <what you want to do>`. Copilot allocates
+   a task ID, creates the task folder, maps the blast radius, and asks you to approve before
+   planning begins. You do not need to create folders manually.
+
 ## Workflow
 
 ```
-/setup → /grill → /plan → /execute → /verify
+/setup → /grill <describe task> → /plan → /execute → /verify
 ```
 
 | Command   | What it does |
 |-----------|--------------|
 | `/setup`  | Validate bundle, record graph state, update AGENTS.md |
-| `/grill`  | Discovery Gate — map blast radius, surface risks, lock verification steps |
+| `/grill`  | Allocate task ID, map blast radius, surface risks, lock verification steps |
 | `/plan`   | Declare intended files, risk, and verification commands. Requires approved grill |
 | `/execute`| Apply only the approved plan edits |
 | `/verify` | Run locked verification commands and produce a witnessed receipt |
 
-Human approval is required before `/execute` and before final verification acceptance.
+Human approval is required at `/grill`, before `/execute`, and before final verification.
 
 ## If Graphify is unavailable
 

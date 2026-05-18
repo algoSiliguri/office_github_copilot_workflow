@@ -20,8 +20,21 @@ must approve the blast-radius analysis (Discovery Gate) before `/plan` is allowe
 
 ## Instructions
 
-- Create or update `.github/tasks/TASK-{NNN}/grill.json`.
-- Populate `task_id` with the active task identifier from `.github/workflow/state.json`.
+### Task initialization (always first)
+
+1. Read `.github/workflow/state.json`. If `active_task` is non-null, the task folder already
+   exists — use that task ID and skip to the graph-context step below.
+2. If `active_task` is null, allocate a new task ID:
+   - List all directories under `.github/tasks/` matching `TASK-\d+`.
+   - Take the highest numeric suffix found; the new ID is that number plus one, zero-padded to
+     three digits. If no TASK folders exist, start at `TASK-001`.
+   - Create `.github/tasks/TASK-{NNN}/`.
+   - Update `.github/workflow/state.json` to set `active_task: "TASK-{NNN}"`.
+3. All subsequent artifacts for this session go under `.github/tasks/TASK-{NNN}/`.
+
+### Grill session
+
+- Populate `task_id` with the active task ID determined above.
 - Populate `grilled_at` with the current time in ISO 8601 format.
 - Read `.github/workflow/graph-record.json`. If freshness is `stale` or `missing`, warn the user
   before proceeding; degraded grill is allowed with explicit acknowledgement.
